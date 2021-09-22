@@ -23,7 +23,9 @@
   "background": {
     "scripts": [
       "inc/dexie.js",
-      "js/background.js"
+      "js/background.js",
+      "modules/tiktok.js",
+      "modules/instagram.js"
     ]
   }
 }
