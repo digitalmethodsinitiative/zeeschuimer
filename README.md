@@ -30,3 +30,6 @@ debugging console](https://www.youtube.com/watch?v=sAM78GU4P34&feature=emb_title
 ## Credits & license
 Zeeschuimer was developed by Stijn Peeters for the [Digital Methods Initiative](https://digitalmethods.net) and is 
 licensed under the Mozilla Public License, 2.0. Refer to the LICENSE file for more information.
+
+Development is supported by the Dutch [PDI-SSH](https://pdi-ssh.nl/en/) foundation through the [CAT4SMR 
+project](https://cat4smr.humanities.uva.nl/).
