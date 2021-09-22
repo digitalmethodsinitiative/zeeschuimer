@@ -5,12 +5,14 @@
   "name": "Zeeschuimer",
   "version": "1.0",
   "homepage_url": "https://github.com/digitalmethodsinitiative/zeeschuimer",
+
   "icons": {
-    "48": "pen.svg"
+    "48": "images/zeeschuimer-48.png",
+    "96": "images/zeeschuimer-96.png"
   },
 
   "browser_action": {
-    "default_icon": "icons/zeeschuimer-32.png",
+    "default_icon": "images/zeeschuimer-64.png",
     "default_title": "Zeeschuimer Status",
     "default_popup": "popup/status.html",
     "browser_style": true

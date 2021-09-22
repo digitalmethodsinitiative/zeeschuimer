@@ -1,5 +1,4 @@
-const db = new Dexie('zeeschuimer-items');
-window.db = db;
+window.db = new Dexie('zeeschuimer-items');
 window.db.version(1).stores({
     items: "++id, source_platform, source_platform_url, source_url, item"
 });
