@@ -3,7 +3,7 @@
   "description": "Collect data while browsing TikTok and upload it for analysis later",
   "manifest_version": 2,
   "name": "Zeeschuimer",
-  "version": "1.0",
+  "version": "1.0b",
   "homepage_url": "https://github.com/digitalmethodsinitiative/zeeschuimer",
 
   "icons": {
@@ -13,13 +13,11 @@
 
   "browser_action": {
     "default_icon": "images/zeeschuimer-64.png",
-    "default_title": "Zeeschuimer Status",
-    "default_popup": "popup/status.html",
-    "browser_style": true
+    "default_title": "Zeeschuimer Status"
   },
 
   "permissions": [
-    "webRequest", "webRequestBlocking", "<all_urls>", "storage", "downloads"
+    "webRequest", "webRequestBlocking", "<all_urls>", "storage", "downloads", "activeTab", "storage", "tabs"
   ],
 
   "background": {

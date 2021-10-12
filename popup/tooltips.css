@@ -1,0 +1,56 @@
+.tooltippable:not(a) {
+    cursor: help;
+}
+
+#tooltip {
+    background: #B62700;
+    color: #FEFFCF;
+    padding: 0.25em 1em;
+    font-size: x-small;
+    position: absolute;
+    top: 0;
+    left: 0;
+    max-width: 20em;
+    z-index: 10;
+    text-align: center;
+}
+
+#tooltip:after, #tooltip:before {
+    top: 100%;
+    left: 50%;
+    border: solid transparent;
+    content: " ";
+    height: 0;
+    width: 0;
+    position: absolute;
+    pointer-events: none;
+}
+
+#tooltip.point-up:after, #tooltip.point-up:before {
+    bottom: 100%;
+    top: auto;
+}
+
+#tooltip:after {
+    border-color: rgba(255, 255, 255, 0);
+    border-top-color: #B62700;
+    border-width: 5px;
+    margin-left: -5px;
+}
+
+#tooltip.point-up:after {
+    border-bottom-color: #B62700;
+    border-top-color: rgba(255, 255, 255, 0);
+}
+
+#tooltip:before {
+    border-color: rgba(0, 0, 0, 0);
+    border-top-color: #000;
+    border-width: 6px;
+    margin-left: -6px;
+}
+
+#tooltip.point-up:before {
+    border-top-color: rgba(0, 0, 0, 0);
+    border-bottom-color: #000
+}

@@ -1,0 +1,19 @@
+{
+  "language": "eng",
+  "license": "MPL-2.0",
+  "title": "Zeeschuimer",
+  "upload_type": "software",
+  "version": "v1.0b",
+  "keywords": [
+    "scraping", "data capture", "4cat", "instagram", "tiktok"
+  ],
+  "creators": [
+    {
+      "orcid": "0000-0002-0161-8019",
+      "affiliation": "University of Amsterdam",
+      "name": "Stijn Peeters"
+    }
+  ],
+  "access_right": "open",
+  "description": "<p>Zeeschuimer is a work in progress.</p>."
+}

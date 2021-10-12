@@ -1,28 +1,178 @@
 <!DOCTYPE html>
 <head>
+    <title>Zeeschuimer</title>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
     <script type="text/javascript" src="popup.js"></script>
+    <link rel="stylesheet" href="tooltips.css">
     <style>
-        body {
-            padding: 0 1em 1em 1em;
+        /** Colours from https://coolors.co/1446a0-db3069-f5d547-ebebd3-3c3c3b **/
+        @font-face {
+            font-family: 'Open Sans';
+            src: url("../fonts/OpenSans-Regular.ttf")
         }
 
-        h1, article {
+        @font-face {
+            font-family: 'Open Sans';
+            font-weight: bold;
+            src: url("../fonts/OpenSans-Bold.ttf")
+        }
+
+        @font-face {
+            font-family: 'Open Sans';
+            font-style: italic;
+            src: url("../fonts/OpenSans-Italic.ttf")
+        }
+
+        @font-face {
+            font-family: 'Open Sans';
+            font-weight: bold;
+            font-style: italic;
+            src: url("../fonts/OpenSans-BoldItalic.ttf")
+        }
+
+        html {
+            background: #F5D547;
+            padding: 1em;
+        }
+
+        body {
+            font-family: 'Open Sans', sans-serif;
+            color: #3C3C3B;
+        }
+
+        article {
+            padding: 0;
+            max-width: 600px;
+            margin: 0 auto;
+            background: #EBEBD3;
+            border-radius: 1em;
+            border: 2px solid #3C3C3B;
+        }
+
+        h1 {
+            font-size: 2em;
+            margin-top: 0;
+            padding: 0.5em;
+            background: #3C3C3B;
+            color: #EBEBD3;
+            border-top-left-radius: 0.4em;
+            border-top-right-radius: 0.4em;
+            background-image: url('../images/zeeschuimer-96.png');
+            background-repeat: no-repeat;
+            background-position-x: 0;
+            background-position-y: 0;
+            background-size: contain;
+            text-indent: 2.5em;
+            position: relative;
+        }
+
+        body.beta h1::after {
+            transform: rotate(20deg);
+            background: #F5D547;
+            color: #3C3C3B;
+            padding: 0.5em;
+            border-radius: 15px;
+            border: 2px solid #3C3C3B;
+            content: "⚠ Beta version";
+            position: absolute;
+            right: -1.5em;
+            top: -0.25em;
+            font-size: 50%;
             text-align: center;
+            display: block;
+            text-indent: 0;
+        }
+
+        h2 span {
+            display: inline;
+            border-bottom: 1px solid #363636;
         }
 
         h1 img {
             display: inline;
-            height: 1.5ex;
+            height: 1em;
+        }
+
+        a {
+            color: #1446A0;
+        }
+
+        #status, #upload-status {
+            margin: 0 1em;
+        }
+
+        table {
+            width: 100%;
+            margin: 1em;
+        }
+
+        td, th {
+            text-align: center;
+        }
+
+        .reset-all {
+            display: block;
+            margin: 0 auto;
+        }
+
+        nav ul {
+            list-style: none;
+            padding: 0;
+            text-align: center;
+        }
+
+        nav li {
+            display: inline-block;
+        }
+
+        nav li:not(:last-child)::after {
+            content: ' \2022';
+        }
+
+        .fourcat-url-container {
+            text-align: center;
+        }
+
+        #upload-status {
+            text-align: center;
+        }
+
+        .tooltippable {
+            display: inline-block;
+            background: #3C3C3B;
+            color: #EBEBD3;
+            font-size: 0.75em;
+            border-radius: 0.75em;
+            width: 1.5em;
+            height: 1.5em;
+            text-align: center;
+            font-weight: bold;
         }
     </style>
+    <link rel="shortcut icon" href="/images/zeeschuimer-96.png">
 </head>
-<body>
-<h1><img src="../images/zeeschuimer-96.png" alt=""> Zeeschuimer status</h1>
+<body class="beta">
 <article>
-    <div id="status">hello</div>
+    <h1>Zeeschuimer</h1>
+    <div class="fourcat-url-container">
+        <label>
+            <span>4CAT instance:</span>
+            <input type="text" placeholder="https://4cat.example.com" id="fourcat-url">
+            <span class="tooltippable" title="The 4CAT instance to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
+        </label>
+    </div>
+    <p id="upload-status"></p>
+    <div id="status">[Loading data collection status]</div>
 </article>
 <footer>
-    <button class="reset-all">Delete all items</button>
-    <p id="upload-status"></p>
+    <nav>
+        <ul>
+            <li><a href="https://tools.digitalmethods.net">DMI Tools</a></li>
+            <li><a href="https://www.github.com/digitalmethodsinitiative/zeeschuimer">GitHub</a></li>
+            <li><a href="https://www.github.com/digitalmethodsinitiative/4cat">4CAT</a></li>
+            <li><a href="https://cat4smr.humanities.uva.nl">CAT4SMR</a></li>
+        </ul>
+    </nav>
 </footer>
+<script type="text/javascript" src="tooltips.js"></script>
 </body>
