@@ -9,7 +9,8 @@ API-based data collection.
 
 You can, for example, browse TikTok and later export a list of all posts you saw in the order you saw them in. Data can 
 be exported as a JSON file or exported to a [4CAT](https://github.com/digitalmethodsinitiative/4cat) instance for 
-analysis and storage.
+analysis and storage. Zeeschuimer is primarily intended as a companion to 4CAT, but you can also integrate its output
+into your own analysis pipeline.
 
 Currently, it supports the following platforms:
 * TikTok via https://www.tiktok.com

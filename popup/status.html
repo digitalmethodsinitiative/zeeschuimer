@@ -162,7 +162,34 @@
         </label>
     </div>
     <p id="upload-status"></p>
-    <div id="status">[Loading data collection status]</div>
+    <div id="status">
+        <h2><span>Captured data objects</span></h2>
+        <div>
+            <table id="item-table">
+                <thead>
+                    <tr>
+                        <th>Platform</th>
+                        <th>Items</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody></tbody>
+            </table>
+            <button class="reset-all">Delete all items</button>
+        </div>
+        <h2><span>Uploaded datasets</span></h2>
+        <table id="upload-table">
+            <thead>
+                <tr>
+                    <th>Platform</th>
+                    <th>Items</th>
+                    <th>Date</th>
+                    <th>4CAT Link</th>
+                </tr>
+            </thead>
+            <tbody></tbody>
+        </table>
+    </div>
 </article>
 <footer>
     <nav>

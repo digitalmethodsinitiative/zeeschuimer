@@ -1,9 +1,17 @@
 const background = browser.extension.getBackgroundPage();
 
-function createElement(html) {
-    let element = document.createElement('template');
-    element.innerHTML = html;
-    return element.content.firstChild;
+function createElement(tag, attributes={}, content=undefined) {
+    let element = document.createElement(tag);
+    for(let attribute in attributes) {
+        element.setAttribute(attribute, attributes[attribute]);
+    }
+    if (content instanceof HTMLElement) {
+        element.appendChild(content);
+    } else if(content !== undefined) {
+        element.textContent = content;
+    }
+
+    return element;
 }
 
 document.addEventListener('DOMContentLoaded', function () {
@@ -38,7 +46,7 @@ function set_4cat_url(e) {
     }
 
     document.querySelectorAll('button.upload-to-4cat').forEach(button => {
-        let items = parseInt(button.parentElement.previousSibling.innerHTML);
+        let items = parseInt(button.parentElement.previousSibling.innerText);
         button.disabled = !(items > 0 && url.length > 0);
     });
 }
@@ -49,41 +57,42 @@ async function get_stats() {
         response[module] = await background.db.items.where("source_platform").equals(module).count();
     }
 
-    let status = document.getElementById('status');
-    let buffer = '';
+    document.querySelector("#item-table tbody").innerHTML = '';
+    document.querySelector("#upload-table tbody").innerHTML = '';
 
-    buffer += '<h2><span>Captured data objects</span></h2><div>';
-    buffer += '<table><tr><th>Platform</th><th>Items</th><th>Actions</th></tr>';
+    console.log(response);
     for (let platform in response) {
-        let disabled = parseInt(response[platform]) === 0 ? ' disabled' : '';
-        buffer += '<tr>';
-        buffer += '<td>' + platform + '</td>';
-        buffer += '<td class="num-items">' + response[platform] + '</td>';
-        buffer += '<td>' +
-                ' <button class="reset" data-platform="' + platform + '"' + disabled + '>Clear</button>' +
-                ' <button class="download-ndjson" data-platform="' + platform + '"' + disabled + '>.ndjson</button>' +
-                ' <button class="upload-to-4cat" data-platform="' + platform + '"' + disabled + '>to 4CAT</button></td>';
-        buffer += '</tr>';
+        let disabled = (parseInt(response[platform]) === 0);
+        let row = createElement("tr");
+        row.appendChild(createElement("td", {}, platform));
+        row.appendChild(createElement("td", {}, parseInt(response[platform])));
+
+        let actions = createElement("td");
+        let clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Clear");
+        clear_button.disabled = disabled;
+        let download_button = createElement("button", {"data-platform": platform, "class": "download-ndjson"}, ".ndjson");
+        download_button.disabled = disabled;
+        let fourcat_button = createElement("button", {"data-platform": platform, "class": "upload-to-4cat"}, "to 4CAT");
+        fourcat_button.disabled = disabled;
+
+        actions.appendChild(clear_button);
+        actions.appendChild(download_button);
+        actions.appendChild(fourcat_button);
+
+        row.appendChild(actions);
+        document.querySelector("#item-table tbody").appendChild(row);
     }
-
-    buffer += '</table>';
-    buffer += '<button class="reset-all">Delete all items</button></div>';
-
-    buffer += '<h2><span>Uploaded datasets</span></h2>';
-    buffer += '<table><tr><th>Platform</th><th>Items</th><th>Date</th><th>4CAT Link</th></tr>';
 
     let uploads = await background.db.uploads.orderBy("id").limit(10);
     await uploads.each(upload => {
-        buffer += '<tr>';
-        buffer += '<td>' + upload.platform + '</td>';
-        buffer += '<td>' + upload.items + '</td>';
-        buffer += '<td>' + (new Date(upload.timestamp)).toLocaleString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"})  + '</td>';
-        buffer += '<td><a href="' + upload.url + '">' + upload.url.split("/")[2] + '</a></td>';
-        buffer += '</tr>';
+        let row = createElement("tr");
+        row.appendChild(createElement("td", {}, upload.platform));
+        row.appendChild(createElement("td", {}, upload.items));
+        row.appendChild(createElement("td", {}, (new Date(upload.timestamp)).toLocaleString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"})));
+        row.appendChild(createElement("td", {}, createElement("a", {"href": upload.url}, upload.url.split("/")[2])));
+        document.querySelector("#upload-table tbody").appendChild(row);
     });
 
-    buffer += '</table>';
-    status.innerHTML = buffer;
     set_4cat_url(true);
 }
 
@@ -113,30 +122,30 @@ async function button_handler(event) {
         xhr.open("POST", localStorage.getItem("4cat-url") + "/api/import-dataset/", true);
         xhr.setRequestHeader("X-Zeeschuimer-Platform", platform)
         xhr.onloadstart = function () {
-            status.innerHTML = 'Starting upload...';
+            status.innerText = 'Starting upload...';
         }
         xhr.onprogress = function (event) {
             let pct = event.total === 0 ? '???' : Math.round(event.loaded / event.total * 100, 1);
-            status.innerHTML = pct + '% uploaded';
+            status.innerText = pct + '% uploaded';
         }
         xhr.onreadystatechange = function() {
             let response = xhr.responseText.replace(/\n/g, '');
             if(xhr.readyState === xhr.DONE) {
                 if(xhr.status === 200) {
-                    status.innerHTML = 'File uploaded. Waiting for processing to finish.'
+                    status.innerText = 'File uploaded. Waiting for processing to finish.'
                     try {
                         response = JSON.parse(response);
                     } catch (SyntaxError) {
-                        status.innerHTML = 'Error during upload: malformed response from 4CAT server.';
+                        status.innerText = 'Error during upload: malformed response from 4CAT server.';
                         return;
                     }
                     upload_poll.init(response);
                 } else if(xhr.status === 403) {
-                    status.innerHTML = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
+                    status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
                 } else if(xhr.status === 0) {
-                    status.innerHTML = 'Could not connect to 4CAT server. Is the URL correct?';
+                    status.innerText = 'Could not connect to 4CAT server. Is the URL correct?';
                 } else {
-                    status.innerHTML = 'Error ' + xhr.status + ' ' + xhr.statusText + ' during upload. Is the URL correct?';
+                    status.innerText = 'Error ' + xhr.status + ' ' + xhr.statusText + ' during upload. Is the URL correct?';
                 }
             }
         }
@@ -157,7 +166,7 @@ const upload_poll = {
             }
 
             if (xhr.status !== 200) {
-                status.innerHTML = 'Error while checking for upload status.'
+                status.innerText = 'Error while checking for upload status.'
                 return;
             }
 
@@ -166,15 +175,17 @@ const upload_poll = {
             try {
                 progress = JSON.parse(json_response);
             } catch (SyntaxError) {
-                status.innerHTML = 'Error during upload: malformed response from 4CAT server.';
+                status.innerText = 'Error during upload: malformed response from 4CAT server.';
                 return;
             }
 
             if (!progress["done"]) {
-                status.innerHTML = 'Processing upload: ' + progress["status"];
+                status.innerText = 'Processing upload: ' + progress["status"];
                 setTimeout(() => upload_poll.init(response), 1000);
             } else {
-                status.innerHTML = 'Upload completed! <a href="' + progress["url"] + '">View dataset</a>'
+                status.innerHTML = '';
+                status.appendChild(createElement("span", {},"Upload completed! "));
+                status.appendChild(createElement("a", {"href": progress["url"]}, "View dataset."));
                 upload_poll.add_dataset(progress);
             }
         }

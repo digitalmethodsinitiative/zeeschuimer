@@ -1,16 +1,4 @@
 /**
- * Create DOM element for further manipulation
- *
- * @param html  HTML contents of DOM node
- * @returns DOM node
- */
-function createElement(html) {
-    var element = document.createElement('template');
-    element.innerHTML = html;
-    return element.content.firstChild;
-}
-
-/**
  * Call a function for each element in array
  *
  * @param elements
@@ -40,8 +28,11 @@ function $_(selector) {
     return document.querySelector(selector);
 }
 
-document.getElementsByTagName('body')[0].append(createElement('<div id="tooltip"><div></div></div>'));
-document.getElementById('tooltip').style.display = 'none';
+let tooltip_div = document.createElement("div");
+tooltip_div.id = "tooltip";
+tooltip_div.style.display = 'none';
+tooltip_div.appendChild(document.createElement("div"))
+document.getElementsByTagName('body')[0].append(tooltip_div);
 
 each($$('.tooltippable'), function (element, i) {
     element.addEventListener('mouseover', function (e) {
@@ -57,7 +48,11 @@ each($$('.tooltippable'), function (element, i) {
             var up = this.classList.contains('points-up');
             this.setAttribute('data-title-content', title);
             this.removeAttribute('title');
-            tooltip.innerHTML = '<div>' + title + '</div>';
+
+            let tooltip_text = document.createElement("div");
+            tooltip_text.textContent = title;
+            tooltip.innerHTML = '';
+            tooltip.appendChild(tooltip_text);
             tooltip.style.visibility = 'hidden';
             tooltip.style.display = 'block';
 
