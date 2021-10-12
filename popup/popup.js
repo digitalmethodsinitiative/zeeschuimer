@@ -26,10 +26,12 @@ function set_4cat_url(e) {
     let url;
     if(e !== true) {
         url = document.querySelector('#fourcat-url').value;
-        if(url.indexOf('://') === -1) {
-            url = 'http://' + url;
+        if(url.length > 0) {
+            if (url.indexOf('://') === -1) {
+                url = 'http://' + url;
+            }
+            url = url.split('/').slice(0, 3).join('/');
         }
-        url = url.split('/').slice(0, 3).join('/');
         localStorage.setItem('4cat-url', url);
     } else {
         url = localStorage.getItem('4cat-url');
