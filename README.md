@@ -28,6 +28,24 @@ Zeeschuimer is in active development. .xpi files of work-in-progress versions ar
 in any Firefox-based browser. If you want to run the latest development version instead, you can [do so from the Firefox
 debugging console](https://www.youtube.com/watch?v=sAM78GU4P34&feature=emb_title).
 
+## How to use
+Install the browser extension in a Firefox browser. A button with the Zeeschuimer logo (a white skull on a black 
+background) will appear in the browser toolbar. Click it to open the Zeeschuimer interface.
+
+Next, simply browse a supported platform's site. You will see the amount of items detected per platform increase as you 
+browse. When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload it
+to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
+processors on the data.
+
+To upload to 4CAT, copy the URL of the website of the 4CAT instance to the "4CAT instance" field at the top of 
+Zeeschuimer's interface. You can then use the "to 4CAT" button to create a new 4CAT dataset from the captured data. 
+After uploading, Zeeschuimer will show you a link and the ten most recently uploaded datasets are shown at the bottom of
+the interface.
+
+Don't forget to reset the data as needed. For example, if you want to create a dataset for a given TikTok hashtag, first
+reset the TikTok data in Zeeschuimer, _then_ go to the hashtag's "Explore" page on TikTok, and then upload the dataset
+when you've scrolled down enough to be satisfied with the amount of items. 
+
 ## Credits & license
 Zeeschuimer was developed by Stijn Peeters for the [Digital Methods Initiative](https://digitalmethods.net) and is 
 licensed under the Mozilla Public License, 2.0. Refer to the LICENSE file for more information.
