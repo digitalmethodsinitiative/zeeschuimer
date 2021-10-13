@@ -57,40 +57,56 @@ async function get_stats() {
         response[module] = await background.db.items.where("source_platform").equals(module).count();
     }
 
-    document.querySelector("#item-table tbody").innerHTML = '';
-    document.querySelector("#upload-table tbody").innerHTML = '';
-
-    console.log(response);
     for (let platform in response) {
         let disabled = (parseInt(response[platform]) === 0);
-        let row = createElement("tr");
-        row.appendChild(createElement("td", {}, platform));
-        row.appendChild(createElement("td", {}, parseInt(response[platform])));
+        let row_id = "stats-" + platform.replace(/[^a-zA-Z0-9]/g, "");
+        if(!document.querySelector("#" + row_id)) {
+            let row = createElement("tr", {"id": row_id});
+            row.appendChild(createElement("td", {}, platform));
+            row.appendChild(createElement("td", {"class": "num-items"}, parseInt(response[platform])));
 
-        let actions = createElement("td");
-        let clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Clear");
-        clear_button.disabled = disabled;
-        let download_button = createElement("button", {"data-platform": platform, "class": "download-ndjson"}, ".ndjson");
-        download_button.disabled = disabled;
-        let fourcat_button = createElement("button", {"data-platform": platform, "class": "upload-to-4cat"}, "to 4CAT");
-        fourcat_button.disabled = disabled;
+            let actions = createElement("td");
+            let clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Clear");
+            clear_button.disabled = disabled;
+            let download_button = createElement("button", {
+                "data-platform": platform,
+                "class": "download-ndjson"
+            }, ".ndjson");
+            download_button.disabled = disabled;
+            let fourcat_button = createElement("button", {
+                "data-platform": platform,
+                "class": "upload-to-4cat"
+            }, "to 4CAT");
+            fourcat_button.disabled = disabled;
 
-        actions.appendChild(clear_button);
-        actions.appendChild(download_button);
-        actions.appendChild(fourcat_button);
+            actions.appendChild(clear_button);
+            actions.appendChild(download_button);
+            actions.appendChild(fourcat_button);
 
-        row.appendChild(actions);
-        document.querySelector("#item-table tbody").appendChild(row);
+            row.appendChild(actions);
+            document.querySelector("#item-table tbody").appendChild(row);
+        } else {
+            document.querySelector("#" + row_id + " .num-items").innerText = parseInt(response[platform]);
+            document.querySelectorAll("#" + row_id + " button").forEach(button => { button.disabled = disabled; });
+        }
     }
 
     let uploads = await background.db.uploads.orderBy("id").limit(10);
     await uploads.each(upload => {
-        let row = createElement("tr");
-        row.appendChild(createElement("td", {}, upload.platform));
-        row.appendChild(createElement("td", {}, upload.items));
-        row.appendChild(createElement("td", {}, (new Date(upload.timestamp)).toLocaleString('en-us', { weekday:"long", year:"numeric", month:"short", day:"numeric"})));
-        row.appendChild(createElement("td", {}, createElement("a", {"href": upload.url}, upload.url.split("/")[2])));
-        document.querySelector("#upload-table tbody").appendChild(row);
+        let row_id = "upload-" + upload.id;
+        if(!document.querySelector("#" + row_id)) {
+            let row = createElement("tr", {"id": row_id});
+            row.appendChild(createElement("td", {}, upload.platform));
+            row.appendChild(createElement("td", {}, upload.items));
+            row.appendChild(createElement("td", {}, (new Date(upload.timestamp)).toLocaleString('en-us', {
+                weekday: "long",
+                year: "numeric",
+                month: "short",
+                day: "numeric"
+            })));
+            row.appendChild(createElement("td", {}, createElement("a", {"href": upload.url, "target": "_blank"}, upload.url.split("/")[2])));
+            document.querySelector("#upload-table tbody").prepend(row);
+        }
     });
 
     set_4cat_url(true);
@@ -140,6 +156,8 @@ async function button_handler(event) {
                         return;
                     }
                     upload_poll.init(response);
+                } else if(xhr.status === 429) {
+                    status.innerText = '4CAT server refused upload, too soon after previous one. Try again in a minute.'
                 } else if(xhr.status === 403) {
                     status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
                 } else if(xhr.status === 0) {
@@ -185,7 +203,7 @@ const upload_poll = {
             } else {
                 status.innerHTML = '';
                 status.appendChild(createElement("span", {},"Upload completed! "));
-                status.appendChild(createElement("a", {"href": progress["url"]}, "View dataset."));
+                status.appendChild(createElement("a", {"href": progress["url"], "target": "_blank"}, "View dataset."));
                 upload_poll.add_dataset(progress);
             }
         }
