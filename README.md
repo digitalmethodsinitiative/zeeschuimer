@@ -44,7 +44,10 @@ the interface.
 
 Don't forget to reset the data as needed. For example, if you want to create a dataset for a given TikTok hashtag, first
 reset the TikTok data in Zeeschuimer, _then_ go to the hashtag's "Explore" page on TikTok, and then upload the dataset
-when you've scrolled down enough to be satisfied with the amount of items. 
+when you've scrolled down enough to be satisfied with the amount of items.
+
+If you find yourself scrolling a lot to collect data, consider using another browser extension to do it for you, for 
+example [FoxScroller](https://addons.mozilla.org/en-US/firefox/addon/foxscroller/).
 
 ## Credits & license
 Zeeschuimer was developed by Stijn Peeters for the [Digital Methods Initiative](https://digitalmethods.net) and is 
