@@ -3,7 +3,7 @@
   "description": "Collect data while browsing TikTok and upload it for analysis later",
   "manifest_version": 2,
   "name": "Zeeschuimer",
-  "version": "1.0b2",
+  "version": "1.0b3",
   "homepage_url": "https://github.com/digitalmethodsinitiative/zeeschuimer",
 
   "icons": {
