@@ -6,6 +6,14 @@
     <link rel="stylesheet" href="tooltips.css">
     <style>
         /** Colours from https://coolors.co/1446a0-db3069-f5d547-ebebd3-3c3c3b **/
+        :root {
+            --neutral: #EBEBD3;
+            --neutral-contrast: #3C3C3B;
+            --neutral-contrast-alt: #1446A0;
+            --accent-alt: #DB3069;
+            --accent: #F5D547;
+        }
+
         @font-face {
             font-family: 'Open Sans';
             src: url("../fonts/OpenSans-Regular.ttf")
@@ -31,30 +39,30 @@
         }
 
         html {
-            background: #F5D547;
+            background: var(--accent-alt) url('https://raw.githubusercontent.com/tanshoku/squidfingers-patterns/master/pattern_120.gif');
             padding: 1em;
         }
 
         body {
             font-family: 'Open Sans', sans-serif;
-            color: #3C3C3B;
+            color: var(--neutral-contrast);
         }
 
         article {
             padding: 0;
             max-width: 600px;
             margin: 0 auto;
-            background: #EBEBD3;
+            background: var(--neutral);
             border-radius: 1em;
-            border: 2px solid #3C3C3B;
+            border: 2px solid var(--neutral-contrast);
         }
 
         h1 {
             font-size: 2em;
             margin-top: 0;
             padding: 0.5em;
-            background: #3C3C3B;
-            color: #EBEBD3;
+            background: var(--neutral-contrast);
+            color: var(--neutral);
             border-top-left-radius: 0.4em;
             border-top-right-radius: 0.4em;
             background-image: url('../images/zeeschuimer-96.png');
@@ -68,11 +76,11 @@
 
         body.beta h1::after {
             transform: rotate(20deg);
-            background: #F5D547;
-            color: #3C3C3B;
+            background: var(--accent);
+            color: var(--neutral-contrast);
             padding: 0.5em;
             border-radius: 15px;
-            border: 2px solid #3C3C3B;
+            border: 2px solid var(--neutral-contrast);
             content: "⚠ Beta version";
             position: absolute;
             right: -1.5em;
@@ -85,7 +93,7 @@
 
         h2 span {
             display: inline;
-            border-bottom: 1px solid #363636;
+            border-bottom: 1px solid var(--neutral-contrast);
         }
 
         h1 img {
@@ -94,7 +102,7 @@
         }
 
         a {
-            color: #1446A0;
+            color: var(--neutral-contrast-alt);
         }
 
         #status, #upload-status {
@@ -139,8 +147,8 @@
 
         .tooltippable {
             display: inline-block;
-            background: #3C3C3B;
-            color: #EBEBD3;
+            background: var(--neutral-contrast);
+            color: var(--neutral);
             font-size: 0.75em;
             border-radius: 0.75em;
             width: 1.5em;

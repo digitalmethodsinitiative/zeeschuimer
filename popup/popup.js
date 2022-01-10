@@ -47,7 +47,7 @@ function set_4cat_url(e) {
 
     document.querySelectorAll('button.upload-to-4cat').forEach(button => {
         let items = parseInt(button.parentElement.previousSibling.innerText);
-        button.disabled = !(items > 0 && url.length > 0);
+        button.disabled = !(items > 0 && url && url.length > 0);
     });
 }
 
