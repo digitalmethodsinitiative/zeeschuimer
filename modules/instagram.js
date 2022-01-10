@@ -2,9 +2,23 @@ zeeschuimer.register_module(
     'instagram.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
+        let endpoint = source_url.split("/").slice(3).join("/").split("?")[0].split("#")[0].replace(/\/$/, '');
+
         if (!["instagram.com"].includes(domain)) {
             return [];
         }
+
+        let whitelisted_endpoints = [
+            "graphql/query", //live-loading @ front page
+            "api/v1/collections/list",
+            "api/v1/feed/user/33646200", //live-loading @ user page
+            "api/v1/tags/blessed/sections", //live-loading @ tag explore page
+            "api/v1/locations/214262158/sections", //live-loading @ location explore page
+        ]
+
+        /*if(!whitelisted_endpoints.includes(endpoint)) {
+            return [];
+        }*/
 
         // determine what part of instagram we're working in
         let path = source_platform_url.split("/");
@@ -58,6 +72,7 @@ zeeschuimer.register_module(
         }
 
         let possible_edges = ["edge_owner_to_timeline_media", "edge_web_feed_timeline"];
+        let possible_item_lists = ["items", "medias"];
         let edges = [];
 
         // find edge lists in the extracted JSON data
@@ -80,17 +95,28 @@ zeeschuimer.register_module(
                             && ["GraphVideo", "GraphImage", "GraphSidecar"].includes(node["__typename"])
                         );
                     }));
-                } else if(property === "items") {
+                } else if(possible_item_lists.includes(property)) {
+                    // 'items' on user pages, 'medias' on explore pages
+                    let items;
+                    if(property === "medias") {
+                        items = obj[property].map(media => media["media"]);
+                    } else {
+                        items = obj[property];
+                    }
+
                     // simple item lists
                     // this could be more robust...
-                    edges.push(...obj[property].filter(item => {
+                    edges.push(...items.filter(item => {
                         return (
-                            "media_type" in item
+                            "id" in item
+                            && "media_type" in item
                             && "user" in item
                             && "caption" in item
                             && (!("product_type" in item) || item["product_type"] !== "story")
                         );
                     }));
+                } else if(property === "media") {
+
                 } else if(typeof(obj[property]) === "object") {
                     traverse(obj[property]);
                 }
@@ -101,8 +127,8 @@ zeeschuimer.register_module(
 
         if(edges.length > 0) {
             console.log('Found ' + edges.length + ' items via ' + source_url);
-        } else {
         }
+
         return edges;
     }
 );
