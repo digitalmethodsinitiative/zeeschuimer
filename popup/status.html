@@ -39,7 +39,7 @@
         }
 
         html {
-            background: var(--accent-alt) url('https://raw.githubusercontent.com/tanshoku/squidfingers-patterns/master/pattern_120.gif');
+            background: var(--accent);
             padding: 1em;
         }
 
@@ -137,8 +137,9 @@
             content: ' \2022';
         }
 
-        .fourcat-url-container {
+        .fourcat-url-container, .zeeschuimer-master-switch {
             text-align: center;
+            margin-bottom: 0.5em;
         }
 
         #upload-status {
@@ -162,6 +163,10 @@
 <body class="beta">
 <article>
     <h1>Zeeschuimer</h1>
+    <nav class="zeeschuimer-master-switch">
+        <label>Enable data capture <input type="checkbox" id="master-switch" checked="checked"></label>
+        <span class="tooltippable" title="Items will only be captured if this is enabled.">?</span>
+    </nav>
     <div class="fourcat-url-container">
         <label>
             <span>4CAT instance:</span>

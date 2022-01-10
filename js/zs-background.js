@@ -28,15 +28,14 @@ window.zeeschuimer = {
         let session;
         session = await db.settings.get("session");
         if(!session) {
-            console.log("Adding session");
-            session = {"session": 1, "value": 0};
+            session = {"key": "session", "value": 0};
             await db.settings.add(session);
         }
 
-        session = session["value"] + 1;
-        this.session = session;
-        await db.settings.update("session", {"value": session});
-        await db.nav.where("session").notEqual(session).delete();
+        session["value"] += 1;
+        this.session = session["value"];
+        await db.settings.update("session", session);
+        await db.nav.where("session").notEqual(this.session).delete();
     },
 
     /**
@@ -57,8 +56,12 @@ window.zeeschuimer = {
             filter.write(event.data);
         }
 
-        filter.onstop = event => {
-            zeeschuimer.parse_request(full_response, source_platform_url, source_url, details.tabId);
+        filter.onstop = async (event) => {
+            let is_enabled = await browser.storage.local.get('zs-enabled');
+            let enabled = !!parseInt(is_enabled['zs-enabled']);
+            if(enabled) {
+                zeeschuimer.parse_request(full_response, source_platform_url, source_url, details.tabId);
+            }
             filter.disconnect();
             full_response = '';
         }
@@ -73,7 +76,7 @@ window.zeeschuimer = {
      * @param source_url  URL of the content that was captured
      * @param tabId  ID of the tab in which the request was captured
      */
-    parse_request: async function parse_request(response, source_platform_url, source_url, tabId) {
+    parse_request: async function(response, source_platform_url, source_url, tabId) {
         if (!source_platform_url) {
             source_platform_url = source_url;
         }

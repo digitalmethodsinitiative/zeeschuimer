@@ -14,7 +14,7 @@ function createElement(tag, attributes={}, content=undefined) {
     return element;
 }
 
-document.addEventListener('DOMContentLoaded', function () {
+document.addEventListener('DOMContentLoaded', async function () {
     get_stats();
     setInterval(get_stats, 1000);
 
@@ -22,11 +22,30 @@ document.addEventListener('DOMContentLoaded', function () {
     document.addEventListener('keyup', set_4cat_url);
     document.addEventListener('change', set_4cat_url);
 
-    document.querySelector('#fourcat-url').value = localStorage.getItem('4cat-url');
+    document.querySelector('#master-switch').addEventListener('change', toggle_listening);
+
+    let fourcat_url = await background.browser.storage.local.get('4cat-url');
+    document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
+    let is_enabled = await background.browser.storage.local.get(['zs-enabled']);
+    document.querySelector('#master-switch').checked = !!parseInt(is_enabled['zs-enabled']);
 });
 
 
-function set_4cat_url(e) {
+async function get_4cat_url(e) {
+    let url = await background.browser.storage.local.get(['4cat-url']);
+    console.log(url);
+    if (url['4cat-url']) {
+        url = url['4cat-url'];
+    } else {
+        url = '';
+    }
+
+    return url;
+}
+
+
+async function set_4cat_url(e) {
     if(e !== true && !e.target.matches('#fourcat-url')) {
         return;
     }
@@ -40,15 +59,31 @@ function set_4cat_url(e) {
             }
             url = url.split('/').slice(0, 3).join('/');
         }
-        localStorage.setItem('4cat-url', url);
+        await background.browser.storage.local.set({'4cat-url': url});
     } else {
-        url = localStorage.getItem('4cat-url');
+        url = await background.browser.storage.local.get(['4cat-url']);
+        console.log(url);
+        if(url['4cat-url']) {
+            url = url['4cat-url'];
+        } else {
+            url = '';
+        }
     }
 
     document.querySelectorAll('button.upload-to-4cat').forEach(button => {
         let items = parseInt(button.parentElement.previousSibling.innerText);
         button.disabled = !(items > 0 && url && url.length > 0);
     });
+}
+
+async function toggle_listening(e) {
+    let now = await background.browser.storage.local.get(['zs-enabled']);
+    console.log(now);
+    let current = !!parseInt(now['zs-enabled']);
+    let updated = current ? 0 : 1;
+    console.log('new : ' + updated);
+
+    await background.browser.storage.local.set({'zs-enabled': String(updated)});
 }
 
 async function get_stats() {
@@ -135,7 +170,8 @@ async function button_handler(event) {
 
         let xhr = new XMLHttpRequest();
         let status = document.getElementById('upload-status');
-        xhr.open("POST", localStorage.getItem("4cat-url") + "/api/import-dataset/", true);
+        let upload_url = await get_4cat_url();
+        xhr.open("POST", upload_url + "/api/import-dataset/", true);
         xhr.setRequestHeader("X-Zeeschuimer-Platform", platform)
         xhr.onloadstart = function () {
             status.innerText = 'Starting upload...';
@@ -173,8 +209,9 @@ async function button_handler(event) {
 }
 
 const upload_poll = {
-    init: function(response) {
-        let poll_url = localStorage.getItem("4cat-url") + '/api/check-query/?key=' + response["key"];
+    init: async function(response) {
+        let upload_url = await get_4cat_url();
+        let poll_url = upload_url + '/api/check-query/?key=' + response["key"];
         let status = document.getElementById('upload-status');
         let xhr = new XMLHttpRequest();
         xhr.open("GET", poll_url, true);
