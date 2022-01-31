@@ -34,7 +34,6 @@ document.addEventListener('DOMContentLoaded', async function () {
 
 async function get_4cat_url(e) {
     let url = await background.browser.storage.local.get(['4cat-url']);
-    console.log(url);
     if (url['4cat-url']) {
         url = url['4cat-url'];
     } else {
@@ -62,7 +61,6 @@ async function set_4cat_url(e) {
         await background.browser.storage.local.set({'4cat-url': url});
     } else {
         url = await background.browser.storage.local.get(['4cat-url']);
-        console.log(url);
         if(url['4cat-url']) {
             url = url['4cat-url'];
         } else {
@@ -78,10 +76,8 @@ async function set_4cat_url(e) {
 
 async function toggle_listening(e) {
     let now = await background.browser.storage.local.get(['zs-enabled']);
-    console.log(now);
     let current = !!parseInt(now['zs-enabled']);
     let updated = current ? 0 : 1;
-    console.log('new : ' + updated);
 
     await background.browser.storage.local.set({'zs-enabled': String(updated)});
 }
