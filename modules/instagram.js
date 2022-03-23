@@ -43,7 +43,7 @@ zeeschuimer.register_module(
         } catch (SyntaxError) {
             // data can be embedded in the HTML in either of these two JavaScript statements
             // if the second is present, it overrides the first
-            let js_prefixes = ["window._sharedData = {", "window.__additionalDataLoaded('feed',{"];
+            let js_prefixes = ["window._sharedData = {", "window.__additionalDataLoaded('feed',{", "window.__additionalDataLoaded('feed_v2',{"];
             let prefix;
 
             while(js_prefixes.length > 0) {
@@ -72,7 +72,7 @@ zeeschuimer.register_module(
         }
 
         let possible_edges = ["edge_owner_to_timeline_media", "edge_web_feed_timeline"];
-        let possible_item_lists = ["items", "medias"];
+        let possible_item_lists = ["items", "medias", "feed_items"];
         let edges = [];
 
         // find edge lists in the extracted JSON data
@@ -97,24 +97,31 @@ zeeschuimer.register_module(
                     }));
                 } else if(possible_item_lists.includes(property)) {
                     // 'items' on user pages, 'medias' on explore pages
+                    // and another special case for timeline feeds, which have
+                    // items in 'media_or_ads' (ads filtered later)
                     let items;
                     if(property === "medias") {
                         items = obj[property].map(media => media["media"]);
+                    } else if(property === "feed_items") {
+                        items = obj[property].map(media => media["media_or_ad"]);
                     } else {
                         items = obj[property];
                     }
 
                     // simple item lists
                     // this could be more robust...
-                    edges.push(...items.filter(item => {
-                        return (
-                            "id" in item
-                            && "media_type" in item
-                            && "user" in item
-                            && "caption" in item
-                            && (!("product_type" in item) || item["product_type"] !== "story")
-                        );
-                    }));
+                    if(items) {
+                        edges.push(...items.filter(item => {
+                            return (
+                                item
+                                && "id" in item
+                                && "media_type" in item
+                                && "user" in item
+                                && "caption" in item
+                                && (!("product_type" in item) || item["product_type"] !== "story")
+                            );
+                        }));
+                    }
                 } else if(property === "media") {
 
                 } else if(typeof(obj[property]) === "object") {
