@@ -39,6 +39,8 @@ zeeschuimer.register_module(
             return r;
         } else if ("itemList" in data) {
             return data["itemList"];
+        } else if ("item_list" in data) {
+            return data["item_list"];
         } else {
             return [];
         }
