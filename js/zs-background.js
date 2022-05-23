@@ -120,7 +120,7 @@ window.zeeschuimer = {
         let item_list = [];
         for (let module in this.modules) {
             item_list = this.modules[module](response, source_platform_url, source_url);
-            if (item_list.length > 0) {
+            if (item_list && item_list.length > 0) {
                 await Promise.all(item_list.map(async (item) => {
                     if(!item) {
                         return;
