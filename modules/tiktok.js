@@ -10,12 +10,12 @@ zeeschuimer.register_module(
          * Some data is embedded in the page rather than loaded asynchronously.
          * This here extracts it!
          */
-        let embedded_sigil_start = /window\['SIGI_STATE']\s*=\s*/mg;
-        let embedded_sigil_end = /;\s*window\['SIGI_RETRY']\s*=\s*/mg;
+        let embedded_sigil_start = /(window\['SIGI_STATE']\s*=\s*|<script id="SIGI_STATE" type="application\/json">)/mg;
+        let embedded_sigil_end = /(;\s*window\['SIGI_RETRY']\s*=\s*|<\/script>)/mg;
         let data;
         let from_embed = false;
         if(embedded_sigil_start.test(response)) {
-            response = response.split(embedded_sigil_start)[1];
+            response = response.split(embedded_sigil_start)[2];
             if(!embedded_sigil_end.test(response)) {
                 return [];
             }
