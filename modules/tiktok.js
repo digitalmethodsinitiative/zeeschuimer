@@ -33,14 +33,31 @@ zeeschuimer.register_module(
             return [];
         }
 
+        console.log('aaaaaaaaaaaaaa');
         if("ItemModule" in data) {
             let r = Object.values(data["ItemModule"]);
-            console.log(r);
             return r;
         } else if ("itemList" in data) {
             return data["itemList"];
         } else if ("item_list" in data) {
             return data["item_list"];
+        } else if ("data" in data) {
+            // search results "top results" (i.e. not the video tab)
+            let r = Object.values(data["data"]);
+            if(r.length === 0) {
+                return [];
+            }
+            if(!r[0].hasOwnProperty("type") || !r[0].hasOwnProperty("item")) {
+                return [];
+            }
+            let items = r.map(x => x["item"]);
+            let known_fields = ["id", "desc", "createTime", "music", "duetInfo"];
+            for(let i in known_fields) {
+                if(!items[0].hasOwnProperty(known_fields[i])) {
+                    return [];
+                }
+            }
+            return items;
         } else {
             return [];
         }

@@ -167,7 +167,6 @@ window.zeeschuimer = {
      * @param tabId  Tab ID to update nav index for
      */
     nav_handler: async function(tabId) {
-        console.log('nav change!');
         if(tabId.hasOwnProperty("tabId")) {
             tabId = tabId.tabId;
         }
