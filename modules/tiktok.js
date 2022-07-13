@@ -33,7 +33,6 @@ zeeschuimer.register_module(
             return [];
         }
 
-        console.log('aaaaaaaaaaaaaa');
         if("ItemModule" in data) {
             let r = Object.values(data["ItemModule"]);
             return r;
@@ -44,20 +43,25 @@ zeeschuimer.register_module(
         } else if ("data" in data) {
             // search results "top results" (i.e. not the video tab)
             let r = Object.values(data["data"]);
+            let useable_items = [];
             if(r.length === 0) {
                 return [];
             }
-            if(!r[0].hasOwnProperty("type") || !r[0].hasOwnProperty("item")) {
-                return [];
-            }
-            let items = r.map(x => x["item"]);
+            let items = r.filter(x => x.hasOwnProperty('item') && x.hasOwnProperty('type')).map(x => x["item"]);
             let known_fields = ["id", "desc", "createTime", "music", "duetInfo"];
-            for(let i in known_fields) {
-                if(!items[0].hasOwnProperty(known_fields[i])) {
-                    return [];
+            for(let i in items) {
+                let item = items[i];
+                let item_ok = true;
+                for (let j in known_fields) {
+                    if (!item.hasOwnProperty(known_fields[j])) {
+                        item_ok = false;
+                    }
+                }
+                if(item_ok) {
+                    useable_items.push(item);
                 }
             }
-            return items;
+            return useable_items;
         } else {
             return [];
         }
