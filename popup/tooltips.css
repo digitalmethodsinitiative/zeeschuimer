@@ -1,9 +1,9 @@
-.tooltippable:not(a) {
+.tooltippable:not(a):not(button) {
     cursor: help;
 }
 
 #tooltip {
-    background: #B62700;
+    background: #b45d3d;
     color: #FEFFCF;
     padding: 0.25em 1em;
     font-size: x-small;
@@ -33,24 +33,24 @@
 
 #tooltip:after {
     border-color: rgba(255, 255, 255, 0);
-    border-top-color: #B62700;
+    border-top-color: #b45d3d;
     border-width: 5px;
     margin-left: -5px;
 }
 
 #tooltip.point-up:after {
-    border-bottom-color: #B62700;
+    border-bottom-color: #b45d3d;
     border-top-color: rgba(255, 255, 255, 0);
 }
 
 #tooltip:before {
     border-color: rgba(0, 0, 0, 0);
-    border-top-color: #000;
+    border-top-color: #0000;
     border-width: 6px;
     margin-left: -6px;
 }
 
 #tooltip.point-up:before {
     border-top-color: rgba(0, 0, 0, 0);
-    border-bottom-color: #000
+    border-bottom-color: #0000
 }

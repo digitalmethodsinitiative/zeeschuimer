@@ -2,16 +2,15 @@
 <head>
     <title>Zeeschuimer</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
-    <script type="text/javascript" src="popup.js"></script>
     <link rel="stylesheet" href="tooltips.css">
     <style>
         /** Colours from https://coolors.co/1446a0-db3069-f5d547-ebebd3-3c3c3b **/
         :root {
-            --neutral: #EBEBD3;
+            --neutral: #d9c398;
             --neutral-contrast: #3C3C3B;
-            --neutral-contrast-alt: #1446A0;
-            --accent-alt: #DB3069;
-            --accent: #F5D547;
+            --neutral-contrast-alt: #5d6c4c;
+            --accent-alt: #b45d3d;
+            --accent: #e0ba5f;
         }
 
         @font-face {
@@ -38,43 +37,103 @@
             src: url("../fonts/OpenSans-BoldItalic.ttf")
         }
 
+        @font-face {
+            font-family: 'Lobster Two';
+            src: url("../fonts/LobsterTwo-Regular.ttf")
+        }
+
+        @font-face {
+            font-family: 'Lobster Two';
+            font-weight: bold;
+            src: url("../fonts/LobsterTwo-Bold.ttf")
+        }
+
+        @font-face {
+            font-family: 'Lobster Two';
+            font-style: italic;
+            src: url("../fonts/LobsterTwo-Italic.ttf")
+        }
+
+        @font-face {
+            font-family: 'Lobster Two';
+            font-weight: bold;
+            font-style: italic;
+            src: url("../fonts/LobsterTwo-BoldItalic.ttf")
+        }
+
         html {
-            background: var(--accent);
-            padding: 1em;
+            background: #FFF;
+            margin: 0;
+            padding: 0;
+            height: 100%;
+            background: url('../images/background.png')
         }
 
         body {
             font-family: 'Open Sans', sans-serif;
             color: var(--neutral-contrast);
+            max-width: 800px;
+            padding: 2em 0 0 0;
+            margin: 0 auto;
+            background: var(--neutral);
+            min-height: calc(100% - 2em);
+            border: 0 solid var(--neutral-contrast);
+            border-width: 0 2px;
         }
 
         article {
             padding: 0;
             max-width: 600px;
-            margin: 0 auto;
-            background: var(--neutral);
-            border-radius: 1em;
+            margin: 0 auto 1em auto;
+            background: var(--accent);
+            border-radius: 1.5em;
             border: 2px solid var(--neutral-contrast);
+            overflow: hidden;
         }
 
-        h1 {
-            font-size: 2em;
+        h1, h2 {
+            font-size: 3em;
+            font-family: 'Lobster Two', serif;
+            font-style: italic;
+            font-weight: bold;
+        }
+
+        h2 {
+            font-size: 1.5em;
+        }
+
+        header {
             margin-top: 0;
-            padding: 0.5em;
+            margin-bottom: 0.5em;
+            padding: 0.25em;
             background: var(--neutral-contrast);
             color: var(--neutral);
-            border-top-left-radius: 0.4em;
-            border-top-right-radius: 0.4em;
-            background-image: url('../images/zeeschuimer-96.png');
+            background-image: url('../images/chirico.png');
             background-repeat: no-repeat;
             background-position-x: 0;
             background-position-y: 0;
             background-size: contain;
-            text-indent: 2.5em;
             position: relative;
+            border-bottom: 1px solid var(--neutral-contrast)
         }
 
-        body.beta h1::after {
+        h1, .version {
+            display: inline-block;
+        }
+
+        h1 {
+            text-indent: 1.75em;
+            margin: 0;
+        }
+
+        .version {
+            font-size: 1em;
+            font-family: 'Lobster Two', serif;
+        }
+
+        body.beta header::after {
+            font-family: 'Lobster Two', serif;
+            font-weight: bold;
             transform: rotate(20deg);
             background: var(--accent);
             color: var(--neutral-contrast);
@@ -85,7 +144,7 @@
             position: absolute;
             right: -1.5em;
             top: -0.25em;
-            font-size: 50%;
+            font-size: 80%;
             text-align: center;
             display: block;
             text-indent: 0;
@@ -96,7 +155,7 @@
             border-bottom: 1px solid var(--neutral-contrast);
         }
 
-        h1 img {
+        header img {
             display: inline;
             height: 1em;
         }
@@ -105,7 +164,7 @@
             color: var(--neutral-contrast-alt);
         }
 
-        #status, #upload-status {
+        section {
             margin: 0 1em;
         }
 
@@ -116,6 +175,28 @@
 
         td, th {
             text-align: center;
+        }
+
+        td > button:not(:last-child) {
+            margin-right: 0.25em;
+        }
+
+        input:not([type=checkbox]):not([type=radio]), button {
+            background: var(--neutral-contrast-alt);
+            color: var(--accent);
+            border: 2px solid var(--neutral-contrast);
+            border-radius: 0.5em;
+            padding: 0.25em 0.5em;
+        }
+
+        input:not([type=checkbox]):not([type=radio]):disabled, button:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        input[type=submit]:not(:disabled):hover, button:not(:disabled):hover {
+            background: var(--neutral-contrast);
+            cursor: pointer;
         }
 
         .reset-all {
@@ -146,7 +227,7 @@
             text-align: center;
         }
 
-        .tooltippable {
+        .tooltippable:not(a):not(button) {
             display: inline-block;
             background: var(--neutral-contrast);
             color: var(--neutral);
@@ -157,52 +238,119 @@
             text-align: center;
             font-weight: bold;
         }
+
+        /** fancy checkboxes **/
+        .toggle-switch {
+            display: inline-flex;
+            align-items: center;
+            justify-content: space-around;
+            width: 55px;
+            margin-left: 5px;
+            background-color: var(--neutral-contrast-alt);
+            border-radius: 0.5em;
+            position: relative;
+            cursor: pointer;
+            border: 2px solid var(--neutral-contrast);
+        }
+
+        .toggle-switch input {
+            -moz-appearance: none;
+            opacity: 0;
+        }
+
+        .toggle-switch label {
+            width: 100%;
+        }
+
+        .toggle:before {
+            content: "";
+            height: 1.1em;
+            width: 1.1em;
+            background-color: var(--neutral-contrast);
+            border-radius: 5px;
+            transition: all 0.2s;
+            position: absolute;
+            left: 5px;
+            top: 10%;
+            cursor: pointer;
+            z-index: 2;
+        }
+
+        .toggle:after {
+            content: "OFF";
+            font-size: .5em;
+            font-weight: 700;
+            text-transform: uppercase;
+            color: var(--accent);
+            position: absolute;
+            right: 10%;
+            top: 25%;
+            pointer-events: none;
+            z-index: 1;
+        }
+
+        .toggle-switch input:checked + .toggle:before {
+            transform: translateX(1.7em);
+            right: 10%;
+            background-color: var(--accent);
+        }
+
+        .toggle-switch input:checked + .toggle:after {
+            content: "ON";
+            left: -3em;
+        }
     </style>
     <link rel="shortcut icon" href="/images/zeeschuimer-96.png">
 </head>
-<body class="beta">
+<body>
 <article>
-    <h1>Zeeschuimer</h1>
-    <nav class="zeeschuimer-master-switch">
-        <label>Enable data capture <input type="checkbox" id="master-switch" checked="checked"></label>
-        <span class="tooltippable" title="Items will only be captured if this is enabled.">?</span>
-    </nav>
-    <div class="fourcat-url-container">
-        <label>
-            <span>4CAT instance:</span>
-            <input type="text" placeholder="https://4cat.example.com" id="fourcat-url">
-            <span class="tooltippable" title="The 4CAT instance to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
-        </label>
-    </div>
-    <p id="upload-status"></p>
-    <div id="status">
+    <header>
+        <h1>Zeeschuimer</h1>
+        <span class="version">v1.1</span>
+    </header>
+    <section id="status">
         <h2><span>Captured data objects</span></h2>
         <div>
             <table id="item-table">
                 <thead>
-                    <tr>
-                        <th>Platform</th>
-                        <th>Items</th>
-                        <th>Actions</th>
-                    </tr>
+                <tr>
+                    <th>Active</th>
+                    <th>Platform</th>
+                    <th>Items</th>
+                    <th>Actions</th>
+                </tr>
                 </thead>
                 <tbody></tbody>
             </table>
             <button class="reset-all">Delete all items</button>
         </div>
+    </section>
+    <section id="configuration">
+        <h2><span>Connect to 4CAT</span></h2>
+        <div class="fourcat-url-container">
+            <label>
+                <span>4CAT server URL:</span>
+                <input type="text" placeholder="https://4cat.example.com" id="fourcat-url">
+                <span class="tooltippable"
+                      title="The URL of the 4CAT instance to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
+            </label>
+        </div>
+        <p id="upload-status"></p>
+    </section>
+    <section>
         <h2><span>Uploaded datasets</span></h2>
         <table id="upload-table">
             <thead>
-                <tr>
-                    <th>Platform</th>
-                    <th>Items</th>
-                    <th>Date</th>
-                    <th>4CAT Link</th>
-                </tr>
+            <tr>
+                <th>Platform</th>
+                <th>Items</th>
+                <th>Date</th>
+                <th>4CAT Link</th>
+            </tr>
             </thead>
             <tbody></tbody>
         </table>
-    </div>
+    </section>
 </article>
 <footer>
     <nav>
@@ -211,8 +359,10 @@
             <li><a href="https://www.github.com/digitalmethodsinitiative/zeeschuimer">GitHub</a></li>
             <li><a href="https://www.github.com/digitalmethodsinitiative/4cat">4CAT</a></li>
             <li><a href="https://cat4smr.humanities.uva.nl">CAT4SMR</a></li>
+            <li><a href="https://doi.org/10.5281/zenodo.6826877">Cite/DOI</a></li>
         </ul>
     </nav>
 </footer>
 <script type="text/javascript" src="tooltips.js"></script>
+<script type="text/javascript" src="popup.js"></script>
 </body>

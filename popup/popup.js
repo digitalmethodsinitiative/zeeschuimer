@@ -1,11 +1,13 @@
 const background = browser.extension.getBackgroundPage();
+var have_4cat = false;
 
 function createElement(tag, attributes={}, content=undefined) {
     let element = document.createElement(tag);
     for(let attribute in attributes) {
         element.setAttribute(attribute, attributes[attribute]);
     }
-    if (content instanceof HTMLElement) {
+    if (content && typeof(content) === 'object' && 'tagName' in content) {
+        console.log(content);
         element.appendChild(content);
     } else if(content !== undefined) {
         element.textContent = content;
@@ -22,13 +24,8 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('keyup', set_4cat_url);
     document.addEventListener('change', set_4cat_url);
 
-    document.querySelector('#master-switch').addEventListener('change', toggle_listening);
-
     let fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
-
-    let is_enabled = await background.browser.storage.local.get(['zs-enabled']);
-    document.querySelector('#master-switch').checked = !!parseInt(is_enabled['zs-enabled']);
 });
 
 
@@ -68,18 +65,43 @@ async function set_4cat_url(e) {
         }
     }
 
-    document.querySelectorAll('button.upload-to-4cat').forEach(button => {
-        let items = parseInt(button.parentElement.previousSibling.innerText);
-        button.disabled = !(items > 0 && url && url.length > 0);
+    have_4cat = (url && url.length > 0);
+}
+
+function activate_buttons() {
+    document.querySelectorAll("td button").forEach(button => {
+        let current = button.disabled;
+        let items = parseInt(button.parentNode.parentNode.querySelector('.num-items').innerText);
+        let new_status = current;
+
+        if(button.classList.contains('upload-to-4cat')) {
+            new_status = !(items > 0 && have_4cat);
+            if(new_status && !have_4cat) {
+                button.classList.add('tooltippable');
+                button.setAttribute('title', 'Configure a 4CAT URL to enable uploading to 4CAT');
+            } else {
+                button.classList.remove('tooltippable');
+                button.setAttribute('title', '');
+            }
+
+        } else if(button.classList.contains('download-ndjson') || button.classList.contains('reset')) {
+            new_status = !(items > 0);
+        }
+
+        if(new_status !== current) {
+            button.disabled = new_status;
+        }
     });
 }
 
 async function toggle_listening(e) {
-    let now = await background.browser.storage.local.get(['zs-enabled']);
-    let current = !!parseInt(now['zs-enabled']);
+    let platform = e.target.getAttribute('name');
+    let now = await background.browser.storage.local.get([platform]);
+    let current = !!parseInt(now[platform]);
     let updated = current ? 0 : 1;
+    console.log('setting ' + updated)
 
-    await background.browser.storage.local.set({'zs-enabled': String(updated)});
+    await background.browser.storage.local.set({[platform]: String(updated)});
 }
 
 async function get_stats() {
@@ -89,26 +111,35 @@ async function get_stats() {
     }
 
     for (let platform in response) {
-        let disabled = (parseInt(response[platform]) === 0);
         let row_id = "stats-" + platform.replace(/[^a-zA-Z0-9]/g, "");
+        let new_num_items = parseInt(response[platform]);
         if(!document.querySelector("#" + row_id)) {
+            let toggle_field = 'zs-enabled-' + platform;
+            let enabled = await background.browser.storage.local.get([toggle_field])
+            enabled = enabled.hasOwnProperty(toggle_field) && !!parseInt(enabled[toggle_field]);
             let row = createElement("tr", {"id": row_id});
+
+            // checkbox stuff
+            let checker = createElement("label", {"for": toggle_field});
+            checker.appendChild(createElement('input', {"id": toggle_field, "name": toggle_field, "type": "checkbox"}))
+            checker.appendChild(createElement('span', {"class": "toggle"}));
+            if(enabled) { checker.firstChild.setAttribute('checked', 'checked'); }
+            checker.addEventListener('change', toggle_listening);
+
+            row.appendChild(createElement("td", {}, createElement('div', {'class': 'toggle-switch'}, checker)));
             row.appendChild(createElement("td", {}, platform));
             row.appendChild(createElement("td", {"class": "num-items"}, parseInt(response[platform])));
 
             let actions = createElement("td");
-            let clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Clear");
-            clear_button.disabled = disabled;
+            let clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Delete");
             let download_button = createElement("button", {
                 "data-platform": platform,
                 "class": "download-ndjson"
             }, ".ndjson");
-            download_button.disabled = disabled;
             let fourcat_button = createElement("button", {
                 "data-platform": platform,
-                "class": "upload-to-4cat"
+                "class": "upload-to-4cat",
             }, "to 4CAT");
-            fourcat_button.disabled = disabled;
 
             actions.appendChild(clear_button);
             actions.appendChild(download_button);
@@ -116,9 +147,8 @@ async function get_stats() {
 
             row.appendChild(actions);
             document.querySelector("#item-table tbody").appendChild(row);
-        } else {
-            document.querySelector("#" + row_id + " .num-items").innerText = parseInt(response[platform]);
-            document.querySelectorAll("#" + row_id + " button").forEach(button => { button.disabled = disabled; });
+        } else if(new_num_items !== parseInt(document.querySelector("#" + row_id + " .num-items").innerText)) {
+            document.querySelector("#" + row_id + " .num-items").innerText = new_num_items;
         }
     }
 
@@ -141,6 +171,8 @@ async function get_stats() {
     });
 
     set_4cat_url(true);
+    activate_buttons();
+    init_tooltips();
 }
 
 async function button_handler(event) {
@@ -201,6 +233,7 @@ async function button_handler(event) {
         }
         xhr.send(blob);
     }
+
     get_stats();
 }
 
