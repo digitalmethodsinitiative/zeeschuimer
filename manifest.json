@@ -1,9 +1,9 @@
 {
 
-  "description": "Collect data while browsing TikTok and upload it for analysis later",
+  "description": "Collect data while browsing social media platforms and upload it for analysis later",
   "manifest_version": 2,
   "name": "Zeeschuimer",
-  "version": "1.1.0",
+  "version": "1.2.0b1",
   "homepage_url": "https://github.com/digitalmethodsinitiative/zeeschuimer",
 
   "icons": {
@@ -23,9 +23,11 @@
   "background": {
     "scripts": [
       "inc/dexie.js",
+      "inc/he.js",
       "js/zs-background.js",
       "modules/tiktok.js",
-      "modules/instagram.js"
+      "modules/instagram.js",
+      "modules/linkedin.js"
     ]
   }
 }

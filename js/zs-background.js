@@ -83,7 +83,6 @@ window.zeeschuimer = {
      * @param tabId  ID of the tab in which the request was captured
      */
     parse_request: async function (response, source_platform_url, source_url, tabId) {
-        console.log(source_url);
         if (!source_platform_url) {
             source_platform_url = source_url;
         }
@@ -126,7 +125,6 @@ window.zeeschuimer = {
         let item_list = [];
         for (let module in this.modules) {
             item_list = this.modules[module](response, source_platform_url, source_url);
-            console.log(item_list);
             if (item_list && item_list.length > 0) {
                 await Promise.all(item_list.map(async (item) => {
                     if (!item) {
@@ -140,6 +138,7 @@ window.zeeschuimer = {
                         await db.items.add({
                             "nav_index": nav_index,
                             "item_id": item_id,
+                            "timestamp_collected": Date.now(),
                             "source_platform": module,
                             "source_platform_url": source_platform_url,
                             "source_url": source_url,
