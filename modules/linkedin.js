@@ -6,20 +6,21 @@ zeeschuimer.register_module(
             return [];
         }
 
+        // objects embedded in HTML are identified by this bit of text
         const sigil = '{&quot;data&quot;:{&quot;metadata&quot;';
         let data;
         try {
             data = JSON.parse(response);
         } catch (SyntaxError) {
             if(response.indexOf(sigil) >= 0) {
-                // is html
+                // is html and (probably) has embedded JSON data
                 const embedded_json = sigil + response.split(sigil).pop().split('\n')[0];
                 if (!embedded_json) {
                     return [];
                 }
 
                 try {
-                    console.log(he.decode(embedded_json));
+                    // use he to decode from HTML entities (the way the data is embedded)
                     data = JSON.parse(he.decode(embedded_json));
                 } catch (SyntaxError) {
                     return [];
@@ -29,7 +30,9 @@ zeeschuimer.register_module(
             }
         }
 
+        // now we have the data, try to parse it
         if ("data" in data && "included" in data) {
+            // items may be referenced as 'results' for search result pages or 'elements' for the feed
             let item_key = '';
             if("results" in data["data"]) {
                 item_key = 'results';
@@ -39,12 +42,10 @@ zeeschuimer.register_module(
                 return [];
             }
 
-            // XHR updates
             // there is a list of objects, each with an ID
             // and a separate list of items to display, a list of those IDs
             // so the first step is to map item IDs to objects
             let mapped_objects = [];
-
 
             data["included"].forEach(object => {
                 mapped_objects[object["entityUrn"]] = object;
@@ -60,6 +61,8 @@ zeeschuimer.register_module(
                     continue;
                 }
 
+                // there are many types of content in these responses
+                // we are (for now?) only interested in posts, which are identified in this way
                 if (result.indexOf('urn:li:fs_updateV2:(') !== 0) {
                     continue;
                 }
@@ -77,6 +80,16 @@ zeeschuimer.register_module(
     }
 )
 
+/**
+ * Enrich an object
+ *
+ * Some fields may contain references to other objects stored in a response's "include" field
+ * This function recursively resolves these references
+ *
+ * @param object  Object to enrich
+ * @param mapped_objects  Map of all available objects
+ * @returns object  Enriched object
+ */
 function recursively_enrich(object, mapped_objects) {
     if(typeof(object) != 'object') {
         return object;
