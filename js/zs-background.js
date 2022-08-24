@@ -64,12 +64,9 @@ window.zeeschuimer = {
             let enabled = is_enabled.hasOwnProperty(enabled_key) && !!parseInt(is_enabled[enabled_key]);
             if (enabled) {
                 zeeschuimer.parse_request(full_response, source_platform_url, source_url, details.tabId);
-            } else {
-                console.log('not enabled for ' + source_url)
             }
             filter.disconnect();
             full_response = '';
-
         }
 
         return {};

@@ -132,10 +132,6 @@ zeeschuimer.register_module(
 
         traverse(data);
 
-        if(edges.length > 0) {
-            console.log('Found ' + edges.length + ' items via ' + source_url);
-        }
-
         return edges;
     }
 );
