@@ -7,7 +7,6 @@ function createElement(tag, attributes={}, content=undefined) {
         element.setAttribute(attribute, attributes[attribute]);
     }
     if (content && typeof(content) === 'object' && 'tagName' in content) {
-        console.log(content);
         element.appendChild(content);
     } else if(content !== undefined) {
         element.textContent = content;
@@ -24,7 +23,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('keyup', set_4cat_url);
     document.addEventListener('change', set_4cat_url);
 
-    let fourcat_url = await background.browser.storage.local.get('4cat-url');
+    const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
 });
 
@@ -99,7 +98,6 @@ async function toggle_listening(e) {
     let now = await background.browser.storage.local.get([platform]);
     let current = !!parseInt(now[platform]);
     let updated = current ? 0 : 1;
-    console.log('setting ' + updated)
 
     await background.browser.storage.local.set({[platform]: String(updated)});
 }
@@ -153,9 +151,21 @@ async function get_stats() {
     }
 
     let uploads = await background.db.uploads.orderBy("id").limit(10);
+    let num_uploads = parseInt(await background.db.uploads.orderBy("id").limit(10).count());
+
+    if(num_uploads > 0 && !document.querySelector('#clear-history')) {
+        document.querySelector('#upload-table').parentNode.appendChild(createElement('button', {id: 'clear-history'}, 'Clear history'));
+    } else if (num_uploads === 0 && !document.querySelector('#upload-table .empty-table-notice')) {
+        document.querySelector('#upload-table tbody').appendChild(createElement('tr', {class: 'empty-table-notice'},
+            createElement('td', {colspan: 4}, 'No datasets uploaded so far.')));
+    }
+
     await uploads.each(upload => {
         let row_id = "upload-" + upload.id;
         if(!document.querySelector("#" + row_id)) {
+            if(document.querySelector('#upload-table .empty-table-notice')) {
+                document.querySelector('#upload-table .empty-table-notice').remove();
+            }
             let row = createElement("tr", {"id": row_id});
             row.appendChild(createElement("td", {}, upload.platform));
             row.appendChild(createElement("td", {}, upload.items));
@@ -232,6 +242,11 @@ async function button_handler(event) {
             }
         }
         xhr.send(blob);
+
+    } else if(event.target.matches('#clear-history')) {
+        await background.db.uploads.clear();
+        document.querySelector('#clear-history').remove();
+        document.querySelectorAll("#upload-table tbody tr").forEach(x => x.remove());
     }
 
     get_stats();

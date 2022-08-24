@@ -199,9 +199,13 @@
             cursor: pointer;
         }
 
-        .reset-all {
+        .reset-all, #clear-history {
             display: block;
             margin: 0 auto;
+        }
+
+        #clear-history {
+            margin-bottom: 1em;
         }
 
         nav ul {
@@ -306,7 +310,7 @@
 <article>
     <header>
         <h1>Zeeschuimer</h1>
-        <span class="version">v1.1</span>
+        <span class="version">v1.2b1</span>
     </header>
     <section id="status">
         <h2><span>Captured data objects</span></h2>
@@ -332,7 +336,7 @@
                 <span>4CAT server URL:</span>
                 <input type="text" placeholder="https://4cat.example.com" id="fourcat-url">
                 <span class="tooltippable"
-                      title="The URL of the 4CAT instance to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
+                      title="The URL of the 4CAT server to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
             </label>
         </div>
         <p id="upload-status"></p>
