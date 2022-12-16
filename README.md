@@ -16,8 +16,10 @@ analysis and storage. Zeeschuimer is primarily intended as a companion to 4CAT, 
 into your own analysis pipeline.
 
 Currently, it supports the following platforms:
-* TikTok via https://www.tiktok.com
-* Instagram via https://www.instagram.com
+* [TikTok](https://www.tiktok.com)
+* [Instagram](https://www.instagram.com)
+* [LinkedIn](https://www.linkedin.com)
+* [Parler](https://www.parler.com)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests.
