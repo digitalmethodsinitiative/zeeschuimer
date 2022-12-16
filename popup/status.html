@@ -303,6 +303,22 @@
             content: "ON";
             left: -3em;
         }
+
+        button.loading, button.loading:hover {
+            background: var(--neutral-contrast-alt) linear-gradient(90deg,
+                var(--neutral-contrast-alt) 0%,
+                var(--accent-alt) 0%,
+                var(--accent-alt) 15px,
+                var(--neutral-contrast-alt) 15px,
+                var(--neutral-contrast-alt) 100%);
+            background-repeat: repeat-y;
+            animation: move 2s linear infinite;
+        }
+
+        @keyframes move {
+            from { background-position-x: -15px; }
+            to { background-position-x: 75px; }
+        }
     </style>
     <link rel="shortcut icon" href="/images/zeeschuimer-96.png">
 </head>

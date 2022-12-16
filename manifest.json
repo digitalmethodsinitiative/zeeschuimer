@@ -17,7 +17,8 @@
   },
 
   "permissions": [
-    "webRequest", "webRequestBlocking", "webNavigation", "<all_urls>", "storage", "downloads", "activeTab", "tabs"
+    "webRequest", "webRequestBlocking", "webNavigation", "<all_urls>", "storage", "downloads", "activeTab", "tabs",
+    "unlimitedStorage"
   ],
 
   "background": {

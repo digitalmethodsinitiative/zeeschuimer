@@ -1,6 +1,35 @@
 const background = browser.extension.getBackgroundPage();
 var have_4cat = false;
+var xhr;
+var is_uploading = false;
 
+/**
+ * StreamSaver init
+ * Unused for now - see documentation for the download_blob function.
+ */
+/*var fileStream;
+var writer;
+var encode = TextEncoder.prototype.encode.bind(new TextEncoder);
+
+streamSaver.mitm = 'mitm.html';
+// Abort the download stream when leaving the page
+window.isSecureContext && window.addEventListener('beforeunload', evt => {
+    writer.abort()
+    writer = undefined;
+    fileStream = undefined;
+})*/
+
+/**
+ * Create DOM element
+ *
+ * Convenience function because we can't use innerHTML very well in an
+ * extension context.
+ *
+ * @param tag  Tag of element
+ * @param attributes  Element attributes
+ * @param content  Text content of attribute
+ * @returns {*}
+ */
 function createElement(tag, attributes={}, content=undefined) {
     let element = document.createElement(tag);
     for(let attribute in attributes) {
@@ -15,19 +44,14 @@ function createElement(tag, attributes={}, content=undefined) {
     return element;
 }
 
-document.addEventListener('DOMContentLoaded', async function () {
-    get_stats();
-    setInterval(get_stats, 1000);
-
-    document.addEventListener('click', button_handler);
-    document.addEventListener('keyup', set_4cat_url);
-    document.addEventListener('change', set_4cat_url);
-
-    const fourcat_url = await background.browser.storage.local.get('4cat-url');
-    document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
-});
-
-
+/**
+ * Get URL of 4CAT instance to connect to
+ *
+ * This is stored in the LocalStorage.
+ *
+ * @param e
+ * @returns {Promise<*>}
+ */
 async function get_4cat_url(e) {
     let url = await background.browser.storage.local.get(['4cat-url']);
     if (url['4cat-url']) {
@@ -39,7 +63,14 @@ async function get_4cat_url(e) {
     return url;
 }
 
-
+/**
+ * Set URL of 4CAT instance to connect to
+ *
+ * This is stored in the LocalStorage.
+ *
+ * @param e
+ * @returns {Promise<void>}
+ */
 async function set_4cat_url(e) {
     if(e !== true && !e.target.matches('#fourcat-url')) {
         return;
@@ -67,13 +98,20 @@ async function set_4cat_url(e) {
     have_4cat = (url && url.length > 0);
 }
 
+/**
+ * Manage availability of interface buttons
+ *
+ * Some buttons are only available when a 4CAT URL has been provided, or when
+ * items have been collected, etc. This function is called periodically to
+ * enable or disable buttons accordingly.
+ */
 function activate_buttons() {
     document.querySelectorAll("td button").forEach(button => {
         let current = button.disabled;
         let items = parseInt(button.parentNode.parentNode.querySelector('.num-items').innerText);
         let new_status = current;
 
-        if(button.classList.contains('upload-to-4cat')) {
+        if(button.classList.contains('upload-to-4cat') && !is_uploading) {
             new_status = !(items > 0 && have_4cat);
             if(new_status && !have_4cat) {
                 button.classList.add('tooltippable');
@@ -93,6 +131,14 @@ function activate_buttons() {
     });
 }
 
+/**
+ * Toggle data capture for a platform
+ *
+ * Callback; platform depends on the button this callback is called through.
+ *
+ * @param e
+ * @returns {Promise<void>}
+ */
 async function toggle_listening(e) {
     let platform = e.target.getAttribute('name');
     let now = await background.browser.storage.local.get([platform]);
@@ -102,6 +148,15 @@ async function toggle_listening(e) {
     await background.browser.storage.local.set({[platform]: String(updated)});
 }
 
+/**
+ * Get Zeeschuimer stats
+ *
+ * Loads the amount of items collected, etc. This function is called
+ * periodically to keep the numbers in the interface updated as items are
+ * coming in.
+ *
+ * @returns {Promise<void>}
+ */
 async function get_stats() {
     let response = [];
     for(let module in background.zeeschuimer.modules) {
@@ -126,7 +181,7 @@ async function get_stats() {
 
             row.appendChild(createElement("td", {}, createElement('div', {'class': 'toggle-switch'}, checker)));
             row.appendChild(createElement("td", {}, platform));
-            row.appendChild(createElement("td", {"class": "num-items"}, parseInt(response[platform])));
+            row.appendChild(createElement("td", {"class": "num-items"}, new Intl.NumberFormat().format(response[platform])));
 
             let actions = createElement("td");
             let clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Delete");
@@ -146,7 +201,7 @@ async function get_stats() {
             row.appendChild(actions);
             document.querySelector("#item-table tbody").appendChild(row);
         } else if(new_num_items !== parseInt(document.querySelector("#" + row_id + " .num-items").innerText)) {
-            document.querySelector("#" + row_id + " .num-items").innerText = new_num_items;
+            document.querySelector("#" + row_id + " .num-items").innerText = new Intl.NumberFormat().format(new_num_items);
         }
     }
 
@@ -168,7 +223,7 @@ async function get_stats() {
             }
             let row = createElement("tr", {"id": row_id});
             row.appendChild(createElement("td", {}, upload.platform));
-            row.appendChild(createElement("td", {}, upload.items));
+            row.appendChild(createElement("td", {}, new Intl.NumberFormat().format(upload.items)));
             row.appendChild(createElement("td", {}, (new Date(upload.timestamp)).toLocaleString('en-us', {
                 weekday: "long",
                 year: "numeric",
@@ -185,16 +240,32 @@ async function get_stats() {
     init_tooltips();
 }
 
+/**
+ * Handle button clicks
+ *
+ * Since buttons are created dynamically, the buttons don't have individual
+ * listeners but this function listens to incoming events and dispatches
+ * accordingly.
+ *
+ * @param event
+ * @returns {Promise<void>}
+ */
 async function button_handler(event) {
+    let status = document.getElementById('upload-status');
+
     if (event.target.matches('.reset')) {
         let platform = event.target.getAttribute('data-platform');
         await background.db.items.where("source_platform").equals(platform).delete();
+
     } else if (event.target.matches('.reset-all')) {
         await background.db.items.clear();
+
     } else if (event.target.matches('.download-ndjson')) {
         let platform = event.target.getAttribute('data-platform');
         let date = new Date();
+        event.target.classList.add('loading');
 
+        //let blob = await download_blob(platform, 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson');
         let blob = await get_blob(platform);
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson';
         await browser.downloads.download({
@@ -202,21 +273,31 @@ async function button_handler(event) {
             filename: filename,
             conflictAction: 'uniquify'
         });
+
+        event.target.classList.remove('loading');
+
     } else if (event.target.matches('.upload-to-4cat')) {
         let platform = event.target.getAttribute('data-platform');
+        status.innerText = 'Creating data file for uploading...';
         let blob = await get_blob(platform);
 
-        let xhr = new XMLHttpRequest();
-        let status = document.getElementById('upload-status');
+        document.querySelectorAll('.upload-to-4cat').forEach(x => x.setAttribute('disabled', true))
+        is_uploading = true;
+
+        xhr = new XMLHttpRequest();
+        xhr.aborted = false;
         let upload_url = await get_4cat_url();
+
         xhr.open("POST", upload_url + "/api/import-dataset/", true);
         xhr.setRequestHeader("X-Zeeschuimer-Platform", platform)
         xhr.onloadstart = function () {
             status.innerText = 'Starting upload...';
         }
-        xhr.onprogress = function (event) {
-            let pct = event.total === 0 ? '???' : Math.round(event.loaded / event.total * 100, 1);
-            status.innerText = pct + '% uploaded';
+        xhr.upload.onprogress = function (event) {
+            let pct = event.total === 0 ? '???' : Math.round(event.loaded / event.total * 100);
+            status.innerHTML = '';
+            status.appendChild(createElement('p', {}, pct + '% uploaded'));
+            status.appendChild(createElement('button', {id: 'cancel-upload'}, 'Cancel upload'));
         }
         xhr.onreadystatechange = function() {
             let response = xhr.responseText.replace(/\n/g, '');
@@ -225,7 +306,7 @@ async function button_handler(event) {
                     status.innerText = 'File uploaded. Waiting for processing to finish.'
                     try {
                         response = JSON.parse(response);
-                    } catch (SyntaxError) {
+                    } catch (e) {
                         status.innerText = 'Error during upload: malformed response from 4CAT server.';
                         return;
                     }
@@ -235,10 +316,14 @@ async function button_handler(event) {
                 } else if(xhr.status === 403) {
                     status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
                 } else if(xhr.status === 0) {
-                    status.innerText = 'Could not connect to 4CAT server. Is the URL correct?';
+                    if(!xhr.aborted) {
+                        status.innerText = 'Could not connect to 4CAT server. Is the URL correct?';
+                    }
                 } else {
                     status.innerText = 'Error ' + xhr.status + ' ' + xhr.statusText + ' during upload. Is the URL correct?';
                 }
+
+                is_uploading = false;
             }
         }
         xhr.send(blob);
@@ -247,12 +332,29 @@ async function button_handler(event) {
         await background.db.uploads.clear();
         document.querySelector('#clear-history').remove();
         document.querySelectorAll("#upload-table tbody tr").forEach(x => x.remove());
+
+    } else if(event.target.matches('#cancel-upload')) {
+        xhr.abort();
+        xhr.aborted = true;
+        status.innerHTML = '';
     }
 
     get_stats();
 }
 
+/**
+ * Upload status poller
+ */
 const upload_poll = {
+    /**
+     * Start polling for upload status
+     *
+     * Connects to the 4CAT API at the configured URL to check status of a
+     * dataset that has been uploaded and is now being processed.
+     *
+     * @param response
+     * @returns {Promise<void>}
+     */
     init: async function(response) {
         let upload_url = await get_4cat_url();
         let poll_url = upload_url + '/api/check-query/?key=' + response["key"];
@@ -286,11 +388,20 @@ const upload_poll = {
                 status.appendChild(createElement("span", {},"Upload completed! "));
                 status.appendChild(createElement("a", {"href": progress["url"], "target": "_blank"}, "View dataset."));
                 upload_poll.add_dataset(progress);
+
+                document.querySelectorAll('.upload-to-4cat').forEach(x => x.removeAttribute('disabled'))
+                is_uploading = false;
             }
         }
         xhr.send();
     },
 
+    /**
+     * Add dataset to Zeeschuimer history
+     *
+     * @param progress
+     * @returns {Promise<void>}
+     */
     add_dataset: async function(progress) {
         await background.db.uploads.add({
             timestamp: (new Date()).getTime(),
@@ -301,12 +412,128 @@ const upload_poll = {
     }
 }
 
+/**
+ * Get a NDJON dump of items
+ *
+ * Retuens a Blob with all items in it as JSON files, delimited with newlines.
+ * This file can be uploaded to e.g. 4CAT.
+ *
+ * @param platform
+ * @returns {Promise<Blob>}
+ */
 async function get_blob(platform) {
     let ndjson = [];
-    let items = await background.db.items.where("source_platform").equals(platform).sortBy("id");
-    items.forEach(item => {
+
+    await iterate_items(platform, function(item) {
         ndjson.push(JSON.stringify(item) + "\n");
-    })
+    });
 
     return new Blob(ndjson, {type: 'application/x-ndjson'});
 }
+
+/**
+ * Use StreamSaver to download a Blob
+ *
+ * This is advantageous for very large files because the download starts
+ * while items are being collected, instead of only after an NDJSON has been
+ * created and stored in memory. However, StreamSaver is kind of awkward to
+ * use in an extension context, so for now this function is not used.
+ *
+ * @param platform
+ * @param filename
+ * @returns {Promise<void>}
+ */
+async function download_blob(platform, filename) {
+    if (!fileStream) {
+        fileStream = streamSaver.createWriteStream(filename)
+        writer = fileStream.getWriter()
+    }
+
+    await iterate_items(platform, function(item) {
+        writer.write(encode(JSON.stringify(item) + "\n"));
+    });
+
+    await writer.close();
+    writer = undefined;
+    fileStream = undefined;
+}
+
+/**
+ * Iterate through all collected items for a given platform
+ *
+ * A callback function will be called with each item as its only argument. This
+ * function iterates over the items in chunks of 500, to avoid issues with
+ * large datasets that are too much for the browser to handle in one go.
+ *
+ * @param platform  Platform to iterate items for
+ * @param callback  Callback to call for each item
+ * @returns {Promise<void>}
+ */
+async function iterate_items(platform, callback) {
+    let previous;
+    while(true) {
+        let items;
+        // we paginate here in this somewhat roundabout way because firefox
+        // crashes if we query everything in one go for large datasets
+        if(!previous) {
+            items = await background.db.items
+                .orderBy('id')
+                .filter(item => item.source_platform === platform)
+                .limit(500).toArray();
+        } else {
+            items = await background.db.items
+                .where('id')
+                .aboveOrEqual(previous.id)
+                .filter(fastForward(previous, 'id', item => item.source_platform === platform))
+                .limit(500).toArray();
+        }
+
+        if(!items.length) {
+            break;
+        }
+
+        items.forEach(item => {
+            callback(item);
+            previous = item;
+        })
+    }
+}
+
+/**
+ * Helper function for Dexie pagination
+ *
+ * Used to paginate through results where large result sets may be too much for
+ * Firefox to handle.
+ *
+ * See https://dexie.org/docs/Collection/Collection.offset().
+ *
+ * @param lastRow  Last seen row (that should not be included)
+ * @param idProp  Property to compare between items
+ * @param otherCriteria  Other filters, as a function that returns a bool.
+ * @returns {(function(*): (*|boolean))|*}
+ */
+function fastForward(lastRow, idProp, otherCriteria) {
+    let fastForwardComplete = false;
+    return item => {
+        if (fastForwardComplete) return otherCriteria(item);
+        if (item[idProp] === lastRow[idProp]) {
+            fastForwardComplete = true;
+        }
+        return false;
+    };
+}
+
+/**
+ * Init!
+ */
+document.addEventListener('DOMContentLoaded', async function () {
+    get_stats();
+    setInterval(get_stats, 1000);
+
+    document.addEventListener('click', button_handler);
+    document.addEventListener('keyup', set_4cat_url);
+    document.addEventListener('change', set_4cat_url);
+
+    const fourcat_url = await background.browser.storage.local.get('4cat-url');
+    document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+});
