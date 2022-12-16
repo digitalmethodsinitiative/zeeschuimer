@@ -28,7 +28,8 @@
       "js/zs-background.js",
       "modules/tiktok.js",
       "modules/instagram.js",
-      "modules/linkedin.js"
+      "modules/linkedin.js",
+      "modules/parler.js"
     ]
   }
 }
