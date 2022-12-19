@@ -27,6 +27,8 @@
     "unlimitedStorage"
   ],
 
+  "incognito": "not_allowed",
+
   "background": {
     "scripts": [
       "inc/dexie.js",
