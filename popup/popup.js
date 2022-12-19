@@ -279,10 +279,10 @@ async function button_handler(event) {
     } else if (event.target.matches('.upload-to-4cat')) {
         let platform = event.target.getAttribute('data-platform');
         status.innerText = 'Creating data file for uploading...';
+        is_uploading = true;
         let blob = await get_blob(platform);
 
-        document.querySelectorAll('.upload-to-4cat').forEach(x => x.setAttribute('disabled', true))
-        is_uploading = true;
+        document.querySelectorAll('.upload-to-4cat').forEach(x => x.setAttribute('disabled', true));
 
         xhr = new XMLHttpRequest();
         xhr.aborted = false;
