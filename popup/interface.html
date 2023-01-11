@@ -1,16 +1,27 @@
 <!DOCTYPE html>
 <head>
     <title>Zeeschuimer</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8"/>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src *;">
     <link rel="stylesheet" href="tooltips.css">
+    <!--<script src="../js/webtorrent.min.js"></script>
+    <script src="../js/ponyfill-2.0.2.js"></script>
+    <script src="../js/streamsaver-2.0.3.js"></script>-->
     <style>
-        /** Colours from https://coolors.co/1446a0-db3069-f5d547-ebebd3-3c3c3b **/
         :root {
             --neutral: #d9c398;
             --neutral-contrast: #3C3C3B;
             --neutral-contrast-alt: #5d6c4c;
             --accent-alt: #b45d3d;
             --accent: #e0ba5f;
+        }
+
+        *[aria-hidden=true] {
+            display: none;
+        }
+
+        *[aria-hidden=false] {
+            display: auto;
         }
 
         @font-face {
@@ -199,6 +210,10 @@
             cursor: pointer;
         }
 
+        input[type=file] {
+            width: 15em;
+        }
+
         .reset-all, #clear-history {
             display: block;
             margin: 0 auto;
@@ -210,8 +225,9 @@
 
         nav ul {
             list-style: none;
-            padding: 0;
+            padding: 1em;
             text-align: center;
+            margin: 0;
         }
 
         nav li {
@@ -222,7 +238,7 @@
             content: ' \2022';
         }
 
-        .fourcat-url-container, .zeeschuimer-master-switch {
+        .fourcat-url-container, .zeeschuimer-master-switch, .import-container {
             text-align: center;
             margin-bottom: 0.5em;
         }
@@ -326,7 +342,7 @@
 <article>
     <header>
         <h1>Zeeschuimer</h1>
-        <span class="version">v1.2.2</span>
+        <span class="version">v1.4.0</span>
     </header>
     <section id="status">
         <h2><span>Captured data objects</span></h2>
@@ -371,6 +387,16 @@
             <tbody></tbody>
         </table>
     </section>
+    <section id="advanced-mode" aria-hidden="true">
+        <h2><span>Import from NDJSON</span></h2>
+        <p class="import-container">
+            <label>
+                NDJSON file:
+                <input name="ndjson-file" id="ndjson-file" type="file">
+                <button id="import-button">Import</button>
+            </label>
+        </p>
+    </section>
 </article>
 <footer>
     <nav>
@@ -380,9 +406,10 @@
             <li><a href="https://4cat.nl">4CAT</a></li>
             <li><a href="https://cat4smr.humanities.uva.nl">CAT4SMR</a></li>
             <li><a href="https://doi.org/10.5281/zenodo.6826877">Cite/DOI</a></li>
+            <li><a href="#" id="toggle-advanced-mode">Show advanced options</a></li>
         </ul>
     </nav>
 </footer>
 <script type="text/javascript" src="tooltips.js"></script>
-<script type="text/javascript" src="popup.js"></script>
+<script type="text/javascript" src="interface.js"></script>
 </body>

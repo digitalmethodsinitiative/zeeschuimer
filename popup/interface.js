@@ -337,6 +337,59 @@ async function button_handler(event) {
         xhr.abort();
         xhr.aborted = true;
         status.innerHTML = '';
+
+    } else if(event.target.matches('#import-button')) {
+        if(!confirm('Importing data will remove all items currently stored. Are you sure?')) {
+            return;
+        }
+
+        await background.db.items.clear();
+
+        event.target.setAttribute('disabled', 'disabled');
+        let file = document.querySelector('#ndjson-file').files[0];
+        let reader = new FileReader();
+        reader.readAsText(file);
+        reader.addEventListener('load', async function (e) {
+            let imported_items = 0;
+            let skipped = 0;
+            let jsons = reader.result.split("\n");
+            for(let index in jsons) {
+                let raw_json = jsons[index];
+                if (!raw_json) {
+                    continue;
+                }
+
+                try {
+                    let imported = JSON.parse(raw_json);
+                    await background.db.items.add(imported);
+                    imported_items += 1;
+                } catch (e) {
+                    skipped += 1;
+                    console.log('Skipping invalid JSON string: (' + e + ') ' + raw_json);
+                }
+            }
+
+            if(skipped) {
+                alert('Imported ' + imported_items + ' item(s), ' + skipped + ' skipped.');
+            } else {
+                alert('Imported ' + imported_items + ' item(s).');
+            }
+        });
+
+        reader.addEventListener('loadend', function(e) {
+            event.target.removeAttribute('disabled');
+        });
+
+    } else if (event.target.matches('#toggle-advanced-mode')) {
+        let section = document.querySelector('#advanced-mode');
+        let is_hidden = section.getAttribute('aria-hidden') == 'true';
+        if(is_hidden) {
+            section.setAttribute('aria-hidden', 'false');
+            event.target.innerText = 'Hide advanced options';
+        } else {
+            section.setAttribute('aria-hidden', 'true');
+            event.target.innerText = 'Show advanced options';
+        }
     }
 
     get_stats();

@@ -139,6 +139,7 @@ window.zeeschuimer = {
                             "source_platform": module,
                             "source_platform_url": source_platform_url,
                             "source_url": source_url,
+                            "user_agent": navigator.userAgent,
                             "data": item
                         });
                     }
@@ -155,7 +156,7 @@ window.zeeschuimer = {
      */
     has_tab: async function () {
         const tabs = await browser.tabs.query({});
-        const full_url = browser.runtime.getURL('popup/status.html');
+        const full_url = browser.runtime.getURL('popup/interface.html');
         const zeeschuimer_tab = tabs.filter((tab) => {
             return (tab.url === full_url);
         });
@@ -195,7 +196,7 @@ browser.webNavigation.onCommitted.addListener(
 browser.browserAction.onClicked.addListener(async () => {
     let tab = await zeeschuimer.has_tab();
     if (!tab) {
-        browser.tabs.create({url: 'popup/status.html'});
+        browser.tabs.create({url: 'popup/interface.html'});
     } else if (!tab.active) {
         browser.tabs.update(tab.id, {active: true});
     }
