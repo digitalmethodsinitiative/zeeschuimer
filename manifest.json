@@ -38,7 +38,8 @@
       "modules/instagram.js",
       "modules/linkedin.js",
       "modules/parler.js",
-      "modules/9gag.js"
+      "modules/9gag.js",
+      "modules/imgur.js"
     ]
   }
 }

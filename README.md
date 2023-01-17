@@ -21,6 +21,7 @@ Currently, it supports the following platforms:
 * [LinkedIn](https://www.linkedin.com)
 * [Parler](https://www.parler.com)
 * [9gag](https://9gag.com)
+* [Imgur](https://imgur.com)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests.
