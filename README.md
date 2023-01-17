@@ -20,6 +20,7 @@ Currently, it supports the following platforms:
 * [Instagram](https://www.instagram.com)
 * [LinkedIn](https://www.linkedin.com)
 * [Parler](https://www.parler.com)
+* [9gag](https://9gag.com)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests.

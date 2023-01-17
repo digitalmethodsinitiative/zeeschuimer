@@ -3,7 +3,7 @@
   "license": "MPL-2.0",
   "title": "Zeeschuimer",
   "upload_type": "software",
-  "version": "v1.4",
+  "version": "v1.4.1",
   "keywords": [
     "scraping", "data capture", "4cat", "instagram", "tiktok"
   ],
@@ -16,5 +16,4 @@
   ],
   "access_right": "open",
   "description": "<p>Zeeschuimer is a browser extension that monitors internet traffic while you are browsing a social media site, and collects data about the items you see in a platform's web interface for later systematic analysis. Its target audience is researchers who wish to systematically study content on social media platforms that resist conventional scraping or API-based data collection.</p><p>This Zenodo record serves as a static, archived version of the Zeeschuimer git repository as it is tagged for release. For the latest version of the code, visit the <a href='https://github.com/digitalmethodsinitiative/zeeschuimer'>GitHub repository</a></p>."
-
 }
