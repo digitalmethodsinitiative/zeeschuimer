@@ -1,4 +1,5 @@
 zeeschuimer.register_module(
+    'Parler',
     'parler.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split('/')[2].toLowerCase().replace(/^www\./, '');

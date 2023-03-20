@@ -14,10 +14,14 @@ window.zeeschuimer = {
     /**
      * Register Zeeschuimer module
      * @param name  Module identifier
+     * @param domain  Module primary domain name
      * @param callback  Function to parse request content with, returning an Array of extracted items
      */
-    register_module: function (name, callback) {
-        this.modules[name] = callback;
+    register_module: function (name, domain, callback) {
+        this.modules[domain] = {
+            name: name,
+            callback: callback
+        };
     },
 
     /**
@@ -121,7 +125,7 @@ window.zeeschuimer = {
 
         let item_list = [];
         for (let module in this.modules) {
-            item_list = this.modules[module](response, source_platform_url, source_url);
+            item_list = this.modules[module].callback(response, source_platform_url, source_url);
             if (item_list && item_list.length > 0) {
                 await Promise.all(item_list.map(async (item) => {
                     if (!item) {

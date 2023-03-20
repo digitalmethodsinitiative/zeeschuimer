@@ -159,6 +159,8 @@ async function toggle_listening(e) {
  */
 async function get_stats() {
     let response = [];
+    let platform_map = [];
+    Object.keys(background.zeeschuimer.modules).forEach(function(platform) { platform_map[platform] = background.zeeschuimer.modules[platform].name; });
     for(let module in background.zeeschuimer.modules) {
         response[module] = await background.db.items.where("source_platform").equals(module).count();
     }
@@ -180,7 +182,7 @@ async function get_stats() {
             checker.addEventListener('change', toggle_listening);
 
             row.appendChild(createElement("td", {}, createElement('div', {'class': 'toggle-switch'}, checker)));
-            row.appendChild(createElement("td", {}, platform));
+            row.appendChild(createElement("td", {}, createElement('a', {'href': 'https://' + platform}, platform_map[platform])));
             row.appendChild(createElement("td", {"class": "num-items"}, new Intl.NumberFormat().format(response[platform])));
 
             let actions = createElement("td");
@@ -390,6 +392,9 @@ async function button_handler(event) {
             section.setAttribute('aria-hidden', 'true');
             event.target.innerText = 'Show advanced options';
         }
+
+        event.stopPropagation();
+        return false;
     }
 
     get_stats();
