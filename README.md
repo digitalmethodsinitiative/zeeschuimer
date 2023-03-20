@@ -18,6 +18,7 @@ into your own analysis pipeline.
 Currently, it supports the following platforms:
 * [TikTok](https://www.tiktok.com)
 * [Instagram](https://www.instagram.com)
+* [Twitter](https://www.twitter.com)
 * [LinkedIn](https://www.linkedin.com)
 * [Parler](https://www.parler.com)
 * [9gag](https://9gag.com)
