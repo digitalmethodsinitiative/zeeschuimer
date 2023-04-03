@@ -306,9 +306,16 @@ async function button_handler(event) {
             if(xhr.readyState === xhr.DONE) {
                 if(xhr.status === 200) {
                     status.innerText = 'File uploaded. Waiting for processing to finish.'
+                    if (xhr.responseURL.indexOf('/login/') >= 0) {
+                        is_uploading = false;
+                        status.innerText = 'You are not logged in to this 4CAT server! Open it in a separate tab, log in and try again.'
+                        return;
+                    }
+
                     try {
                         response = JSON.parse(response);
                     } catch (e) {
+                        is_uploading = false;
                         status.innerText = 'Error during upload: malformed response from 4CAT server.';
                         return;
                     }
