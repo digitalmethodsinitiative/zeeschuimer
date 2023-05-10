@@ -16,7 +16,7 @@ zeeschuimer.register_module(
         }
 
         if ("cards" in data) {
-            console.log("Collecting Douyin data...")
+            console.log("Collecting Douyin Front Page data...")
             let useable_items = [];
             for(let i in data["cards"]) {
                 let item = data["cards"][i]["aweme"];
