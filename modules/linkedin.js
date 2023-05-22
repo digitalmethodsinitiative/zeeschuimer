@@ -64,7 +64,7 @@ zeeschuimer.register_module(
 
                 // there are many types of content in these responses
                 // we are (for now?) only interested in posts, which are identified in this way
-                if (result.indexOf('urn:li:fs_updateV2:(') !== 0) {
+                if (result.indexOf('urn:li:fs_updateV2:(urn:li:activity:') !== 0) {
                     continue;
                 }
 
