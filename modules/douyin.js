@@ -14,10 +14,7 @@ zeeschuimer.register_module(
             return [];
         }
 
-        if (("e" in data) && ("sc" in data) && ("tc" in data) && (3 === Object.keys(data).length)) {
-            // These appear to be status pings of some kind
-            return [];
-        } else if ("cards" in data) {
+        if ("cards" in data) {
             // Front Page (首页) tab
             let usable_items = [];
             for(let i in data["cards"]) {
@@ -35,19 +32,58 @@ zeeschuimer.register_module(
             return usable_items;
         } else if ("aweme_list" in data) {
             // Recommend (推荐) tab, Hot (热点) tab, and Channels (e.g. game (游戏), entertainment (娱乐), music (音乐))
-
+            // Also collects extra videos from mixes/collections (e.g. from Search page)
             let usable_items = [];
             for(let i in data["aweme_list"]) {
                 let item_data = data["aweme_list"][i];
                 item_data["id"] = item_data["aweme_id"];
                 usable_items.push(item_data);
             }
-            console.log(`Collected ${usable_items.length} Douyin videos from Recommend, Hot, or Channel tabs`)
+            console.log(`Collected ${usable_items.length} Douyin videos downloaded`)
             return usable_items;
+        } else if (("data" in data)  && Array.isArray(data["data"]) && ("global_doodle_config" in data)) {
+            // Search
+            let videos_count = 0;
+            let mix_count = 0;
+            let mix_video_count = 0;
+            let usable_items = [];
+            for(let i in data["data"]) {
+                let search_result = data["data"][i];
+                // Search items can also return "mixes"/"collections"
+                if (search_result["card_unique_name"] === "video") {
+                    // Single video
+                    let item_data = search_result["aweme_info"];
+                    item_data["id"] = item_data["aweme_id"];
+                    usable_items.push(item_data);
+                    videos_count++;
+                } else if (search_result["card_unique_name"] === "aweme_mix") {
+                    // Collection of videos
+                    let mix_videos = search_result["aweme_mix_info"]["mix_items"];
+                    for(let j in mix_videos) {
+                        // Each video has mix_info data
+                        // item_data["mix_info"]["statis"]["current_episode"] is an int starting at 1 representing the video order
+                        let item_data = mix_videos[j];
+                        item_data["id"] = item_data["aweme_id"];
+                        usable_items.push(item_data);
+                        mix_video_count++;
+                    }
+                    mix_count++;
+                } else if (search_result["card_unique_name"] === "baike_wiki_doc") {
+                    // These are cool chinese wiki cards; I have seen them explaining the search term used
+                } else {
+                        console.log("WARNING: NEW card type detected! Notify ZeeSchuimer developers https://github.com/digitalmethodsinitiative/zeeschuimer/issues")
+                        console.log(search_result)
+                }
+            }
+            console.log(`Collected ${videos_count} Douyin videos and ${mix_count} mixes (containing ${mix_video_count} videos)`)
+            return usable_items;
+        } else if ((("e" in data) && ("sc" in data) && ("tc" in data) && (3 === Object.keys(data).length)) || ("StabilityStatistics" in data)) {
+            // These appear to be status pings of some kind
+            return [];
         } else {
-            // debug
-            //console.log("MAYBE INTERESTING")
-            //console.log(data)
+                // debug
+                // console.log("MAYBE INTERESTING")
+                // console.log(data)
         }
 
         // if () {
