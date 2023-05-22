@@ -324,6 +324,9 @@ async function button_handler(event) {
                     status.innerText = '4CAT server refused upload, too soon after previous one. Try again in a minute.'
                 } else if(xhr.status === 403) {
                     status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
+                } else if(xhr.status === 404 && xhr.responseText.indexOf('Unknown platform or source format') >= 0) {
+                    status.innerText = 'The 4CAT server cannot import ' + platform + ' datasets. It may need to be ' +
+                        'upgraded before you can upload data from this source to it.';
                 } else if(xhr.status === 0) {
                     if(!xhr.aborted) {
                         status.innerText = 'Could not connect to 4CAT server. Is the URL correct?';
