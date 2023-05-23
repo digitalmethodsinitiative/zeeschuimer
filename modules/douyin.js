@@ -37,6 +37,11 @@ zeeschuimer.register_module(
             for(let i in data["aweme_list"]) {
                 let item_data = data["aweme_list"][i];
                 item_data["id"] = item_data["aweme_id"];
+                // On search page, items collected this way are part of collections/mixes and not the first video
+                if (source_platform_url.includes("douyin.com/search")) {
+                    item_data["ZS_collected_from_mix"] = true;
+                    item_data["ZS_first_mix_vid"] = false;
+                }
                 usable_items.push(item_data);
             }
             console.log(`Collected ${usable_items.length} Douyin videos downloaded`)
