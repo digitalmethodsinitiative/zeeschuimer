@@ -59,17 +59,28 @@ zeeschuimer.register_module(
                 } else if (search_result["card_unique_name"] === "aweme_mix") {
                     // Collection of videos
                     let mix_videos = search_result["aweme_mix_info"]["mix_items"];
+                    let first_mix_vid = true;
                     for(let j in mix_videos) {
                         // Each video has mix_info data
                         // item_data["mix_info"]["statis"]["current_episode"] is an int starting at 1 representing the video order
                         let item_data = mix_videos[j];
                         item_data["id"] = item_data["aweme_id"];
+                        // Add some metadata to ensure we know video was found in mix and which video was displayed (i.e. the first)
+                        item_data["ZS_collected_from_mix"] = true;
+                        if (first_mix_vid) {
+                            // We know this video was displayed on screen
+                            item_data["ZS_first_mix_vid"] = true;
+                            first_mix_vid = false;
+                        } else {
+                            item_data["ZS_first_mix_vid"] = false;
+                        }
                         usable_items.push(item_data);
                         mix_video_count++;
                     }
                     mix_count++;
-                } else if (search_result["card_unique_name"] === "baike_wiki_doc") {
-                    // These are cool chinese wiki cards; I have seen them explaining the search term used
+                } else if (["baike_wiki_doc", "douyin_trending"].includes(search_result["card_unique_name"])) {
+                    // baike_wiki_doc are cool chinese wiki cards; I have seen them explaining the search term used
+                    // douyin_trending trending data
                 } else {
                         console.log("WARNING: NEW card type detected! Notify ZeeSchuimer developers https://github.com/digitalmethodsinitiative/zeeschuimer/issues")
                         console.log(search_result)
