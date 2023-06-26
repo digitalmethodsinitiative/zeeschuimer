@@ -14,6 +14,7 @@ zeeschuimer.register_module(
                 && source_url.indexOf('ListLatestTweetsTimeline') < 0
                 && source_url.indexOf('UserTweets') < 0
                 && source_url.indexOf('Likes') < 0
+                && source_url.indexOf('SearchTimeline') < 0
                 // this one is not enabled because it is always loaded when viewing a user profile
                 // even when not viewing the media tab
                 // && source_url.indexOf('UserMedia') < 0
