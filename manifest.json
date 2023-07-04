@@ -40,7 +40,8 @@
       "modules/parler.js",
       "modules/9gag.js",
       "modules/imgur.js",
-      "modules/twitter.js"
+      "modules/twitter.js",
+      "modules/douyin.js"
     ]
   }
 }
