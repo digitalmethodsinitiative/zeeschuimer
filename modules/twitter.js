@@ -32,6 +32,23 @@ zeeschuimer.register_module(
             return [];
         }
 
+        // we want to process tweets under multiple conditions so factor that out into a simple function
+        // so we can call it when we need it, rather than duplicating the code
+        let process = function (tweet) {
+            if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
+                // this sometimes happens
+                // no other data in the object, so just skip
+                return;
+            }
+
+            if('tweet' in tweet) {
+                // sometimes this is nested once more, for some reason
+                tweet = tweet['tweet'];
+            }
+            tweet['id'] = tweet['legacy']['id_str'];
+            tweets.push(tweet);
+        }
+
         // find 'entries' in the API response
         // Twitter JSON objects are RPC-like objects that are interpreted
         // One of the 'instructions' is to add entries to the timeline, this is what we are interested in because what
@@ -53,38 +70,13 @@ zeeschuimer.register_module(
                     for (let entry in child['entries']) {
                         entry = child['entries'][entry];
                         if('itemContent' in entry['content'] && entry['content']['itemContent']['itemType'] !== 'TimelineTimelineCursor') {
-                            // tweets are sometimes embedded directly in this object
-                            let tweet = entry['content']['itemContent']['tweet_results']['result']
-                            if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
-                                // this sometimes happens
-                                // no other data in the object, so just skip
-                                continue;
-                            }
-
-                            if('tweet' in tweet) {
-                                // sometimes this is nested once more, for some reason
-                                tweet = tweet['tweet'];
-                            }
-                            tweet['id'] = tweet['legacy']['id_str'];
-                            tweets.push(tweet);
+                            process(entry['content']['itemContent']['tweet_results']['result']);
 
                         } else if ('items' in entry['content']) {
                             for (let item in entry['content']['items']) {
 								item = entry['content']['items'][item]['item'];
-								if('itemContent' in item) {
-									let tweet = item['itemContent']['tweet_results']['result']
-				                    if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
-				                        // this sometimes happens
-				                        // no other data in the object, so just skip
-				                        continue;
-				                    }
-
-				                    if('tweet' in tweet) {
-				                        // sometimes this is nested once more, for some reason
-				                        tweet = tweet['tweet'];
-				                    }
-				                    tweet['id'] = tweet['legacy']['id_str'];
-				                    tweets.push(tweet);
+								if('itemContent' in item && 'tweet_results' in item['itemContent']) {
+				                    process(item['itemContent']['tweet_results']['result']);
 								}
                             }
                         } else {
