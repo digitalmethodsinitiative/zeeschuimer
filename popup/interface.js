@@ -2,6 +2,7 @@ const background = browser.extension.getBackgroundPage();
 var have_4cat = false;
 var xhr;
 var is_uploading = false;
+const downloadUrls = new Map();
 
 /**
  * StreamSaver init
@@ -270,11 +271,13 @@ async function button_handler(event) {
         //let blob = await download_blob(platform, 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson');
         let blob = await get_blob(platform);
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson';
-        await browser.downloads.download({
-            url: window.URL.createObjectURL(blob),
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const downloadId = await browser.downloads.download({
+            url: downloadUrl,
             filename: filename,
             conflictAction: 'uniquify'
         });
+        downloadUrls.set(downloadId, downloadUrl);
 
         event.target.classList.remove('loading');
 
@@ -592,6 +595,21 @@ function fastForward(lastRow, idProp, otherCriteria) {
 }
 
 /**
+ * Listen for completed downloads, and if the download that has completed
+ * was one of our object URLs, then revoke it.
+ * @param delta object representing the changes that caused this event to fire.
+ */
+function downloadListener(delta) {
+    if(delta.state && delta.state.current === "complete") {
+        const url = downloadUrls.get(delta.id);
+        if(url) {
+            window.URL.revokeObjectURL(url);
+            downloadUrls.delete(delta.id);
+        }
+    }
+}
+
+/**
  * Init!
  */
 document.addEventListener('DOMContentLoaded', async function () {
@@ -604,4 +622,5 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+    browser.downloads.onChanged.addListener(downloadListener);
 });
