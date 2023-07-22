@@ -76,6 +76,28 @@ window.zeeschuimer = {
         return {};
     },
 
+    
+    sendDataToAPI: async function (dataToSend) {
+        const cloudFunctionUrl = await browser.storage.local.get('firebase-url');
+        const apiKey = await browser.storage.local.get('firebase-api-key');
+
+        fetch(`${cloudFunctionUrl}/add`, {
+            method: 'POST',
+            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
+            body: JSON.stringify(dataToSend),
+        })
+            .then(response => {
+            if (response.ok) {
+                console.log('Data uploaded successfully');
+            } else {
+                console.error('Failed to upload data:', response.statusText);
+            }
+            })
+            .catch(error => {
+            console.error('Error uploading data:', error.message);
+            });
+        },
+
     /**
      * Parse captured request
      * @param response  Content of the request
@@ -146,7 +168,9 @@ window.zeeschuimer = {
                             "user_agent": navigator.userAgent,
                             "data": item
                         });
+                        await zeeschuimer.sendDataToAPI(item);
                     }
+
                 }));
 
                 return;

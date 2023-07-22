@@ -34,14 +34,7 @@
       "inc/dexie.js",
       "inc/he.js",
       "js/zs-background.js",
-      "modules/tiktok.js",
-      "modules/instagram.js",
-      "modules/linkedin.js",
-      "modules/parler.js",
-      "modules/9gag.js",
-      "modules/imgur.js",
-      "modules/twitter.js",
-      "modules/douyin.js"
-    ]
+      "modules/ig_stories.js"
+      ]
   }
 }

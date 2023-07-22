@@ -1,5 +1,7 @@
 const background = browser.extension.getBackgroundPage();
 var have_4cat = false;
+var have_firebase = false;
+var have_firebase_key = false;
 var xhr;
 var is_uploading = false;
 
@@ -63,6 +65,30 @@ async function get_4cat_url(e) {
     return url;
 }
 
+async function get_firebase_url(e) {
+    let url = await background.browser.storage.local.get(['firebase-url']);
+    if (url['firebase-url']) {
+        url = url['firebase-url'];
+    } else {
+        url = '';
+    }
+
+    return url;
+}
+
+
+async function get_firebase_key(e) {
+    let url = await background.browser.storage.local.get(['firebase-key']);
+    if (url['firebase-key']) {
+        url = url['firebase-key'];
+    } else {
+        url = '';
+    }
+
+    return url;
+}
+
+
 /**
  * Set URL of 4CAT instance to connect to
  *
@@ -96,6 +122,54 @@ async function set_4cat_url(e) {
     }
 
     have_4cat = (url && url.length > 0);
+}
+
+async function set_firebase_url(e) {
+    if(e !== true && !e.target.matches('#firebase-url')) {
+        return;
+    }
+
+    let url;
+    if(e !== true) {
+        url = document.querySelector('#firebase-url').value;
+        if(url.length > 0) {
+            if (url.indexOf('://') === -1) {
+                url = 'http://' + url;
+            }
+            url = url.split('/').slice(0, 3).join('/');
+        }
+        await background.browser.storage.local.set({'firebase-url': url});
+    } else {
+        url = await background.browser.storage.local.get(['firebase-url']);
+        if(url['firebase-url']) {
+            url = url['firebase-url'];
+        } else {
+            url = '';
+        }
+    }
+
+    have_firebase = (url && url.length > 0);
+}
+
+async function set_firebase_key(e) {
+    if(e !== true && !e.target.matches('#firebase-key')) {
+        return;
+    }
+
+    let key;
+    if(e !== true) {
+        key = document.querySelector('#firebase-key').value;
+        await background.browser.storage.local.set({'firebase-key': key});
+    } else {
+        key = await background.browser.storage.local.get(['firebase-key']);
+        if(key['firebase-key']) {
+            key = key['firebase-key'];
+        } else {
+            key = '';
+        }
+    }
+
+    have_firebase_key = (key && key.length > 0);
 }
 
 /**
@@ -602,6 +676,18 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('keyup', set_4cat_url);
     document.addEventListener('change', set_4cat_url);
 
+    document.addEventListener('keyup', set_firebase_url);
+    document.addEventListener('change', set_firebase_url);
+
+    document.addEventListener('keyup', set_firebase_key);
+    document.addEventListener('change', set_firebase_key);
+
     const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
+    const firebase_url = await background.browser.storage.local.get('firebase-url');
+    document.querySelector('#firebase-url').value = firebase_url['firebase-url'] ? firebase_url['firebase-url'] : '';
+
+    const firebase_key = await background.browser.storage.local.get('firebase-key');
+    document.querySelector('#firebase-key').value = firebase_key['firebase-key'] ? firebase_key['firebase-key'] : '';   
 });
