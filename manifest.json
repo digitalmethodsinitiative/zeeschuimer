@@ -1,16 +1,10 @@
 {
 
-  "description": "Collect data while browsing social media platforms and upload it for analysis later",
+  "description": "Collect data while browsing social media platforms and instantly upload it for analysis",
   "manifest_version": 2,
-  "name": "Zeeschuimer",
+  "name": "Zeeschuimer-F",
   "version": "1.8.0",
-  "homepage_url": "https://github.com/digitalmethodsinitiative/zeeschuimer",
-
-  "browser_specific_settings": {
-    "gecko": {
-      "update_url": "https://extensions.digitalmethods.net/updates.json"
-    }
-  },
+  "homepage_url": "https://github.com/michaelachmann/zeeschuimer-f",
 
   "icons": {
     "48": "images/zeeschuimer-48.png",
@@ -19,7 +13,7 @@
 
   "browser_action": {
     "default_icon": "images/zeeschuimer-64.png",
-    "default_title": "Zeeschuimer Status"
+    "default_title": "Zeeschuimer-F Status"
   },
 
   "permissions": [

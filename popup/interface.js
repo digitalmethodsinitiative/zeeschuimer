@@ -46,24 +46,24 @@ function createElement(tag, attributes={}, content=undefined) {
     return element;
 }
 
-/**
- * Get URL of 4CAT instance to connect to
- *
- * This is stored in the LocalStorage.
- *
- * @param e
- * @returns {Promise<*>}
- */
-async function get_4cat_url(e) {
-    let url = await background.browser.storage.local.get(['4cat-url']);
-    if (url['4cat-url']) {
-        url = url['4cat-url'];
-    } else {
-        url = '';
-    }
+// /**
+//  * Get URL of 4CAT instance to connect to
+//  *
+//  * This is stored in the LocalStorage.
+//  *
+//  * @param e
+//  * @returns {Promise<*>}
+//  */
+// async function get_4cat_url(e) {
+//     let url = await background.browser.storage.local.get(['4cat-url']);
+//     if (url['4cat-url']) {
+//         url = url['4cat-url'];
+//     } else {
+//         url = '';
+//     }
 
-    return url;
-}
+//     return url;
+// }
 
 async function get_firebase_url(e) {
     let url = await background.browser.storage.local.get(['firebase-url']);
@@ -89,40 +89,40 @@ async function get_firebase_key(e) {
 }
 
 
-/**
- * Set URL of 4CAT instance to connect to
- *
- * This is stored in the LocalStorage.
- *
- * @param e
- * @returns {Promise<void>}
- */
-async function set_4cat_url(e) {
-    if(e !== true && !e.target.matches('#fourcat-url')) {
-        return;
-    }
+// /**
+//  * Set URL of 4CAT instance to connect to
+//  *
+//  * This is stored in the LocalStorage.
+//  *
+//  * @param e
+//  * @returns {Promise<void>}
+//  */
+// async function set_4cat_url(e) {
+//     if(e !== true && !e.target.matches('#fourcat-url')) {
+//         return;
+//     }
 
-    let url;
-    if(e !== true) {
-        url = document.querySelector('#fourcat-url').value;
-        if(url.length > 0) {
-            if (url.indexOf('://') === -1) {
-                url = 'http://' + url;
-            }
-            url = url.split('/').slice(0, 3).join('/');
-        }
-        await background.browser.storage.local.set({'4cat-url': url});
-    } else {
-        url = await background.browser.storage.local.get(['4cat-url']);
-        if(url['4cat-url']) {
-            url = url['4cat-url'];
-        } else {
-            url = '';
-        }
-    }
+//     let url;
+//     if(e !== true) {
+//         url = document.querySelector('#fourcat-url').value;
+//         if(url.length > 0) {
+//             if (url.indexOf('://') === -1) {
+//                 url = 'http://' + url;
+//             }
+//             url = url.split('/').slice(0, 3).join('/');
+//         }
+//         await background.browser.storage.local.set({'4cat-url': url});
+//     } else {
+//         url = await background.browser.storage.local.get(['4cat-url']);
+//         if(url['4cat-url']) {
+//             url = url['4cat-url'];
+//         } else {
+//             url = '';
+//         }
+//     }
 
-    have_4cat = (url && url.length > 0);
-}
+//     have_4cat = (url && url.length > 0);
+// }
 
 async function set_firebase_url(e) {
     if(e !== true && !e.target.matches('#firebase-url')) {
@@ -134,7 +134,7 @@ async function set_firebase_url(e) {
         url = document.querySelector('#firebase-url').value;
         if(url.length > 0) {
             if (url.indexOf('://') === -1) {
-                url = 'http://' + url;
+                url = 'https://' + url;
             }
             url = url.split('/').slice(0, 3).join('/');
         }
@@ -265,14 +265,14 @@ async function get_stats() {
                 "data-platform": platform,
                 "class": "download-ndjson"
             }, ".ndjson");
-            let fourcat_button = createElement("button", {
-                "data-platform": platform,
-                "class": "upload-to-4cat",
-            }, "to 4CAT");
+            // let fourcat_button = createElement("button", {
+            //     "data-platform": platform,
+            //     "class": "upload-to-4cat",
+            // }, "to 4CAT");
 
             actions.appendChild(clear_button);
             actions.appendChild(download_button);
-            actions.appendChild(fourcat_button);
+            // actions.appendChild(fourcat_button);
 
             row.appendChild(actions);
             document.querySelector("#item-table tbody").appendChild(row);
@@ -284,12 +284,12 @@ async function get_stats() {
     let uploads = await background.db.uploads.orderBy("id").limit(10);
     let num_uploads = parseInt(await background.db.uploads.orderBy("id").limit(10).count());
 
-    if(num_uploads > 0 && !document.querySelector('#clear-history')) {
-        document.querySelector('#upload-table').parentNode.appendChild(createElement('button', {id: 'clear-history'}, 'Clear history'));
-    } else if (num_uploads === 0 && !document.querySelector('#upload-table .empty-table-notice')) {
-        document.querySelector('#upload-table tbody').appendChild(createElement('tr', {class: 'empty-table-notice'},
-            createElement('td', {colspan: 4}, 'No datasets uploaded so far.')));
-    }
+    //if(num_uploads > 0 && !document.querySelector('#clear-history')) {
+    //    document.querySelector('#upload-table').parentNode.appendChild(createElement('button', {id: 'clear-history'}, 'Clear history'));
+    //} else if (num_uploads === 0 && !document.querySelector('#upload-table .empty-table-notice')) {
+    //    document.querySelector('#upload-table tbody').appendChild(createElement('tr', {class: 'empty-table-notice'},
+    //        createElement('td', {colspan: 4}, 'No datasets uploaded so far.')));
+    //}
 
     await uploads.each(upload => {
         let row_id = "upload-" + upload.id;
@@ -311,7 +311,7 @@ async function get_stats() {
         }
     });
 
-    set_4cat_url(true);
+    // set_4cat_url(true);
     activate_buttons();
     init_tooltips();
 }
@@ -352,67 +352,67 @@ async function button_handler(event) {
 
         event.target.classList.remove('loading');
 
-    } else if (event.target.matches('.upload-to-4cat')) {
-        let platform = event.target.getAttribute('data-platform');
-        status.innerText = 'Creating data file for uploading...';
-        is_uploading = true;
-        let blob = await get_blob(platform);
+    // } else if (event.target.matches('.upload-to-4cat')) {
+    //     let platform = event.target.getAttribute('data-platform');
+    //     status.innerText = 'Creating data file for uploading...';
+    //     is_uploading = true;
+    //     let blob = await get_blob(platform);
 
-        document.querySelectorAll('.upload-to-4cat').forEach(x => x.setAttribute('disabled', true));
+    //     document.querySelectorAll('.upload-to-4cat').forEach(x => x.setAttribute('disabled', true));
 
-        xhr = new XMLHttpRequest();
-        xhr.aborted = false;
-        let upload_url = await get_4cat_url();
+    //     xhr = new XMLHttpRequest();
+    //     xhr.aborted = false;
+    //     let upload_url = await get_4cat_url();
 
-        xhr.open("POST", upload_url + "/api/import-dataset/", true);
-        xhr.setRequestHeader("X-Zeeschuimer-Platform", platform)
-        xhr.onloadstart = function () {
-            status.innerText = 'Starting upload...';
-        }
-        xhr.upload.onprogress = function (event) {
-            let pct = event.total === 0 ? '???' : Math.round(event.loaded / event.total * 100);
-            status.innerHTML = '';
-            status.appendChild(createElement('p', {}, pct + '% uploaded'));
-            status.appendChild(createElement('button', {id: 'cancel-upload'}, 'Cancel upload'));
-        }
-        xhr.onreadystatechange = function() {
-            let response = xhr.responseText.replace(/\n/g, '');
-            if(xhr.readyState === xhr.DONE) {
-                if(xhr.status === 200) {
-                    status.innerText = 'File uploaded. Waiting for processing to finish.'
-                    if (xhr.responseURL.indexOf('/login/') >= 0) {
-                        is_uploading = false;
-                        status.innerText = 'You are not logged in to this 4CAT server! Open it in a separate tab, log in and try again.'
-                        return;
-                    }
+    //     xhr.open("POST", upload_url + "/api/import-dataset/", true);
+    //     xhr.setRequestHeader("X-Zeeschuimer-Platform", platform)
+    //     xhr.onloadstart = function () {
+    //         status.innerText = 'Starting upload...';
+    //     }
+    //     xhr.upload.onprogress = function (event) {
+    //         let pct = event.total === 0 ? '???' : Math.round(event.loaded / event.total * 100);
+    //         status.innerHTML = '';
+    //         status.appendChild(createElement('p', {}, pct + '% uploaded'));
+    //         status.appendChild(createElement('button', {id: 'cancel-upload'}, 'Cancel upload'));
+    //     }
+    //     xhr.onreadystatechange = function() {
+    //         let response = xhr.responseText.replace(/\n/g, '');
+    //         if(xhr.readyState === xhr.DONE) {
+    //             if(xhr.status === 200) {
+    //                 status.innerText = 'File uploaded. Waiting for processing to finish.'
+    //                 if (xhr.responseURL.indexOf('/login/') >= 0) {
+    //                     is_uploading = false;
+    //                     status.innerText = 'You are not logged in to this 4CAT server! Open it in a separate tab, log in and try again.'
+    //                     return;
+    //                 }
 
-                    try {
-                        response = JSON.parse(response);
-                    } catch (e) {
-                        is_uploading = false;
-                        status.innerText = 'Error during upload: malformed response from 4CAT server.';
-                        return;
-                    }
-                    upload_poll.init(response);
-                } else if(xhr.status === 429) {
-                    status.innerText = '4CAT server refused upload, too soon after previous one. Try again in a minute.'
-                } else if(xhr.status === 403) {
-                    status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
-                } else if(xhr.status === 404 && xhr.responseText.indexOf('Unknown platform or source format') >= 0) {
-                    status.innerText = 'The 4CAT server does not accept ' + platform + ' datasets. The 4CAT ' +
-                        'administrator may need to enable the data source or upgrade 4CAT.';
-                } else if(xhr.status === 0) {
-                    if(!xhr.aborted) {
-                        status.innerText = 'Could not connect to 4CAT server. Is the URL correct?';
-                    }
-                } else {
-                    status.innerText = 'Error ' + xhr.status + ' ' + xhr.statusText + ' during upload. Is the URL correct?';
-                }
+    //                 try {
+    //                     response = JSON.parse(response);
+    //                 } catch (e) {
+    //                     is_uploading = false;
+    //                     status.innerText = 'Error during upload: malformed response from 4CAT server.';
+    //                     return;
+    //                 }
+    //                 upload_poll.init(response);
+    //             } else if(xhr.status === 429) {
+    //                 status.innerText = '4CAT server refused upload, too soon after previous one. Try again in a minute.'
+    //             } else if(xhr.status === 403) {
+    //                 status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
+    //             } else if(xhr.status === 404 && xhr.responseText.indexOf('Unknown platform or source format') >= 0) {
+    //                 status.innerText = 'The 4CAT server does not accept ' + platform + ' datasets. The 4CAT ' +
+    //                     'administrator may need to enable the data source or upgrade 4CAT.';
+    //             } else if(xhr.status === 0) {
+    //                 if(!xhr.aborted) {
+    //                     status.innerText = 'Could not connect to 4CAT server. Is the URL correct?';
+    //                 }
+    //             } else {
+    //                 status.innerText = 'Error ' + xhr.status + ' ' + xhr.statusText + ' during upload. Is the URL correct?';
+    //             }
 
-                is_uploading = false;
-            }
-        }
-        xhr.send(blob);
+    //             is_uploading = false;
+    //         }
+    //     }
+    //     xhr.send(blob);
 
     } else if(event.target.matches('#clear-history')) {
         await background.db.uploads.clear();
@@ -673,8 +673,6 @@ document.addEventListener('DOMContentLoaded', async function () {
     setInterval(get_stats, 1000);
 
     document.addEventListener('click', button_handler);
-    document.addEventListener('keyup', set_4cat_url);
-    document.addEventListener('change', set_4cat_url);
 
     document.addEventListener('keyup', set_firebase_url);
     document.addEventListener('change', set_firebase_url);
@@ -682,8 +680,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('keyup', set_firebase_key);
     document.addEventListener('change', set_firebase_key);
 
-    const fourcat_url = await background.browser.storage.local.get('4cat-url');
-    document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
 
     const firebase_url = await background.browser.storage.local.get('firebase-url');
     document.querySelector('#firebase-url').value = firebase_url['firebase-url'] ? firebase_url['firebase-url'] : '';

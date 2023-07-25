@@ -1,6 +1,6 @@
 <!DOCTYPE html>
 <head>
-    <title>Zeeschuimer</title>
+    <title>Zeeschuimer-F</title>
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Security-Policy" content="script-src *;">
     <link rel="stylesheet" href="tooltips.css">
@@ -342,7 +342,7 @@
 <body>
 <article>
     <header>
-        <h1>Zeeschuimer</h1>
+        <h1>Zeeschuimer-F</h1>
         <span class="version">v1.8.0</span>
     </header>
     <section id="status">
@@ -362,6 +362,7 @@
             <button class="reset-all">Delete all items</button>
         </div>
     </section>
+    <!--
     <section id="configuration">
         <h2><span>Connect to 4CAT</span></h2>
         <div class="fourcat-url-container">
@@ -372,19 +373,8 @@
                       title="The URL of the 4CAT server to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
             </label>
         </div>
-        <div class="fourcat-url-container">
-            <label>
-                <span>Firebase Endopint URL:</span>
-                <input type="text" placeholder="https://us-central1-zeeschuimer-ig-loader.cloudfunctions.net/stories/add" id="firebase-url">
-            </label>
-        </div>
-        <div class="fourcat-url-container">
-            <label>
-                <span>Firebase API Key:</span>
-                <input type="text" placeholder="7ce20587-7757-43eb-ae1d-ab41445e9070" id="firebase-key">
-            </label>
-        </div>
         <p id="upload-status"></p>
+        
     </section>
     <section>
         <h2><span>Uploaded datasets</span></h2>
@@ -399,6 +389,21 @@
             </thead>
             <tbody></tbody>
         </table>
+    </section>-->
+    <section>
+        <h2><span>Connect to Firebase</span></h2>
+        <div class="fourcat-url-container">
+            <label>
+                <span>Firebase Endopint URL:</span>
+                <input type="text" placeholder="https://us-central1-zeeschuimer-ig-loader.cloudfunctions.net/stories/add" id="firebase-url">
+            </label>
+        </div>
+        <div class="fourcat-url-container">
+            <label>
+                <span>Firebase API Key:</span>
+                <input type="text" placeholder="7ce20587-7757-43eb-ae1d-ab41445e9070" id="firebase-key">
+            </label>
+        </div>
     </section>
     <section id="advanced-mode" aria-hidden="true">
         <h2><span>Import from NDJSON</span></h2>

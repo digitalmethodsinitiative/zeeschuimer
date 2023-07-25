@@ -5,6 +5,11 @@ zeeschuimer.register_module(
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
         let endpoint = source_url.split("/").slice(3).join("/").split("?")[0].split("#")[0].replace(/\/$/, '');
 
+        const firebase_url = zeeschuimer.firebase_url['firebase-url']
+        const firebase_key = zeeschuimer.firebase_key['firebase-key']
+
+        console.log(firebase_url)
+
         if (!["instagram.com"].includes(domain)) {
             return [];
         }
@@ -75,7 +80,68 @@ zeeschuimer.register_module(
         
         let edges = [];
 
-        
+        // const uploadMedia = function(mediaURL, reelId, mediaType) {
+        //     // Download the image and upload it to the API
+        //     fetch(mediaURL)
+        //     .then((response) => response.blob())
+        //     .then((blob) => {
+        //         // Upload the blob to the API via POST
+        //         const formData = new FormData();
+
+        //         // Get the file extension from the URL
+        //         let mediaExtension = ""
+
+        //         if (mediaType === "image") {
+        //             mediaExtension = "jpeg"
+        //         } else if (mediaType === "video") {
+        //             mediaExtension = "mp4"
+        //         }
+
+        //         // Create a filename for the media
+        //         const filename = `${reelId}.${mediaExtension}`;
+        //         formData.append("file", blob, filename);
+        //         formData.append("reelId", reelId);
+
+        //         // Upload the file to the API
+        //         fetch(`${firebase_url}/stories/${mediaType}`, {
+        //             method: "POST",
+        //             headers: { "x-api-key": firebase_key },
+        //             body: formData,
+        //         })
+        //         .then((response) => {
+        //             if (response.ok) {
+        //             console.log("Media uploaded successfully");
+        //             } else {
+        //             console.error("Failed to upload media:", response.statusText);
+        //             }
+        //         })
+        //         .catch((error) => {
+        //             console.error("Error uploading media:", error.message);
+        //         })
+        //     })
+        // };
+
+        const sendItemToAPI = function(dataToSend) {
+            // Upload the data to the API via POST
+            fetch(`${firebase_url}/add`, {
+                method: 'POST',
+                headers: { 'Content-Type': 'application/json', 'x-api-key': firebase_key },
+                body: JSON.stringify(dataToSend),
+            })
+                .then(response => {
+                if (response.ok) {
+                    console.log(response)
+                    console.log('Data uploaded successfully');
+                } else {
+                    console.error('Failed to upload data:', response.statusText);
+                }
+                })
+                .catch(error => {
+                console.error('Error uploading data:', error.message);
+                });
+            };
+    
+
         const traverse = function (obj) {
             for (const property in obj) {
               if (obj.hasOwnProperty(property) && possible_edges.includes(property)) {
@@ -95,8 +161,24 @@ zeeschuimer.register_module(
                             ...user,
                         },
                       };
+                      const imageURL = reel.image_versions2.candidates[0].url;
+                      const reelId = reel.id;
 
                       edges.push(edge);
+                      sendItemToAPI(edge);
+
+/*                         // Upload the image to the API
+                        uploadMedia(imageURL, reelId, "image");
+
+                        // Check if the reel has a video_version property
+                        if (reel.hasOwnProperty("video_versions")) {
+                            const videoURL = reel.video_versions[0].url;
+                            // Upload the video to the API
+                            uploadMedia(videoURL, reelId, "video");
+                        } */
+
+
+
                     });
                   });
                 }
@@ -105,10 +187,6 @@ zeeschuimer.register_module(
           };
           
         traverse(data);
-
-
-
-        console.log(edges);
 
         return edges;
     }

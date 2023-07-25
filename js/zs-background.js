@@ -10,6 +10,8 @@ window.zeeschuimer = {
     modules: {},
     session: null,
     tab_url_map: {},
+    firebase_url: null,
+    firebase_key: null,
 
     /**
      * Register Zeeschuimer module
@@ -40,6 +42,11 @@ window.zeeschuimer = {
         this.session = session["value"];
         await db.settings.update("session", session);
         await db.nav.where("session").notEqual(this.session).delete();
+
+        this.firebase_url['firebase_url'] = "https://story-p4by3ifwbq-uc.a.run.app"
+        //this.firebase_url = await browser.storage.local.get('firebase-url');
+        this.firebase_key['firebase_key'] = "f6882379-38c0-4356-a612-093b1e2926de"
+        //this.firebase_key = await browser.storage.local.get('firebase-key');
     },
 
     /**
@@ -75,28 +82,6 @@ window.zeeschuimer = {
 
         return {};
     },
-
-    
-    sendDataToAPI: async function (dataToSend) {
-        const cloudFunctionUrl = await browser.storage.local.get('firebase-url');
-        const apiKey = await browser.storage.local.get('firebase-api-key');
-
-        fetch(`${cloudFunctionUrl}/add`, {
-            method: 'POST',
-            headers: { 'Content-Type': 'application/json', 'x-api-key': apiKey },
-            body: JSON.stringify(dataToSend),
-        })
-            .then(response => {
-            if (response.ok) {
-                console.log('Data uploaded successfully');
-            } else {
-                console.error('Failed to upload data:', response.statusText);
-            }
-            })
-            .catch(error => {
-            console.error('Error uploading data:', error.message);
-            });
-        },
 
     /**
      * Parse captured request
@@ -168,7 +153,7 @@ window.zeeschuimer = {
                             "user_agent": navigator.userAgent,
                             "data": item
                         });
-                        await zeeschuimer.sendDataToAPI(item);
+                        
                     }
 
                 }));
