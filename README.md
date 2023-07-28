@@ -1,73 +1,25 @@
-# 🏴‍☠️ Zeeschuimer
+# 🏴‍☠️ Zeeschuimer-F - Real-Time Instagram Stories Capture with Firebase Backend
 
-[![DOI: 10.5281/zenodo.4742622](https://zenodo.org/badge/DOI/10.5281/zenodo.6826877.svg)](https://doi.org/10.5281/zenodo.6826877)
-[![License: MPL 2.0](https://img.shields.io/badge/license-MPL--2.0-informational)](https://github.com/digitalmethodsinitiative/4cat/blob/master/LICENSE)
+<p align="center"><img alt="A screenshot of Zeeschuimer-F's status window" src="images/example_screenshot.png"></p>
 
-<p align="center"><img alt="A screenshot of Zeeschuimer's status window" src="images/example_screenshot.png"></p>
+Zeeschuimer-F is a modified version of the original [Zeeschuimer project](https://github.com/digitalmethodsinitiative/zeeschuimer) designed to capture Instagram Stories data. The project is based on the research and work done by Stijn Peeters for the [Digital Methods Initiative](https://digitalmethods.net).
 
-Zeeschuimer is a browser extension that monitors internet traffic while you are browsing a social media site, and 
-collects data about the items you see in a platform's web interface for later systematic analysis. Its target audience
-is researchers who wish to systematically study content on social media platforms that resist conventional scraping or 
-API-based data collection.
+## Original Zeeschuimer
 
-You can, for example, browse TikTok and later export a list of all posts you saw in the order you saw them in. Data can 
-be exported as a JSON file or exported to a [4CAT](https://github.com/digitalmethodsinitiative/4cat) instance for 
-analysis and storage. Zeeschuimer is primarily intended as a companion to 4CAT, but you can also integrate its output
-into your own analysis pipeline.
+The original Zeeschuimer is a browser extension that monitors internet traffic while you are browsing a social media site and collects data about the items you see in a platform's web interface for later systematic analysis. It was primarily intended for researchers who wished to systematically study content on social media platforms that resist conventional scraping or API-based data collection. To learn more about the original Zeeschuimer project, refer to their [GitHub repository](https://github.com/digitalmethodsinitiative/zeeschuimer).
 
-Currently, it supports the following platforms:
-* [TikTok](https://www.tiktok.com)
-* [Instagram](https://www.instagram.com)
-* [Twitter](https://www.twitter.com)
-* [LinkedIn](https://www.linkedin.com)
-* [Parler](https://www.parler.com)
-* [9gag](https://9gag.com)
-* [Imgur](https://imgur.com)
-* [Douyin](https://douyin.com)
+## Modifications for Real-Time Data Capture and Firebase Backend
 
-Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
-welcome issues and pull requests.
+Zeeschuimer-F introduces a significant modification by implementing replacing the 4CAT backend with [zeeschuimer-fb-backend](https://github.com/michaelachmann/zeeschuimer-fb-backend), a Firebase backend to instantly save the captured data on a remote server. The extension communicates seamlessly with the Firebase server, enabling efficient and secure storage of captured data for later analysis.
 
-The extension does not interfere with your normal browsing and never uploads data automatically, only when you 
-explicitly ask it to do so.
+## Future Work
 
-## Installation
-Zeeschuimer is in active development. .xpi files that you can use to install it in your browser are available on the 
-[releases](https://github.com/digitalmethodsinitiative/zeeschuimer/releases) page. These are signed and can be installed 
-in any Firefox-based browser. If you want to run the latest development version instead, you can [do so from the Firefox
-debugging console](https://www.youtube.com/watch?v=J7el77F1ckg) after cloning the repository locally.
+The modified Zeeschuimer-F and [zeeschuimer-fb-backend](https://github.com/michaelachmann/zeeschuimer-fb-backend) have been developed rapidly for a personal research project. Everyone can clone the backend and create their own Firebase instance. Future improvements of the project would be to add user management and a front-end.
 
-## How to use
-A [guide to using Zeeschuimer and 4CAT](https://tinyurl.com/nmrw-zeeschuimer-tiktok) is available. Basic instructions 
-are as follows: 
+## License
 
-Install the browser extension in a Firefox browser. A button with the Zeeschuimer logo (a 'Z') will appear in the 
-browser toolbar. Click it to open the Zeeschuimer interface. Enable capturing for the sites you want to capture from.
+Zeeschuimer-F is licensed under the Mozilla Public License Version 2.0. Refer to the [LICENSE](LICENSE) file for more information.
 
-Next, simply browse a supported platform's site. You will see the amount of items detected per platform increase as you 
-browse. When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload it
-to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
-processors on the data.
+## Credits
 
-To upload to 4CAT, copy the URL of the website of the 4CAT instance to the "4CAT instance" field at the top of 
-Zeeschuimer's interface. You can then use the "to 4CAT" button to create a new 4CAT dataset from the captured data. 
-After uploading, Zeeschuimer will show you a link and the ten most recently uploaded datasets are shown at the bottom of
-the interface.
-
-Don't forget to reset the data as needed. For example, if you want to create a dataset for a given TikTok hashtag, first
-reset the TikTok data in Zeeschuimer, _then_ go to the hashtag's "Explore" page on TikTok, and then upload the dataset
-when you've scrolled down enough to be satisfied with the amount of items.
-
-If you find yourself scrolling a lot to collect data, consider using another browser extension to do it for you, for 
-example [FoxScroller](https://addons.mozilla.org/en-US/firefox/addon/foxscroller/).
-
-## Credits & license
-Zeeschuimer was developed by Stijn Peeters for the [Digital Methods Initiative](https://digitalmethods.net) and is 
-licensed under the Mozilla Public License, 2.0. Refer to the LICENSE file for more information.
-
-Graphics based on [an image generated by Dall-E](https://labs.openai.com/s/oWvGAHC0pxwWV3bNLfENu7AV), for the prompt 
-'detail of a 1914 metaphysical painting by giorgio de chirico depicting a buccaneer pensively looking out over the open 
-sea'.
-
-Development is supported by the Dutch [PDI-SSH](https://pdi-ssh.nl/en/) foundation through the [CAT4SMR 
-project](https://cat4smr.humanities.uva.nl/).
+Zeeschuimer-F acknowledges the research and development efforts by Stijn Peeters for the original Zeeschuimer project. The modifications made for implementing the real-time data capture mechanism and the Firebase backend were carried out by [Your Name].

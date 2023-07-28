@@ -43,10 +43,11 @@ window.zeeschuimer = {
         await db.settings.update("session", session);
         await db.nav.where("session").notEqual(this.session).delete();
 
-        this.firebase_url['firebase_url'] = "https://story-p4by3ifwbq-uc.a.run.app"
-        //this.firebase_url = await browser.storage.local.get('firebase-url');
-        this.firebase_key['firebase_key'] = "f6882379-38c0-4356-a612-093b1e2926de"
-        //this.firebase_key = await browser.storage.local.get('firebase-key');
+        const firebase_url = await browser.storage.local.get('firebase-url');
+        this.firebase_url = firebase_url
+
+        const firebase_key = await browser.storage.local.get('firebase-key');
+        this.firebase_key = firebase_key
     },
 
     /**
