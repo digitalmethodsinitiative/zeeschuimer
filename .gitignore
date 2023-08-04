@@ -1,2 +1,4 @@
 # Development and Build artefacts
 .idea
+.web-extension-id
+web-ext-artifacts

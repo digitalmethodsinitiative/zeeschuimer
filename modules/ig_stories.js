@@ -121,7 +121,7 @@ zeeschuimer.register_module(
         //     })
         // };
 
-        const sendItemToAPI = function(dataToSend) {
+        const sendItemsToAPI = function(dataToSend) {
             // Upload the data to the API via POST
             fetch(`${firebase_url}/add`, {
                 method: 'POST',
@@ -165,7 +165,6 @@ zeeschuimer.register_module(
                       const reelId = reel.id;
 
                       edges.push(edge);
-                      sendItemToAPI(edge);
 
 /*                         // Upload the image to the API
                         uploadMedia(imageURL, reelId, "image");
@@ -187,7 +186,9 @@ zeeschuimer.register_module(
           };
           
         traverse(data);
-
+    
+        // Upload data to firebase
+        sendItemsToAPI(edges);
         return edges;
     }
 );
