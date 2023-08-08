@@ -34,7 +34,7 @@ zeeschuimer.register_module(
 
         // we want to process tweets under multiple conditions so factor that out into a simple function
         // so we can call it when we need it, rather than duplicating the code
-        let process = function (tweet) {
+        let process = function (tweet, promoted = false, related = false) {
             if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
                 // this sometimes happens
                 // no other data in the object, so just skip
@@ -46,6 +46,8 @@ zeeschuimer.register_module(
                 tweet = tweet['tweet'];
             }
             tweet['id'] = tweet['legacy']['id_str'];
+            tweet['promoted'] = promoted;
+            tweet['related'] = related;
             tweets.push(tweet);
         }
 
@@ -70,13 +72,18 @@ zeeschuimer.register_module(
                     for (let entry in child['entries']) {
                         entry = child['entries'][entry];
                         if('itemContent' in entry['content'] && entry['content']['itemContent']['itemType'] !== 'TimelineTimelineCursor') {
-                            process(entry['content']['itemContent']['tweet_results']['result']);
+                            process(entry['content']['itemContent']['tweet_results']['result'],
+                                ('promotedMetadata' in entry['content']['itemContent']),
+                                (entry['entryId'].indexOf('relatedtweets') >= 0));
 
                         } else if ('items' in entry['content']) {
                             for (let item in entry['content']['items']) {
+                                let entry_id = entry['content']['items'][item]['entryId'];
 								item = entry['content']['items'][item]['item'];
 								if('itemContent' in item && 'tweet_results' in item['itemContent']) {
-				                    process(item['itemContent']['tweet_results']['result']);
+				                    process(item['itemContent']['tweet_results']['result'],
+				                    ('promotedMetadata' in item['itemContent']),
+				                    (entry_id.indexOf('relatedtweets') >= 0));
 								}
                             }
                         } else {
@@ -100,7 +107,9 @@ zeeschuimer.register_module(
                             let tweet = {
                                 id: parseInt(tweet_id),
                                 legacy: data['globalObjects']['tweets'][tweet_id],
-                                type: 'adaptive'
+                                type: 'adaptive',
+                                promoted: false,
+                                related: false
                             }
 
                             // the user is also stored as a reference - so add the user data to the tweet
