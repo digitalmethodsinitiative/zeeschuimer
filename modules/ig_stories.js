@@ -16,6 +16,7 @@ zeeschuimer.register_module(
 
         let whitelisted_endpoints = [
             "api/v1/feed/reels_media", // live-loading stories
+            "api/v1/feed/reels_tray", // stories tray
         ]
 
 
@@ -76,50 +77,9 @@ zeeschuimer.register_module(
             }
         }
 
-        let possible_edges = ["reels_media"];
+        let possible_edges = ["reels_media", "tray"];
         
         let edges = [];
-
-        // const uploadMedia = function(mediaURL, reelId, mediaType) {
-        //     // Download the image and upload it to the API
-        //     fetch(mediaURL)
-        //     .then((response) => response.blob())
-        //     .then((blob) => {
-        //         // Upload the blob to the API via POST
-        //         const formData = new FormData();
-
-        //         // Get the file extension from the URL
-        //         let mediaExtension = ""
-
-        //         if (mediaType === "image") {
-        //             mediaExtension = "jpeg"
-        //         } else if (mediaType === "video") {
-        //             mediaExtension = "mp4"
-        //         }
-
-        //         // Create a filename for the media
-        //         const filename = `${reelId}.${mediaExtension}`;
-        //         formData.append("file", blob, filename);
-        //         formData.append("reelId", reelId);
-
-        //         // Upload the file to the API
-        //         fetch(`${firebase_url}/stories/${mediaType}`, {
-        //             method: "POST",
-        //             headers: { "x-api-key": firebase_key },
-        //             body: formData,
-        //         })
-        //         .then((response) => {
-        //             if (response.ok) {
-        //             console.log("Media uploaded successfully");
-        //             } else {
-        //             console.error("Failed to upload media:", response.statusText);
-        //             }
-        //         })
-        //         .catch((error) => {
-        //             console.error("Error uploading media:", error.message);
-        //         })
-        //     })
-        // };
 
         const sendItemsToAPI = function(dataToSend) {
             // Upload the data to the API via POST
@@ -152,34 +112,19 @@ zeeschuimer.register_module(
                   obj[property].forEach(function (item) {
                     const user = item.user;
                     const reelItems = item.items;
-          
-                    // Create a new object containing user details and reel details
-                    reelItems.forEach(function (reel) {
-                      const edge = {
-                        ...reel, // Spread operator to include all properties from the 'reel' object
-                        user: {
-                            ...user,
-                        },
-                      };
-                      const imageURL = reel.image_versions2.candidates[0].url;
-                      const reelId = reel.id;
 
-                      edges.push(edge);
-
-/*                         // Upload the image to the API
-                        uploadMedia(imageURL, reelId, "image");
-
-                        // Check if the reel has a video_version property
-                        if (reel.hasOwnProperty("video_versions")) {
-                            const videoURL = reel.video_versions[0].url;
-                            // Upload the video to the API
-                            uploadMedia(videoURL, reelId, "video");
-                        } */
-
-
-
-                    });
-                  });
+                    if (reelItems && reelItems.length > 0) {
+                        reelItems.forEach(function (reel) {
+                            const edge = {
+                                ...reel, // Spread operator to include all properties from the 'reel' object
+                                user: {
+                                    ...user,
+                                },
+                            };
+                            edges.push(edge);
+                        });
+                    }
+                });
                 }
               }
             }
