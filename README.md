@@ -20,7 +20,6 @@ Currently, it supports the following platforms:
 * [Instagram](https://www.instagram.com)
 * [Twitter](https://www.twitter.com)
 * [LinkedIn](https://www.linkedin.com)
-* [Parler](https://www.parler.com)
 * [9gag](https://9gag.com)
 * [Imgur](https://imgur.com)
 * [Douyin](https://douyin.com)
