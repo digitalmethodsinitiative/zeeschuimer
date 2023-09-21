@@ -1,5 +1,5 @@
 zeeschuimer.register_module(
-    'Instagram',
+    'Instagram (Posts)',
     'instagram.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
@@ -73,7 +73,7 @@ zeeschuimer.register_module(
         }
 
         let possible_edges = ["edge_owner_to_timeline_media", "edge_web_feed_timeline"];
-        let possible_item_lists = ["items", "medias", "feed_items"];
+        let possible_item_lists = ["medias", "feed_items"];
         let edges = [];
 
         // find edge lists in the extracted JSON data
@@ -83,27 +83,27 @@ zeeschuimer.register_module(
         let traverse = function(obj) {
             for(let property in obj) {
                 if(!obj.hasOwnProperty(property)) {
+                    // not actually a property
                     continue;
                 }
 
-                if(possible_edges.includes(property) && "edges" in obj[property]) {
-                    // edge lists
-                    // traverse data and filter for object types we can process in 4CAT
-                    edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
-                        return (
-                            "id" in node
-                            && "__typename" in node
-                            && ["GraphVideo", "GraphImage", "GraphSidecar"].includes(node["__typename"])
-                        );
-                    }));
-                } else if(possible_item_lists.includes(property)) {
-                    // 'items' on user pages, 'medias' on explore pages
-                    // and another special case for timeline feeds, which have
-                    // items in 'media_or_ads' (ads filtered later)
+                // pages not covered:
+                // - explore (e.g. https://www.instagram.com/explore/)
+                // - 'tagged' pages for a user (e.g. https://www.instagram.com/steveo/tagged/)
+                // these do not load enough post metadata (e.g. author or caption), so too different from other items
+                // to parse
+                // - suggested posts on user feed
+                // these could easily be included... may add in the future
+
+                if(possible_item_lists.includes(property) || property == "items") {
+                    // - posts on user profile pages, but only their 'front page' (e.g. https://www.instagram.com/steveo/)
+                    // - posts on explore pages for specific tags (e.g. https://www.instagram.com/explore/tags/blessed/)
+                    // - posts on explore pages for locations (e.g. https://www.instagram.com/explore/locations/238875664/switzerland/)
+                    // - posts when opened by clicking on them
                     let items;
-                    if(property === "medias") {
+                    if (property === "medias") {
                         items = obj[property].map(media => media["media"]);
-                    } else if(property === "feed_items") {
+                    } else if (property === "feed_items") {
                         items = obj[property].map(media => media["media_or_ad"]);
                     } else {
                         items = obj[property];
@@ -111,7 +111,7 @@ zeeschuimer.register_module(
 
                     // simple item lists
                     // this could be more robust...
-                    if(items) {
+                    if (items) {
                         edges.push(...items.filter(item => {
                             return (
                                 item
@@ -123,8 +123,21 @@ zeeschuimer.register_module(
                             );
                         }));
                     }
-                } else if(property === "media") {
-
+                } else if(["xdt_api__v1__clips__home__connection_v2", "xdt_api__v1__feed__timeline__connection"].includes(property)) {
+                    // - posts in personal feed *that are followed* (i.e. not suggested; e.g. https://instagram.com)
+                    // - posts on 'Reels' page (e.g. https://www.instagram.com/reels/)
+                    edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
+                        return "media" in node
+                            && node["media"] !== null
+                            && "id" in node["media"]
+                            && "user" in node["media"]
+                            && !!node["media"]["user"];
+                    }).map(node => node["media"]));
+                } else if(property === "items") {
+                    // - posts on 'reels' page for a user (e.g. https://www.instagram.com/steveo/reels/)
+                    edges.push(...obj[property].filter(node => "media" in node).map(node => node["media"]).filter(node => {
+                        return "id" in node
+                    }));
                 } else if(typeof(obj[property]) === "object") {
                     traverse(obj[property]);
                 }
