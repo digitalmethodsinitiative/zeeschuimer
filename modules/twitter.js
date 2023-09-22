@@ -15,6 +15,7 @@ zeeschuimer.register_module(
                 && source_url.indexOf('UserTweets') < 0
                 && source_url.indexOf('Likes') < 0
                 && source_url.indexOf('SearchTimeline') < 0
+                && source_url.indexOf('TweetDetail') < 0
                 // this one is not enabled because it is always loaded when viewing a user profile
                 // even when not viewing the media tab
                 // && source_url.indexOf('UserMedia') < 0
@@ -29,6 +30,25 @@ zeeschuimer.register_module(
             data = JSON.parse(response);
         } catch (SyntaxError) {
             return [];
+        }
+
+        // we want to process tweets under multiple conditions so factor that out into a simple function
+        // so we can call it when we need it, rather than duplicating the code
+        let process = function (tweet, promoted = false, related = false) {
+            if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
+                // this sometimes happens
+                // no other data in the object, so just skip
+                return;
+            }
+
+            if('tweet' in tweet) {
+                // sometimes this is nested once more, for some reason
+                tweet = tweet['tweet'];
+            }
+            tweet['id'] = tweet['legacy']['id_str'];
+            tweet['promoted'] = promoted;
+            tweet['related'] = related;
+            tweets.push(tweet);
         }
 
         // find 'entries' in the API response
@@ -51,22 +71,21 @@ zeeschuimer.register_module(
                 ) {
                     for (let entry in child['entries']) {
                         entry = child['entries'][entry];
-                        if('itemContent' in entry['content']) {
-                            // tweets are sometimes embedded directly in this object
-                            let tweet = entry['content']['itemContent']['tweet_results']['result']
-                            if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
-                                // this sometimes happens
-                                // no other data in the object, so just skip
-                                continue;
-                            }
+                        if('itemContent' in entry['content'] && entry['content']['itemContent']['itemType'] !== 'TimelineTimelineCursor') {
+                            process(entry['content']['itemContent']['tweet_results']['result'],
+                                ('promotedMetadata' in entry['content']['itemContent']),
+                                (entry['entryId'].indexOf('relatedtweets') >= 0));
 
-                            if('tweet' in tweet) {
-                                // sometimes this is nested once more, for some reason
-                                tweet = tweet['tweet'];
+                        } else if ('items' in entry['content']) {
+                            for (let item in entry['content']['items']) {
+                                let entry_id = entry['content']['items'][item]['entryId'];
+								item = entry['content']['items'][item]['item'];
+								if('itemContent' in item && 'tweet_results' in item['itemContent']) {
+				                    process(item['itemContent']['tweet_results']['result'],
+				                    ('promotedMetadata' in item['itemContent']),
+				                    (entry_id.indexOf('relatedtweets') >= 0));
+								}
                             }
-                            tweet['id'] = tweet['legacy']['id_str'];
-                            tweets.push(tweet);
-
                         } else {
                             // in other cases this object only contains a reference to the full tweet, which is in turn
                             // stored elsewhere in the parent object
@@ -88,7 +107,9 @@ zeeschuimer.register_module(
                             let tweet = {
                                 id: parseInt(tweet_id),
                                 legacy: data['globalObjects']['tweets'][tweet_id],
-                                type: 'adaptive'
+                                type: 'adaptive',
+                                promoted: false,
+                                related: false
                             }
 
                             // the user is also stored as a reference - so add the user data to the tweet
