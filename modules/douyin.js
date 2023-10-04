@@ -7,14 +7,55 @@ zeeschuimer.register_module(
             return [];
         }
 
-        let data;
-        try {
-            data = JSON.parse(response);
-        } catch (SyntaxError) {
+        if(!response) {
             return [];
         }
 
-        if ("cards" in data) {
+        /**
+         * Some data is embedded in the page rather than loaded asynchronously.
+         * This here extracts it!
+         */
+        let embedded_sigil_start = /(<script class="STREAM_RENDER_DATA" type="application\/json">)/mg;
+        let embedded_sigil_end = /(<\/script>)/mg;
+        let data;
+        let from_embed = false;
+        if(embedded_sigil_start.test(response)) {
+            response = response.split(embedded_sigil_start)[2];
+            if(!embedded_sigil_end.test(response)) {
+                return [];
+            }
+            response = response.split(embedded_sigil_end)[0];
+            console.log(`Found embedded Douyin videos on page ${source_platform_url}`)
+            from_embed = true;
+        }
+
+        try {
+            data = JSON.parse(`${response}`);
+        } catch (SyntaxError) {
+            if (from_embed) {
+                console.log("Failed to parse embedded Douyin videos")
+                console.log(response)
+            }
+            return [];
+        }
+
+        if (from_embed) {
+            // Embedded data
+            if (("value" in data) && ("recommendAwemeList" in data["value"])) {
+                let usable_items = [];
+                for(let i in data["value"]["recommendAwemeList"]) {
+                    let item = data["value"]["recommendAwemeList"][i];
+                    item["id"] = item["awemeId"];
+                    item["ZS_collected_from_embed"] = from_embed;
+                    usable_items.push(item);
+                }
+                console.log(`Collected ${usable_items.length} Douyin videos from embedded HTML`)
+                return usable_items;
+            } else {
+                console.log("Unable to parse embedded data:")
+                console.log(data)
+            }
+        } else if ("cards" in data) {
             // Front Page (首页) tab
             let usable_items = [];
             for(let i in data["cards"]) {
@@ -97,9 +138,8 @@ zeeschuimer.register_module(
             // These appear to be status pings of some kind
             return [];
         } else {
-                // debug
-                // console.log("MAYBE INTERESTING")
-                // console.log(data)
+            // console.log("MAYBE INTERESTING")
+            // console.log(data)
         }
 
         // if () {
