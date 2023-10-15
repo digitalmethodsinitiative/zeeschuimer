@@ -1,26 +1,4 @@
 zeeschuimer.register_module(
-  'Gab',
-  'gab.com',
-  function (response, source_platform_url, source_url) {
-    let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
-
-    if (
-      !["gab.com"].inclues(domain) 
-      || (
-          source_url.indexOf('explore') < 0
-        && source_url.indexOf('video') < 0
-        )
-    ) {
-      return [];
-    }
-
-    let data;
-    let posts = [];
-    try {
-      data = JSON.parse(response);
-    } catch (SyntaxError) {
-        return [];
-    }zeeschuimer.register_module(
     'Gab',
     'gab.com',
     function (response, source_platform_url, source_url) {
@@ -67,4 +45,4 @@ zeeschuimer.register_module(
       traverse(data);
       return posts;
     }
-  );
+);
