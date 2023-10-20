@@ -3,7 +3,7 @@ zeeschuimer.register_module(
     'gab.com',
     function (response, source_platform_url, source_url) {
       let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
-  
+
       if (
         !["gab.com"].inclues(domain) 
         || (
@@ -13,7 +13,7 @@ zeeschuimer.register_module(
       ) {
         return [];
       }
-  
+
       let data;
       let posts = [];
       try {
