@@ -24,21 +24,18 @@ zeeschuimer.register_module(
 
       let traverse = function (obj) {
         for (let property in obj) {
-            let child = obj[property]
-            if (!child) {
-                continue;
+          if(!property) {
+            continue;
+          }
+          if (property.hasOwnProperty('s')) {
+            for (let entry in property['s']) {
+              let post = property['s'][entry];
+              posts.push(post);
             }
-            if (
-                (
-                    child.hasOwnProperty('s')
-                )
-            ) {
-                for (let entry in child['s']) {
-                    post = child['s'][entry];
-                    posts.push(post);
-                }
-                
-            }
+          }
+          else {
+            traverse(property);
+          }
         }
       }
 
