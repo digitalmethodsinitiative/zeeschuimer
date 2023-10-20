@@ -5,17 +5,14 @@ zeeschuimer.register_module(
       let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
 
       if (
-        !["gab.com"].inclues(domain) 
-        || (
-            source_url.indexOf('explore') < 0
-          && source_url.indexOf('video') < 0
-          )
+        !["gab.com"].includes(domain) 
       ) {
         return [];
       }
 
       let data;
       let posts = [];
+      
       try {
         data = JSON.parse(response);
       } catch (SyntaxError) {
@@ -23,18 +20,16 @@ zeeschuimer.register_module(
       }
 
       let traverse = function (obj) {
+        console.log('traversing!');
         for (let property in obj) {
-          if(!property) {
-            continue;
-          }
-          if (property.hasOwnProperty('s')) {
-            for (let entry in property['s']) {
-              let post = property['s'][entry];
+          console.log('property', property);
+          if (property == 's') {
+            for (let entry in property) {
+              console.log('entry', entry);
+              let post = property[entry];
+              console.log('post', post);
               posts.push(post);
             }
-          }
-          else {
-            traverse(property);
           }
         }
       }
