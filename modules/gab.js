@@ -3,7 +3,7 @@ zeeschuimer.register_module(
     'gab.com',
     function (response, source_platform_url, source_url) {
       let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
-
+      console.log('domain:', domain);
       if (
         !["gab.com"].includes(domain) 
       ) {
@@ -21,16 +21,13 @@ zeeschuimer.register_module(
 
       let traverse = function (obj) {
         console.log('traversing!');
-        for (let property in obj) {
-          console.log('property', property);
-          if (property == 's') {
-            for (let entry in property) {
-              console.log('entry', entry);
-              let post = property[entry];
-              console.log('post', post);
-              posts.push(post);
-            }
-          }
+        console.log('object keys:', Object.keys(obj));
+        let s = obj['s'];
+        for (let postnum in Object.keys(s)) {
+          let post = s[postnum];
+          console.log('post', Object.keys(post));
+          post['id'] = post['i'];
+          posts.push(post);
         }
       }
 
