@@ -1,37 +1,62 @@
 zeeschuimer.register_module(
-    'Gab',
+    'Gab!',
     'gab.com',
     function (response, source_platform_url, source_url) {
-      let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
-      console.log('domain:', domain);
-      if (
-        !["gab.com"].includes(domain) 
-      ) {
-        return [];
-      }
+        let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
 
-      let data;
-      let posts = [];
-      
-      try {
-        data = JSON.parse(response);
-      } catch (SyntaxError) {
-          return [];
-      }
-
-      let traverse = function (obj) {
-        console.log('traversing!');
-        console.log('object keys:', Object.keys(obj));
-        let s = obj['s'];
-        for (let postnum in Object.keys(s)) {
-          let post = s[postnum];
-          console.log('post', Object.keys(post));
-          post['id'] = post['i'];
-          posts.push(post);
+        if (!["gab.com"].includes(domain) || (source_url.indexOf('search?type=status') < 0 && source_url.indexOf('explore?') < 0)) {
+            return [];
         }
-      }
 
-      traverse(data);
-      return posts;
+        let data;
+        let posts = [];
+        
+        try {
+            data = JSON.parse(response);
+        } catch (SyntaxError) {
+            return [];
+        }
+
+        if (data.s && Array.isArray(data.s)) {
+            console.log("exploring!");
+            for (let post of data.s) {
+                let transformedPost = {
+                    id: post.i,
+                    created_at: post.ca,
+                    content: post.c,
+                    url: post.ul,
+                    account: {
+                      id: post.ai,
+                      username: "",
+                      display_name: "",
+                      url: "",
+                      avatar: ""  
+                    }
+                };
+                posts.push(transformedPost);
+            }
+        }
+
+        if (data.statuses && Array.isArray(data.statuses)) {
+            console.log("searching!")
+            for (let post of data.statuses) {
+                let transformedPost = {
+                    id: post.id,
+                    created_at: post.created_at,
+                    content: post.content,
+                    url: post.url,
+                    account: {
+                        id: post.account.id,
+                        username: post.account.username,
+                        display_name: post.account.display_name,
+                        url: post.account.url,
+                        avatar: post.account.avatar
+                    }
+                };
+                posts.push(transformedPost);
+            }
+        }
+
+        return posts;
     }
 );
