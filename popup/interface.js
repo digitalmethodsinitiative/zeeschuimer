@@ -2,6 +2,7 @@ const background = browser.extension.getBackgroundPage();
 var have_4cat = false;
 var have_firebase = false;
 var have_firebase_key = false;
+var have_firebase_project = false;
 var xhr;
 var is_uploading = false;
 
@@ -88,6 +89,17 @@ async function get_firebase_key(e) {
     return url;
 }
 
+async function get_firebase_project(e) {
+    let project = await background.browser.storage.local.get(['firebase-project']);
+    if (project['firebase-project']) {
+        project = project['firebase-project'];
+    } else {
+        project = '';
+    }
+
+    return project;
+}
+
 
 // /**
 //  * Set URL of 4CAT instance to connect to
@@ -171,6 +183,29 @@ async function set_firebase_key(e) {
 
     have_firebase_key = (key && key.length > 0);
 }
+
+async function set_firebase_project(e) {
+    if(e !== true && !e.target.matches('#firebase-project')) {
+        return;
+    }
+
+    let key;
+    if(e !== true) {
+        key = document.querySelector('#firebase-project').value;
+        await background.browser.storage.local.set({'firebase-project': key});
+    } else {
+        key = await background.browser.storage.local.get(['firebase-project']);
+        if(key['firebase-project']) {
+            key = key['firebase-project'];
+        } else {
+            key = '';
+        }
+    }
+
+    have_firebase_key = (key && key.length > 0);
+}
+
+
 
 /**
  * Manage availability of interface buttons
@@ -680,11 +715,16 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('keyup', set_firebase_key);
     document.addEventListener('change', set_firebase_key);
 
-
+    document.addEventListener('keyup', set_firebase_project);
+    document.addEventListener('change', set_firebase_project);
 
     const firebase_url = await background.browser.storage.local.get('firebase-url');
     document.querySelector('#firebase-url').value = firebase_url['firebase-url'] ? firebase_url['firebase-url'] : '';
 
     const firebase_key = await background.browser.storage.local.get('firebase-key');
     document.querySelector('#firebase-key').value = firebase_key['firebase-key'] ? firebase_key['firebase-key'] : '';   
+
+    const firebase_project = await background.browser.storage.local.get('firebase-project');
+    document.querySelector('#firebase-project').value = firebase_project['firebase-project'] ? firebase_project['firebase-project'] : '';   
+
 });

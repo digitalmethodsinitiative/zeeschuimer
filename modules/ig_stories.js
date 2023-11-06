@@ -7,7 +7,7 @@ zeeschuimer.register_module(
 
         const firebase_url = zeeschuimer.firebase_url['firebase-url']
         const firebase_key = zeeschuimer.firebase_key['firebase-key']
-
+        const firebase_project = zeeschuimer.firebase_project['firebase-project']
         console.log(firebase_url)
 
         if (!["instagram.com"].includes(domain)) {
@@ -83,7 +83,7 @@ zeeschuimer.register_module(
 
         const sendItemsToAPI = function(dataToSend) {
             // Upload the data to the API via POST
-            fetch(`${firebase_url}/add`, {
+            fetch(`${firebase_url}/add?project=${firebase_project}`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json', 'x-api-key': firebase_key },
                 body: JSON.stringify(dataToSend),

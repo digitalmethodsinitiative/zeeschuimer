@@ -12,6 +12,7 @@ window.zeeschuimer = {
     tab_url_map: {},
     firebase_url: null,
     firebase_key: null,
+    firebase_project: null,
 
     /**
      * Register Zeeschuimer module
@@ -48,6 +49,9 @@ window.zeeschuimer = {
 
         const firebase_key = await browser.storage.local.get('firebase-key');
         this.firebase_key = firebase_key
+
+        const firebase_project = await browser.storage.local.get('firebase-project');
+        this.firebase_project = firebase_project
     },
 
     /**
