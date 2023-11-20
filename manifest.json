@@ -41,8 +41,7 @@
       "modules/imgur.js",
       "modules/twitter.js",
       "modules/douyin.js",
-      "modules/gab.js",
-      "modules/truth.js"
+      "modules/gab.js"
     ]
   }
 }
