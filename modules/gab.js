@@ -35,6 +35,9 @@ zeeschuimer.register_module(
                     created_at: post.ca,
                     content: removeHtmlTagsUsingDOMParser(post.c),
                     url: post.ul,
+                    reaction_count: post.fc,
+                    reposts_count: post.rbc,
+                    replies_count: post.rc,
                     group: post.g ? post.g.id : null,
                     account: {
                       id: post.ai,
@@ -58,6 +61,9 @@ zeeschuimer.register_module(
                     content: removeHtmlTagsUsingDOMParser(post.content),
                     url: post.url,
                     group: post.g ? post.g.id : null,
+                    reaction_count: post.favourites_count,
+                    reposts_count: post.reblogs_count,
+                    replies_count: post.replies_count,
                     account: {
                         id: post.account.id,
                         username: post.account.username,
