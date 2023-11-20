@@ -207,7 +207,7 @@ async function get_stats() {
         }
     }
 
-    let uploads = await background.db.uploads.orderBy("id").limit(10);
+    let uploads = await background.db.uploads.orderBy("id").reverse().limit(10);
     let num_uploads = parseInt(await background.db.uploads.orderBy("id").limit(10).count());
 
     if(num_uploads > 0 && !document.querySelector('#clear-history')) {
@@ -233,7 +233,7 @@ async function get_stats() {
                 day: "numeric"
             })));
             row.appendChild(createElement("td", {}, createElement("a", {"href": upload.url, "target": "_blank"}, upload.url.split("/")[2])));
-            document.querySelector("#upload-table tbody").prepend(row);
+            document.querySelector("#upload-table tbody").append(row);
         }
     });
 
