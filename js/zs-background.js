@@ -80,11 +80,6 @@ window.zeeschuimer = {
             full_response = '';
         }
 
-        filter.onerror = event => {
-            console.error("Error filtering request", event);
-            filter.disconnect();
-        }
-
         return {};
     },
 
