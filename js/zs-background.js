@@ -54,7 +54,7 @@ window.zeeschuimer = {
         let source_url = details.url;
         let base_source_key = 'zs-enabled-' + source_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase();
         let source_platform_url = details.hasOwnProperty("originUrl") ? details.originUrl : source_url;
-        let base_source_platform_key = 'zs-enabled-' +source_platform_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase();
+        let base_source_platform_key = source_platform_url ? 'zs-enabled-' + source_platform_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase() : '';
 
         filter.ondata = event => {
             let str = decoder.decode(event.data, {stream: true});
@@ -66,7 +66,7 @@ window.zeeschuimer = {
             // check if the source URL is enabled
             let is_source_url_enabled = await browser.storage.local.get(base_source_key);
             let enabled = is_source_url_enabled.hasOwnProperty(base_source_key) && !!parseInt(is_source_url_enabled[base_source_key]);
-            if (!enabled) {
+            if (!enabled && base_source_platform_key) {
                 // check if the source platform URL is enabled
                 let is_platform_url_enabled = await browser.storage.local.get(base_source_platform_key);
                 enabled = is_platform_url_enabled.hasOwnProperty(base_source_platform_key) && !!parseInt(is_platform_url_enabled[base_source_platform_key]);
