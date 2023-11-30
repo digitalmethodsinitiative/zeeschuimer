@@ -52,7 +52,9 @@ window.zeeschuimer = {
         let decoder = new TextDecoder("utf-8");
         let full_response = '';
         let source_url = details.url;
+        let base_source_key = 'zs-enabled-' + source_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase();
         let source_platform_url = details.hasOwnProperty("originUrl") ? details.originUrl : source_url;
+        let base_source_platform_key = source_platform_url ? 'zs-enabled-' + source_platform_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase() : '';
 
         filter.ondata = event => {
             let str = decoder.decode(event.data, {stream: true});
@@ -61,11 +63,18 @@ window.zeeschuimer = {
         }
 
         filter.onstop = async (event) => {
-            let base_url = source_platform_url ? source_platform_url : source_url;
-            let source_platform = base_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase();
-            let enabled_key = 'zs-enabled-' + source_platform;
-            let is_enabled = await browser.storage.local.get(enabled_key);
-            let enabled = is_enabled.hasOwnProperty(enabled_key) && !!parseInt(is_enabled[enabled_key]);
+            // check if the source URL is enabled
+            let is_source_url_enabled = await browser.storage.local.get(base_source_key);
+            let enabled = is_source_url_enabled.hasOwnProperty(base_source_key) && !!parseInt(is_source_url_enabled[base_source_key]);
+            if (!enabled && base_source_platform_key) {
+                // check if the source platform URL is enabled
+                // this extra check is necessary e.g. if the request was initiated from another domain
+                // unrelated to the website (which then wouldn't match the domain that this platform
+                // is recognised by)
+                let is_platform_url_enabled = await browser.storage.local.get(base_source_platform_key);
+                enabled = is_platform_url_enabled.hasOwnProperty(base_source_platform_key) && !!parseInt(is_platform_url_enabled[base_source_platform_key]);
+            }
+
             if (enabled) {
                 zeeschuimer.parse_request(full_response, source_platform_url, source_url, details.tabId);
             }
