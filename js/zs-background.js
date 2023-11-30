@@ -68,10 +68,12 @@ window.zeeschuimer = {
             let enabled = is_source_url_enabled.hasOwnProperty(base_source_key) && !!parseInt(is_source_url_enabled[base_source_key]);
             if (!enabled && base_source_platform_key) {
                 // check if the source platform URL is enabled
+                // this extra check is necessary e.g. if the request was initiated from another domain
+                // unrelated to the website (which then wouldn't match the domain that this platform
+                // is recognised by)
                 let is_platform_url_enabled = await browser.storage.local.get(base_source_platform_key);
                 enabled = is_platform_url_enabled.hasOwnProperty(base_source_platform_key) && !!parseInt(is_platform_url_enabled[base_source_platform_key]);
             }
-            //console.log(`source_url ${source_url}; source_platform_url ${source_platform_url} is ${enabled}`);
 
             if (enabled) {
                 zeeschuimer.parse_request(full_response, source_platform_url, source_url, details.tabId);
