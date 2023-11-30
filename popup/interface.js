@@ -322,7 +322,7 @@ async function button_handler(event) {
                     upload_poll.init(response);
                 } else if(xhr.status === 429) {
                     status.innerText = '4CAT server refused upload, too soon after previous one. Try again in a minute.'
-                } else if(xhr.status === 403) {
+                } else if(xhr.status === 403 || xhr.status === 401) {
                     status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
                 } else if(xhr.status === 404 && xhr.responseText.indexOf('Unknown platform or source format') >= 0) {
                     status.innerText = 'The 4CAT server does not accept ' + platform + ' datasets. The 4CAT ' +
