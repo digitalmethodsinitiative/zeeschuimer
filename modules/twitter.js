@@ -70,6 +70,10 @@ zeeschuimer.register_module(
                                 tweet = tweet['tweet'];
                             }
                             tweet['id'] = tweet['legacy']['id_str'];
+                            // distinguish tweets that were included because they were "promoted" from
+                            // those that are actually part of the user/home timeline or search result.
+                            // assume a tweet was promoted if itemContent has promotedMetadata
+                            tweet['promoted'] = ('promotedMetadata' in entry['content']['itemContent']);
                             tweets.push(tweet);
 
                         } else if ('__typename' in entry['content'] && entry['content']['__typename'] === 'TimelineTimelineModule') {
