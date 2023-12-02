@@ -26,103 +26,118 @@ zeeschuimer.register_module(
             return [];
         }
 
-        // Handling posts in explore, in a group, or on a user's profile
+
+        /// first, capture posts in explore, groups, or from a user's profile
         if ((source_url.indexOf('explore?') >= 0 || source_url.indexOf('timelines/group/') >= 0 || source_url.indexOf('accounts/')) && data.s && Array.isArray(data.s)) {
             for (let post of data.s) {
+                let post_author = post.ai;
+                let has_link = "no";
+                let has_image = "no";
+                let author_info = {
+                    id: null,
+                    username: null,
+                    account: null,
+                    display_name: null,
+                    note: null,
+                    avatar: null
+                }
+                let image_info = {
+                    id: null,
+                    url: null,
+                    type: null
+                }
+                let link_info = {
+                    id: null,
+                    url: null,
+                    title: null,
+                    description: null,
+                    type: null,
+                    image: null
+                }
+
+
+                if (post.pci) {
+                    has_link = "yes";
+                    post_link = post.pci;
+                    for (let link of data.pc) {
+                        if (post_link == link.id) {
+                            link_info = {
+                                id: link.id,
+                                url: link.url,
+                                title: link.title,
+                                description: link.description,
+                                type: link.type,
+                                image: link.image
+                            }
+                        }
+                    }
+                }
+                if (post.mai) {
+                    has_image = "yes";
+                    post_image = post.mai[0];
+                    for (let image of data.ma) {
+                        if (post_image == image.i) {
+                            image_info = {
+                                id: image.i,
+                                url: image.u,
+                                type: image.type,
+                            }
+                        }
+                    }
+                }
+                for (let author of data.a) {
+                    if (author.i == post_author) {
+                        author_info = {
+                            id: author.i,
+                            username: author.un,
+                            account: author.ac,
+                            display_name: author.dn,
+                            note: author.nt,
+                            avatar: author.avatar
+                        }
+                    }
+                }
                 let transformedPost = {
-                    type: "post",
                     id: post.i,
                     created_at: post.ca,
                     content: removeHtmlTagsUsingDOMParser(post.c),
                     url: post.ul,
-                    reaction_count: post.fc,
+                    reaction_count: post.fc ? post.fc : 0,
                     reposts_count: post.rbc,
                     replies_count: post.rc,
-                    group: post.g ? post.g.id : null,
+                    group: {
+                        id: post.g ? post.g.id : null,
+                        title: post.g ? post.g.title : null,
+                        description: post.g ? removeHtmlTagsUsingDOMParser(post.g.description) : null,
+                        member_count: post.g ? post.g.member_count : null,
+                        is_private: post.g ? post.g.is_private : null,
+                        url: post.g ? post.g.url : null,
+                        created_at: post.g ? post.g.created_at : null
+                    },
                     account: {
-                      id: post.ai,
-                      username: null,
-                      display_name: null,
-                      url: null,
-                      avatar: null 
+                        id: author_info.id,
+                        username: author_info.username,
+                        account: author_info.account,
+                        display_name: author_info.display_name,
+                        note: removeHtmlTagsUsingDOMParser(author_info.note),
+                    },
+                    link: {
+                        id: has_link == "yes" ? link_info.id : null,
+                        url: has_link == "yes" ? link_info.url : null,
+                        title: has_link == "yes" ? link_info.title : null,
+                        description: has_link == "yes" ? link_info.description: null,
+                        type: has_link == "yes" ? link_info.type : null,
+                        image: has_link == "yes" ? link_info.image : null
+                    },
+                    image: {
+                        id: has_image == "yes" ? image_info.id : null,
+                        url: has_image == "yes" ? image_info.url : null,
+                        type: has_image == "yes" ? image_info.type : null
                     }
                 };
                 items.push(transformedPost);
             }
         }
-
-        // Handling posts in search, since it's different for whatever reason
-        if (source_url.indexOf('search?type=status') >= 0 && data.statuses && Array.isArray(data.statuses)) {
-            for (let post of data.statuses) {
-                let transformedPost = {
-                    type: "post",
-                    id: post.id,
-                    created_at: post.created_at,
-                    content: removeHtmlTagsUsingDOMParser(post.content),
-                    url: post.url,
-                    group: post.g ? post.g.id : null,
-                    reaction_count: post.favourites_count,
-                    reposts_count: post.reblogs_count,
-                    replies_count: post.replies_count,
-                    account: {
-                        id: post.account.id,
-                        username: post.account.username,
-                        display_name: post.account.display_name,
-                        url: post.account.url,
-                        avatar: post.account.avatar
-                    }
-                };
-                items.push(transformedPost);
-            }
-        }
-
-        // Handling groups
-        if (source_url.indexOf('groups') >= 0 && Array.isArray(data) && 'member_count' in data[0]) {
-            for (let group of data) {
-                let transformedGroup = {
-                    type: "group",
-                    id: group.id,
-                    created_at: group.created_at,
-                    url: group.url,
-                    account: {
-                        title: group.title,
-                        description: group.description,
-                        member_count: group.member_count,
-                        is_verified: group.is_verified,
-                        is_private: group.is_private,
-                        category: group.group_category ? group.group_category.text : null
-                    }
-                };
-                items.push(transformedGroup);
-            }
-        }
-
-        // Handling user information
-        if (source_url.indexOf('/users/') >= 0 && data.hasOwnProperty('id') && data.hasOwnProperty('username') && data.username.trim() !== '') {
-            let transformedUser = {
-                type: "user",
-                id: data.id,
-                created_at: data.created_at,
-                url: data.url,
-                account: {
-                    username: data.username,
-                    display_name: data.display_name,
-                    note: data.note,
-                    avatar: data.avatar,
-                    followers_count: data.followers_count,
-                    following_count: data.following_count,
-                    statuses_count: data.statuses_count,
-                    is_pro: data.is_pro,
-                    is_verified: data.is_verified,
-                    is_donor: data.is_donor,
-                    is_investor: data.is_investor,
-                    show_pro_life: data.show_pro_life,
-                    is_parody: data.is_parody,
-                }
-            };
-            items.push(transformedUser);
-        }
-        
         return items;
     }
 );
