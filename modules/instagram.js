@@ -9,43 +9,71 @@ zeeschuimer.register_module(
             return [];
         }
 
-        let whitelisted_endpoints = [
+        /*let whitelisted_endpoints = [
             "graphql/query", //live-loading @ front page
             "api/v1/collections/list",
             "api/v1/feed/user/33646200", //live-loading @ user page
             "api/v1/tags/blessed/sections", //live-loading @ tag explore page
             "api/v1/locations/214262158/sections", //live-loading @ location explore page
+            "api/v1/clips/music", //live-loading @ music overview page
         ]
 
-        /*if(!whitelisted_endpoints.includes(endpoint)) {
+        if(!whitelisted_endpoints.includes(endpoint)) {
             return [];
         }*/
 
         // determine what part of instagram we're working in
+        // 'view' unused for now but may have some bearing on how to parse the data
+        // in any case
         let path = source_platform_url.split("/");
         let view = "";
-        if(path.length === 3) {
+        if (path.length === 3) {
+            // www.instagram.com, no sub URL
             view = "frontpage";
-        } else if(["direct", "account", "directory", "lite", "legal"].includes(path[3])) {
-            // not post listings
+        } else if (["direct", "account", "directory", "lite", "legal"].includes(path[3])) {
+            // not post listings but misc instagram views/pages
             return [];
-        } else if(path[3] === "explore") {
+        } else if (source_url.indexOf('injected_story_units') >= 0) {
+            // injected ads (this URL appears on many ad blocklists!)
+            // might enable if we decide to also capture ads? but not clear where these actually show up in the
+            // interface...
+            return [];
+        } else if (path[3] === "explore") {
             // hashtag, location view
             view = "search";
         } else {
+            // user pages or similar
             view = "user";
         }
 
+        // instagram sometimes loads content in the background without actually using it
+        // maybe pre-caching it or something?
+        // this next bit tries to avoid that noise ending up in the data
+        if ((source_platform_url.indexOf('reels/audio') >= 0
+                || source_platform_url.indexOf('/explore/') >= 0
+                || source_platform_url.split('?')[0].split('/').length > 3
+            )
+            && source_url.endsWith('graphql')) {
+            // reels audio page loads personalised reels in the background (unrelated to the audio) but
+            // doesn't seem to actually use them
+            return [];
+        }
+
+
         let datas = [];
-        let data;
         try {
             // if it's JSON already, just parse it
             datas.push(JSON.parse(response));
-            //console.log(`caught json`)
-        } catch (SyntaxError) {
-            // data can be embedded in the HTML in either of these two JavaScript statements
-            // if the second is present, it overrides the first
-            let js_prefixes = ["window._sharedData = {", "window.__additionalDataLoaded('feed',{", "window.__additionalDataLoaded('feed_v2',{", " data-sjs>{"];
+        } catch {
+            // data can be embedded in the HTML in these JavaScript statements
+            let js_prefixes = [
+                "window._sharedData = {",
+                "window.__additionalDataLoaded('feed',{",
+                "window.__additionalDataLoaded('feed_v2',{",
+                " data-sjs>{",
+                "{\"require\":[[\"ScheduledServerJS\",\"handle\",null,[{\"__bbox\":{\"require\":[[\"RelayPrefetchedStreamCache\",\"next\",[],["
+            ];
+
             let prefix;
 
             while (js_prefixes.length > 0) {
@@ -56,119 +84,119 @@ zeeschuimer.register_module(
                 }
                 //console.log(`caught ${prefix}`)
 
-                let potential_jsons = response.split(prefix.slice(0, -1))
-
-                for (let i = 1; i < potential_jsons.length; i++) {
-                    let json_bit = potential_jsons[i].split('</script>')[0];
-                    if (json_bit.endsWith(";")) {
-                        // remove trailing ;
-                        json_bit = json_bit.slice(0, -1);
-                    }
-
-                    if (prefix.indexOf("additionalDataLoaded") !== -1) {
-                        // remove trailing )
-                        json_bit = json_bit.slice(0, -1);
-                    }
-                    try {
-                        datas.push(JSON.parse(json_bit));
-                        //console.log(`parsed ${prefix}`)
-                    } catch (SyntaxError) {
-                        //console.log(`failed to parse: ${json_bit}`)
-                    }
+                let json_bit = response.split(prefix.slice(0, -1))[1].split('</script>')[0].trim();
+                if (json_bit.endsWith(';')) {
+                    json_bit = json_bit.substring(0, -1);
                 }
+
+                if (prefix.indexOf("additionalDataLoaded") !== -1) {
+                    // remove trailing )
+                    json_bit = json_bit.slice(0, -1);
+                } else if (js_prefixes.length === 0) {
+                    // last
+                    // remove trailing stuff...
+                    json_bit = json_bit.split(']]}}')[0];
+                }
+
+                try {
+                    datas.push(JSON.parse(json_bit));
+                } catch (SyntaxError) {
+                }
+
+                // we go through all prefixes even if we already found one,
+                // because one overrides the other
+            }
+
+            if (!datas) {
+                return [];
             }
         }
 
-        // if we didn't find any JSON, we move on
-        if(!datas) {
-            return [];
-        }
-
-        // extract edges from the JSON
+        let possible_item_lists = ["medias", "feed_items", "fill_items"];
         let edges = [];
-        while (datas.length > 0) {
-            data = datas.shift();
-            if (!data) {
-                continue;
-            }
 
-            let possible_edges = ["edge_owner_to_timeline_media", "edge_web_feed_timeline"];
-            let possible_item_lists = ["medias", "feed_items"];
+        // find edge lists in the extracted JSON data
+        // these are basically any property with a name as defined above
+        // since instagram has all kinds of API responses a generic approach
+        // works best
+        let traverse = function (obj) {
+            for (let property in obj) {
+                if (!obj.hasOwnProperty(property)) {
+                    // not actually a property
+                    continue;
+                }
 
-            // find edge lists in the extracted JSON data
-            // these are basically any property with a name as defined above in
-            // possible_edges - since instagram has all kinds of API responses
-            // a generic approach works best
-            let previously_collected = 0 - edges.length;
-            let traverse = function (obj) {
-                for (let property in obj) {
-                    if (!obj.hasOwnProperty(property)) {
-                        // not actually a property
-                        continue;
-                    }
+                // pages not covered:
+                // - explore (e.g. https://www.instagram.com/explore/)
+                // - 'tagged' pages for a user (e.g. https://www.instagram.com/steveo/tagged/)
+                // these do not load enough post metadata (e.g. author or caption), so too different from other items
+                // to parse
+                // - suggested posts on user feed
+                // these could easily be included... may add in the future
 
-                    // pages not covered:
-                    // - explore (e.g. https://www.instagram.com/explore/)
-                    // - 'tagged' pages for a user (e.g. https://www.instagram.com/steveo/tagged/)
-                    // these do not load enough post metadata (e.g. author or caption), so too different from other items
-                    // to parse
-                    // - suggested posts on user feed
-                    // these could easily be included... may add in the future
-
-                    if (possible_item_lists.includes(property) || property == "items") {
-                        // - posts on user profile pages, but only their 'front page' (e.g. https://www.instagram.com/steveo/)
-                        // - posts on explore pages for specific tags (e.g. https://www.instagram.com/explore/tags/blessed/)
-                        // - posts on explore pages for locations (e.g. https://www.instagram.com/explore/locations/238875664/switzerland/)
-                        // - posts when opened by clicking on them
-                        let items;
-                        if (property === "medias") {
-                            items = obj[property].map(media => media["media"]);
-                        } else if (property === "feed_items") {
-                            items = obj[property].map(media => media["media_or_ad"]);
-                        } else {
-                            items = obj[property];
-                        }
-
-                        // simple item lists
-                        // this could be more robust...
-                        if (items) {
-                            edges.push(...items.filter(item => {
-                                return (
-                                    item
-                                    && "id" in item
-                                    && "media_type" in item
-                                    && "user" in item
-                                    && "caption" in item
-                                    && (!("product_type" in item) || item["product_type"] !== "story")
-                                );
-                            }));
-                        }
-                    } else if (["xdt_api__v1__clips__home__connection_v2", "xdt_api__v1__feed__timeline__connection"].includes(property)) {
-                        // - posts in personal feed *that are followed* (i.e. not suggested; e.g. https://instagram.com)
-                        // - posts on 'Reels' page (e.g. https://www.instagram.com/reels/)
-                        edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
-                            return "media" in node
-                                && node["media"] !== null
-                                && "id" in node["media"]
-                                && "user" in node["media"]
-                                && !!node["media"]["user"];
-                        }).map(node => node["media"]));
-                    } else if (property === "items") {
+                if (possible_item_lists.includes(property) || property === "items") {
+                    // - posts on user profile pages, but only their 'front page' (e.g. https://www.instagram.com/steveo/)
+                    // - posts on explore pages for specific tags (e.g. https://www.instagram.com/explore/tags/blessed/)
+                    // - posts on explore pages for locations (e.g. https://www.instagram.com/explore/locations/238875664/switzerland/)
+                    // - posts on explore pages for sounds (e.g. https://www.instagram.com/reels/audio/290315579897542/)
+                    // - posts when opened by clicking on them
+                    let items;
+                    if (property === "medias" || property === "fill_items") {
+                        items = obj[property].map(media => media["media"]);
+                    } else if (property === "feed_items") {
+                        items = obj[property].map(media => media["media_or_ad"]);
+                    } else if (property === "items" && obj[property].length === obj[property].filter(i => Object.getOwnPropertyNames(i).join('') === 'media').length) {
                         // - posts on 'reels' page for a user (e.g. https://www.instagram.com/steveo/reels/)
-                        edges.push(...obj[property].filter(node => "media" in node).map(node => node["media"]).filter(node => {
+                        // - posts on explore pages for sounds (e.g. https://www.instagram.com/reels/audio/290315579897542/)
+                        items = obj[property].filter(node => "media" in node).map(node => node["media"]).filter(node => {
                             return "id" in node
-                        }));
-                    } else if (typeof (obj[property]) === "object") {
-                        traverse(obj[property]);
+                        });
+                    } else {
+                        items = obj[property];
                     }
+
+                    // simple item lists
+                    // this could be more robust...
+                    if (items) {
+                        edges.push(...items.filter(item => {
+                            return (
+                                item
+                                && "id" in item
+                                && "media_type" in item
+                                && "user" in item
+                                && "caption" in item
+                                && (!("product_type" in item) || item["product_type"] !== "story")
+                            );
+                        }));
+                    }
+                } else if (["xdt_api__v1__clips__home__connection_v2", "xdt_api__v1__feed__timeline__connection"].includes(property)) {
+                    // - posts in personal feed *that are followed* (i.e. not suggested; e.g. https://instagram.com)
+                    // - posts on 'Reels' page (e.g. https://www.instagram.com/reels/)
+                    edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
+                        return "media" in node
+                            && node["media"] !== null
+                            && "id" in node["media"]
+                            && "user" in node["media"]
+                            && !!node["media"]["user"];
+                    }).map(node => node["media"]));
+                } else if (property === "items") {
+                    // - posts on 'reels' page for a user (e.g. https://www.instagram.com/steveo/reels/)
+                    edges.push(...obj[property].filter(node => "media" in node).map(node => node["media"]).filter(node => {
+                        return "id" in node
+                    }));
+                } else if (typeof (obj[property]) === "object") {
+                    traverse(obj[property]);
                 }
             }
+        }
 
-            traverse(data);
-            if (edges.length - previously_collected > 0) {
-                //console.log(`collected ${edges.length - previously_collected} posts`)
+
+        for (const data of datas) {
+            if (data) {
+                traverse(data);
             }
         }
+
         return edges;
     }
 );
