@@ -629,6 +629,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('keyup', set_4cat_url);
     document.addEventListener('change', set_4cat_url);
 
+    const version_container = document.querySelector('.version a');
+    const current_version = version_container.innerText;
+    const known_version = await background.browser.storage.local.get('zs-version');
+    if(!known_version || current_version !== known_version['zs-version']) {
+        const version_alert = createElement('span', {'class': 'popup new-version'}, 'Zeeschuimer has been updated to a new version! You can read the release notes via this link.');
+        const ok_button = createElement('button', {'class': 'close-popup'}, 'OK');
+        ok_button.addEventListener('click', async function(e) {
+            await background.browser.storage.local.set({'zs-version': current_version});
+            document.querySelector('.new-version').remove();
+        });
+        version_alert.appendChild(ok_button);
+        document.querySelector('header').appendChild(version_alert);
+    }
+
     const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
+    browser.downloads.onChanged.addListener(downloadListener);
 });
