@@ -28,9 +28,10 @@ window.isSecureContext && window.addEventListener('beforeunload', evt => {
  * @param tag  Tag of element
  * @param attributes  Element attributes
  * @param content  Text content of attribute
+ * @param prepend_icon  Font awesome icon ID to prepend to content
  * @returns {*}
  */
-function createElement(tag, attributes={}, content=undefined) {
+function createElement(tag, attributes={}, content=undefined, prepend_icon=undefined) {
     let element = document.createElement(tag);
     for(let attribute in attributes) {
         element.setAttribute(attribute, attributes[attribute]);
@@ -39,6 +40,14 @@ function createElement(tag, attributes={}, content=undefined) {
         element.appendChild(content);
     } else if(content !== undefined) {
         element.textContent = content;
+    }
+
+    if(prepend_icon) {
+        const icon_element = document.createElement('i');
+        icon_element.classList.add('fa')
+        icon_element.classList.add('fa-' + prepend_icon);
+        element.textContent = ' ' + element.textContent;
+        element.prepend(icon_element);
     }
 
     return element;
