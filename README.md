@@ -62,6 +62,23 @@ when you've scrolled down enough to be satisfied with the amount of items.
 If you find yourself scrolling a lot to collect data, consider using another browser extension to do it for you, for 
 example [FoxScroller](https://addons.mozilla.org/en-US/firefox/addon/foxscroller/).
 
+## Limitations
+
+Due to the technical limitations, it may not be possible to collect all items from all 'views' for each supported 
+platform. The following limitations are known:
+
+* *Instagram* items that cannot be captured:
+  * Stories
+  * Posts from the 'Tagged' and 'Reels' tabs on a profile page
+  * Posts from the 'Saved' overview of bookmarked posts
+  * Posts from the 'For You' feed on the 'Explore' page (the 'Not personalized' feed _does_ work)
+  * 'Suggested for you' and 'Sponsored' posts on the front page feed
+* *TikTok* items that cannot be captured:
+  * Live streams
+
+Note that these are *known* limitations; data capture may break or change based on platform changes. Always 
+cross-reference captured data with what you are seeing in your browser.
+
 ## Credits & license
 Zeeschuimer was developed by Stijn Peeters for the [Digital Methods Initiative](https://digitalmethods.net) and is 
 licensed under the Mozilla Public License, 2.0. Refer to the LICENSE file for more information.
