@@ -51,11 +51,11 @@ zeeschuimer.register_module(
         // this next bit tries to avoid that noise ending up in the data
         if ((source_platform_url.indexOf('reels/audio') >= 0
                 || source_platform_url.indexOf('/explore/') >= 0
-                || source_platform_url.split('?')[0].split('/').length > 3
             )
             && source_url.endsWith('graphql')) {
-            // reels audio page loads personalised reels in the background (unrelated to the audio) but
-            // doesn't seem to actually use them
+            // reels audio page f.ex. loads personalised reels in the background (unrelated to the audio) but doesn't
+            // seem to actually use them
+
             return [];
         }
 
@@ -93,23 +93,26 @@ zeeschuimer.register_module(
                     // remove trailing )
                     json_bit = json_bit.slice(0, -1);
                 } else if (js_prefixes.length === 0) {
-                    // last
+                    // last prefix has some special handling
                     // remove trailing stuff...
                     json_bit = json_bit.split(']]}}')[0];
                 }
 
                 try {
                     datas.push(JSON.parse(json_bit));
-                } catch (SyntaxError) {
+                } catch {
+                    // fine, not JSON after all
                 }
-
-                // we go through all prefixes even if we already found one,
-                // because one overrides the other
             }
 
             if (!datas) {
                 return [];
             }
+        }
+
+        if (datas.length === 1 && 'lightspeed_web_request_for_igd' in datas[0] && source_url.endsWith('graphql')) {
+            // this is one of those background requests
+            datas = [];
         }
 
         let possible_item_lists = ["medias", "feed_items", "fill_items"];
@@ -128,26 +131,38 @@ zeeschuimer.register_module(
 
                 // pages not covered:
                 // - explore (e.g. https://www.instagram.com/explore/)
+                //   ❌ as of 2024-feb-20
                 // - 'tagged' pages for a user (e.g. https://www.instagram.com/steveo/tagged/)
+                //   ❌ as of 2024-feb-20
+                // - 'reels' user pages (e.g. https://www.instagram.com/ogata.yoshiyuki/reels/)
+                //   ❌ as of 2024-feb-20
                 // these do not load enough post metadata (e.g. author or caption), so too different from other items
                 // to parse
                 // - suggested posts on user feed
                 // these could easily be included... may add in the future
 
                 if (possible_item_lists.includes(property) || property === "items") {
-                    // - posts on user profile pages, but only their 'front page' (e.g. https://www.instagram.com/steveo/)
                     // - posts on explore pages for specific tags (e.g. https://www.instagram.com/explore/tags/blessed/)
                     // - posts on explore pages for locations (e.g. https://www.instagram.com/explore/locations/238875664/switzerland/)
+                    //   ✔️ confirmed working as of 2024-feb-20
                     // - posts on explore pages for sounds (e.g. https://www.instagram.com/reels/audio/290315579897542/)
+                    //   ✔️ confirmed working as of 2024-feb-20
                     // - posts when opened by clicking on them
+                    //   ✔️ confirmed working as of 2024-feb-20
                     let items;
                     if (property === "medias" || property === "fill_items") {
                         items = obj[property].map(media => media["media"]);
                     } else if (property === "feed_items") {
                         items = obj[property].map(media => media["media_or_ad"]);
                     } else if (property === "items" && obj[property].length === obj[property].filter(i => Object.getOwnPropertyNames(i).join('') === 'media').length) {
-                        // - posts on 'reels' page for a user (e.g. https://www.instagram.com/steveo/reels/)
                         // - posts on explore pages for sounds (e.g. https://www.instagram.com/reels/audio/290315579897542/)
+                        //   ✔️ confirmed working as of 2024-feb-20
+                        if(property === 'items' && 'design' in obj) {
+                            // this is loaded, but never actually displayed...
+                            // seems to be a preview of reels for a given tag, but again, not
+                            // actually visible in the interface afaics
+                            continue;
+                        }
                         items = obj[property].filter(node => "media" in node).map(node => node["media"]).filter(node => {
                             return "id" in node
                         });
@@ -166,12 +181,16 @@ zeeschuimer.register_module(
                                 && "user" in item
                                 && "caption" in item
                                 && (!("product_type" in item) || item["product_type"] !== "story")
+                                // these next two are ads, which are not actually shown in the feed but still loaded in the
+                                // background
+                                && (!("product type" in item) || item["product_type"] !== "ad")
+                                && (!("link" in item) || !item["link"] || !item["link"].startsWith('https://www.facebook.com/ads/'))
                             );
                         }));
                     }
-                } else if (["xdt_api__v1__clips__home__connection_v2", "xdt_api__v1__feed__timeline__connection"].includes(property)) {
+                } else if (view !== 'user' && ["xdt_api__v1__feed__timeline__connection"].includes(property)) {
                     // - posts in personal feed *that are followed* (i.e. not suggested; e.g. https://instagram.com)
-                    // - posts on 'Reels' page (e.g. https://www.instagram.com/reels/)
+                    //   ✔️ confirmed working 2024-feb-20
                     edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
                         return "media" in node
                             && node["media"] !== null
@@ -179,10 +198,18 @@ zeeschuimer.register_module(
                             && "user" in node["media"]
                             && !!node["media"]["user"];
                     }).map(node => node["media"]));
-                } else if (property === "items") {
-                    // - posts on 'reels' page for a user (e.g. https://www.instagram.com/steveo/reels/)
-                    edges.push(...obj[property].filter(node => "media" in node).map(node => node["media"]).filter(node => {
-                        return "id" in node
+                } else if (["xdt_api__v1__feed__user_timeline_graphql_connection"].includes(property)) {
+                    // - posts on user pages (e.g. https://www.instagram.com/ogata.yoshiyuki/)
+                    //   ✔️ confirmed working as of 2024-feb-20
+                    edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
+                        return node !== null
+                            && "id" in node
+                            && "user" in node
+                            && !!node["user"]
+                            // these next two are ads, which are not actually shown in the feed but still loaded in the
+                            // background
+                            && (!("product type" in node ) || node["product_type"] !== "ad")
+                            && (!("link" in node) || !node["link"] || !node["link"].startsWith('https://www.facebook.com/ads/'))
                     }));
                 } else if (typeof (obj[property]) === "object") {
                     traverse(obj[property]);
