@@ -40,6 +40,20 @@ window.zeeschuimer = {
         this.session = session["value"];
         await db.settings.update("session", session);
         await db.nav.where("session").notEqual(this.session).delete();
+
+        // synchronise browser icon with whether capture is enabled or not
+        setInterval(async function () {
+            let enabled = [];
+            for (const module in zeeschuimer.modules) {
+                const enabled_key = 'zs-enabled-' + module;
+                const is_enabled = await browser.storage.local.get(enabled_key);
+                if (is_enabled.hasOwnProperty(enabled_key) && !!parseInt(is_enabled[enabled_key])) {
+                    enabled.push(module);
+                }
+            }
+            let path = enabled.length > 0 ? 'images/zeeschuimer-icon-active.png' : 'images/zeeschuimer-icon-inactive.png';
+            browser.browserAction.setIcon({path: path})
+        }, 500);
     },
 
     /**

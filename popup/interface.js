@@ -158,6 +158,16 @@ async function toggle_listening(e) {
     await background.browser.storage.local.set({[platform]: String(updated)});
 }
 
+
+/**
+ * Update favicon depending on whether capture is enabled
+ */
+function update_icon() {
+    const any_enabled = Array.from(document.querySelectorAll('.toggle-switch input')).filter(item => item.checked);
+    const path = any_enabled.length > 0 ? '/images/zeeschuimer-icon-active.png' : '/images/zeeschuimer-icon-inactive.png';
+    document.querySelector('link[rel~=icon]').setAttribute('href', path);
+}
+
 /**
  * Get Zeeschuimer stats
  *
@@ -249,6 +259,7 @@ async function get_stats() {
 
     set_4cat_url(true);
     activate_buttons();
+    update_icon();
     init_tooltips();
 }
 
