@@ -144,6 +144,27 @@
             font-family: 'Lobster Two', serif;
         }
 
+        .version a {
+            color: inherit;
+        }
+
+        .new-version {
+            position: absolute;
+            top: 5.3em;
+            left: 20em;
+            max-width: 15em;
+            background: var(--accent-alt);
+            font-size: 0.75em;
+            color: var(--accent);
+            padding: 1em;
+            text-align: center;
+            box-shadow: 0 0 15px var(--neutral-contrast);
+        }
+
+        .new-version button {
+            margin-top: 0.5em;
+        }
+
         body.beta header::after {
             font-family: 'Lobster Two', serif;
             font-weight: bold;
@@ -344,7 +365,7 @@
 <article>
     <header>
         <h1>Zeeschuimer</h1>
-        <span class="version">v1.8.0</span>
+        <span class="version"><a href="https://github.com/digitalmethodsinitiative/zeeschuimer/releases/tag/v1.9.0">v1.9.0</a></span>
     </header>
     <section id="status">
         <h2><span>Captured data objects</span></h2>
