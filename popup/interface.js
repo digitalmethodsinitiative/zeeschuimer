@@ -2,6 +2,7 @@ const background = browser.extension.getBackgroundPage();
 var have_4cat = false;
 var xhr;
 var is_uploading = false;
+const downloadUrls = new Map();
 
 /**
  * StreamSaver init
@@ -279,11 +280,13 @@ async function button_handler(event) {
         //let blob = await download_blob(platform, 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson');
         let blob = await get_blob(platform);
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson';
-        await browser.downloads.download({
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const downloadId = await browser.downloads.download({
             url: window.URL.createObjectURL(blob),
             filename: filename,
             conflictAction: 'uniquify'
         });
+        downloadUrls.set(downloadId, downloadUrl);
 
         event.target.classList.remove('loading');
 
@@ -573,6 +576,21 @@ async function iterate_items(platform, callback) {
             callback(item);
             previous = item;
         })
+    }
+}
+
+/**
+ * Listen for completed downloads, and if the download that has completed
+ * was one of our object URLs, then revoke it.
+ * @param delta object representing the changes that caused this event to fire.
+ */
+function downloadListener(delta) {
+    if(delta.state && delta.state.current === "complete") {
+        const url = downloadUrls.get(delta.id);
+        if(url) {
+            window.URL.revokeObjectURL(url);
+            downloadUrls.delete(delta.id);
+        }
     }
 }
 
