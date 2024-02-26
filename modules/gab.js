@@ -18,7 +18,7 @@ zeeschuimer.register_module(
         }
 
         let data;
-        let items = []; // Could be posts, groups, or users
+        let items = []; 
         
         try {
             data = JSON.parse(response);
@@ -27,7 +27,7 @@ zeeschuimer.register_module(
         }
 
 
-        /// first, capture posts in explore, groups, or from a user's profile
+        /// capture posts in explore, groups, or from a user's profile
         if ((source_url.indexOf('explore?') >= 0 || source_url.indexOf('timelines/group/') >= 0 || source_url.indexOf('accounts/')) && data.s && Array.isArray(data.s)) {
             for (let post of data.s) {
                 post["id"] = post.i;
@@ -60,6 +60,15 @@ zeeschuimer.register_module(
                     }
                     post["image_info"] = images;
                 }
+                items.push(post);
+            }
+        }
+
+        /// capture posts in search
+        if (source_url.indexOf('search?') >= 0 && data.statuses && Array.isArray(data.statuses)) {
+            for (let post of data.statuses) {
+                post["id"] = post.id;
+                post["c"] = removeHtmlTagsUsingDOMParser(post.content);
                 items.push(post);
             }
         }
