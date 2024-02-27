@@ -12,6 +12,7 @@ import os
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.common.by import By
+from selenium.common import exceptions as selenium_exceptions
 from termcolor import colored
 from selenium import webdriver
 from datetime import datetime
@@ -23,6 +24,8 @@ from glob import glob
 cli = argparse.ArgumentParser()
 cli.add_argument("--profiledir", help="Firefox profile folder", default="")
 cli.add_argument("--geckodriver", help="Path to geckodriver", default="geckodriver")
+cli.add_argument("--login", help="Wait and allow user to login", default=True, action="store_true")
+cli.add_argument("--tests", help="Path to JSON file containing tests", default="tests.json")
 args = cli.parse_args()
 
 # find profile
@@ -110,8 +113,12 @@ driver.switch_to.new_window("tab")
 handles = driver.window_handles
 
 print("Running tests")
-with open("tests.json") as infile:
+with open(args.tests) as infile:
     tests = json.load(infile)
+
+print("Tests found for platforms: {}\n".format(", ".join(tests.keys())))
+if args.login:
+    input("Press Enter after you have logged in to the platforms you want to test")
 
 passed = 0
 failed = 0
@@ -143,8 +150,12 @@ for platform, testcases in tests.items():
 
             # load relevant platform page in other tab
             driver.switch_to.window(handles[1])
-            driver.get(url)
-            time.sleep(settings.get("wait", 5))
+            try:
+                driver.get(url)
+                time.sleep(settings.get("wait", 5))
+            except selenium_exceptions.TimeoutException:
+                # Page may contain data already, but note timeout
+                print(f"{indent} {colored('[⨯]', 'yellow', attrs=['bold'])} page took longer than timeout to load")
 
             # look in Zeeschuimer how many items have been captured
             driver.switch_to.window(handles[0])
