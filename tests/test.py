@@ -11,6 +11,7 @@ import os
 
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
+from selenium.webdriver.common.by import By
 from termcolor import colored
 from selenium import webdriver
 from datetime import datetime
@@ -96,11 +97,11 @@ driver.implicitly_wait(5)
 # (which is randomized because we're loading the extension as a folder, not an
 # xpi file) via the 'temporary addons' panel in the Firefox debugging settings
 # we need the UUID to find the URL of the Zeeschuimer interface to manipulate
-driver.get("about:debugging")
+print("Ensuring Zeeschuimer is loaded")
+driver.get("about:debugging#/runtime/this-firefox")
 time.sleep(0.1)
-driver.execute_script("document.querySelector('.sidebar-item__link[href*=runtime]').click();")
-time.sleep(0.1)
-uuid = driver.execute_script("return document.querySelector('a[href*=manifest]').getAttribute('href').split('/')[2];");
+# find Zeeschuimer element, parent, child with Internal UUID as text, parent, next sibling which contains the UUID
+uuid = driver.find_element(By.XPATH, '//span[@title="Zeeschuimer"]//..//dt[text()="Internal UUID"]//..//dd').text
 zeeschuimer_url = f"moz-extension://{uuid}/popup/interface.html"
 
 # open interface in first tab and open another one for the platform sites
