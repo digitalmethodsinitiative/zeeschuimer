@@ -217,5 +217,59 @@
         "more-after-scroll": true
       }
     }
+  },
+  "douyin.com": {
+    "Front Page": {
+      "https://www.douyin.com/discover": {
+        "expected": 40,
+        "more-after-scroll": true,
+        "wait": 30,
+        "comment": "Douyin loves captchas, so longer wait is needed until we address them programmatically"
+      }
+    },
+    "Recommend": {
+      "https://www.douyin.com/": {
+        "expected": 8,
+        "more-after-scroll": true,
+        "wait": 15
+      }
+    },
+    "User page": {
+      "https://www.douyin.com/user/MS4wLjABAAAAqtpQNZmjRtGJdpyk0gbAh6OpqqBjJddNTgLhmK3Y0CI": {
+        "expected": 21,
+        "more-after-scroll": false,
+        "wait": 15,
+        "comment": "more-after-scroll is true if logged in, false if not"
+      }
+    },
+    "Search": {
+      "https://www.douyin.com/search/%E6%90%9E%E7%AC%91": {
+        "expected": 9,
+        "more-after-scroll": true,
+        "wait": 15
+      }
+    },
+    "Hot": {
+      "https://www.douyin.com/hot": {
+        "expected": 20,
+        "more-after-scroll": true,
+        "wait": 15
+      }
+    },
+    "Channels": {
+      "https://www.douyin.com/channel/300205": {
+        "expected": 20,
+        "more-after-scroll": true,
+        "wait": 15
+      }
+    },
+    "Individual post page": {
+      "https://www.douyin.com/?modal_id=7092325988377316616": {
+        "expected": 10,
+        "more-after-scroll": false,
+        "wait": 15,
+        "comment": "Douyin loads additional videos ready to scroll to even on individual post pages"
+      }
+    }
   }
 }
