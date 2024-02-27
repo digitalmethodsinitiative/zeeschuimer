@@ -157,6 +157,17 @@ for platform, testcases in tests.items():
                 # Page may contain data already, but note timeout
                 print(f"{indent} {colored('[⨯]', 'yellow', attrs=['bold'])} page took longer than timeout to load")
 
+            # Check for captcha
+            if settings.get("captcha_xpath", False):
+                # NOTE: captcha detection may require longer wait times as they do not display immediately
+                try:
+                    captcha_element = driver.find_element(By.XPATH, settings.get("captcha_xpath"))
+                    if captcha_element.is_displayed():
+                        print("Captcha detected...")
+                        input("Press Enter after you have solved the captcha")
+                except selenium_exceptions.NoSuchElementException:
+                    pass
+
             # look in Zeeschuimer how many items have been captured
             driver.switch_to.window(handles[0])
             safename = platform.replace(".", "")
