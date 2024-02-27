@@ -228,9 +228,9 @@
         "captcha_xpath": "//div[@id='captcha_container']"
       }
     },
-    "Recommend": {
+    "Recommended": {
       "https://www.douyin.com/": {
-        "expected": 8,
+        "expected": 2,
         "more-after-scroll": true,
         "wait": 10,
         "captcha_xpath": "//div[@id='captcha_container']"

@@ -27,6 +27,54 @@ zeeschuimer.register_module(
             response = response.split(embedded_sigil_end)[0];
             console.log(`Found embedded Douyin videos on page ${source_platform_url}`)
             from_embed = true;
+        } else {
+            // Recommend aka douyin.com home page has a different embedding!
+            let embedded_sigil_start = /(self.__pace_f.push\()/mg;
+            let embedded_sigil_end = /(\)<\/script>)/mg;
+            if(embedded_sigil_start.test(response)) {
+                // There are many of these...
+                let possible_responses = response.split(embedded_sigil_start);
+                for (let i = 1; i < possible_responses.length; i++) {
+                    response = possible_responses[i];
+                    if(embedded_sigil_end.test(response)) {
+                        response = response.split(embedded_sigil_end)[0];
+                        if (response.includes("recommendAwemeList")) {
+                            // This is the one we want
+                            console.log(`Detected embedded Douyin recommendAwemeList videos on page ${source_platform_url}`)
+                            let temp_data;
+                            try {
+                                // Extract first JSON
+                                temp_data = JSON.parse(`${response}`);
+                            } catch (SyntaxError) {
+                                console.log("Failed to extract embedded recommendAwemeList")
+                                console.log(response)
+                                console.log(SyntaxError)
+                                return [];
+                            }
+                            try {
+                                // Extract second JSON and search for approporiate dictionary
+                                let parsed_list = JSON.parse(temp_data[1].substring(temp_data[1].indexOf(":[") + 1))
+                                for (let j = 1; j < parsed_list.length; j++) {
+                                    response = parsed_list[j];
+                                    if (response && (response instanceof Object) && ("recommendAwemeList" in response)) {
+                                        // Add value key to format as expected and break
+                                        response = JSON.stringify({"value": response});
+                                        console.log(`Extracted embedded Douyin recommendAwemeList videos on page ${source_platform_url}`)
+                                        break;
+                                    }
+                                }
+                            } catch (SyntaxError) {
+                                console.log("Failed to subset embedded recommendAwemeList")
+                                console.log(response)
+                                console.log(SyntaxError)
+                                return [];
+                            }
+                            from_embed = true;
+                            break;
+                        }
+                    }
+                }
+            }
         }
 
         try {
@@ -35,6 +83,7 @@ zeeschuimer.register_module(
             if (from_embed) {
                 console.log("Failed to parse embedded Douyin videos")
                 console.log(response)
+                console.log(SyntaxError)
             }
             return [];
         }
