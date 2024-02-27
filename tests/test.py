@@ -10,6 +10,7 @@ import time
 import os
 
 from selenium.webdriver.firefox.options import Options
+from selenium.webdriver.firefox.service import Service
 from termcolor import colored
 from selenium import webdriver
 from datetime import datetime
@@ -20,6 +21,7 @@ from glob import glob
 
 cli = argparse.ArgumentParser()
 cli.add_argument("--profiledir", help="Firefox profile folder", default="")
+cli.add_argument("--geckodriver", help="Path to geckodriver", default="geckodriver")
 args = cli.parse_args()
 
 # find profile
@@ -76,7 +78,7 @@ profile.set_preference("security.fileuri.strict_origin_policy", False)
 profile.update_preferences()
 
 options.profile = profile
-driver = webdriver.Firefox(options=options)
+driver = webdriver.Firefox(service=Service(args.geckodriver), options=options)
 
 # load zeeschuimer from parent folder
 driver.install_addon(str(Path("..").resolve()), temporary=True)
