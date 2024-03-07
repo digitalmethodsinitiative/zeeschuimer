@@ -40,7 +40,8 @@
       "modules/9gag.js",
       "modules/imgur.js",
       "modules/twitter.js",
-      "modules/douyin.js"
+      "modules/douyin.js",
+      "modules/gab.js"
     ]
   }
 }
