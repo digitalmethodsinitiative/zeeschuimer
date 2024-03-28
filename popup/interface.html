@@ -1,397 +1,40 @@
-<!DOCTYPE html>
+<!DOCTYPE html><html lang="en">
 <head>
-    <title>Zeeschuimer-F</title>
-    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
-    <meta http-equiv="Content-Security-Policy" content="script-src *;">
-    <link rel="stylesheet" href="tooltips.css">
-    <!--<script src="../js/webtorrent.min.js"></script>
-    <script src="../js/ponyfill-2.0.2.js"></script>
-    <script src="../js/streamsaver-2.0.3.js"></script>-->
-    <style>
-        :root {
-            --neutral: #d9c398;
-            --neutral-contrast: #3C3C3B;
-            --neutral-contrast-alt: #5d6c4c;
-            --accent-alt: #b45d3d;
-            --accent: #e0ba5f;
-        }
-
-        *[aria-hidden=true] {
-            display: none;
-        }
-
-        *[aria-hidden=false] {
-            display: auto;
-        }
-
-        @font-face {
-            font-family: 'Open Sans';
-            src: url("../fonts/OpenSans-Regular.ttf")
-        }
-
-        @font-face {
-            font-family: 'Open Sans';
-            font-weight: bold;
-            src: url("../fonts/OpenSans-Bold.ttf")
-        }
-
-        @font-face {
-            font-family: 'Open Sans';
-            font-style: italic;
-            src: url("../fonts/OpenSans-Italic.ttf")
-        }
-
-        @font-face {
-            font-family: 'Open Sans';
-            font-weight: bold;
-            font-style: italic;
-            src: url("../fonts/OpenSans-BoldItalic.ttf")
-        }
-
-        @font-face {
-            font-family: 'Lobster Two';
-            src: url("../fonts/LobsterTwo-Regular.ttf")
-        }
-
-        @font-face {
-            font-family: 'Lobster Two';
-            font-weight: bold;
-            src: url("../fonts/LobsterTwo-Bold.ttf")
-        }
-
-        @font-face {
-            font-family: 'Lobster Two';
-            font-style: italic;
-            src: url("../fonts/LobsterTwo-Italic.ttf")
-        }
-
-        @font-face {
-            font-family: 'Lobster Two';
-            font-weight: bold;
-            font-style: italic;
-            src: url("../fonts/LobsterTwo-BoldItalic.ttf")
-        }
-
-        html {
-            background: #FFF;
-            margin: 0;
-            padding: 0;
-            height: 100%;
-            background: url('../images/background-f.png');
-            background-size: cover;
-            background-attachment: no-repeat;
-        }
-
-        body {
-            font-family: 'Open Sans', sans-serif;
-            color: var(--neutral-contrast);
-            max-width: 800px;
-            padding: 2em 0 0 0;
-            margin: 0 auto;
-            background: var(--neutral);
-            min-height: calc(100% - 2em);
-            border: 0 solid var(--neutral-contrast);
-            border-width: 0 2px;
-        }
-
-        article {
-            padding: 0;
-            max-width: 600px;
-            margin: 0 auto 1em auto;
-            background: var(--accent);
-            border-radius: 1.5em;
-            border: 2px solid var(--neutral-contrast);
-            overflow: hidden;
-        }
-
-        h1, h2 {
-            font-size: 3em;
-            font-family: 'Lobster Two', serif;
-            font-style: italic;
-            font-weight: bold;
-        }
-
-        h2 {
-            font-size: 1.5em;
-        }
-
-        header {
-            margin-top: 0;
-            margin-bottom: 0.5em;
-            padding: 0.25em;
-            background: var(--neutral-contrast);
-            color: var(--neutral);
-            background-image: url('../images/chirico.png');
-            background-repeat: no-repeat;
-            background-position-x: 0;
-            background-position-y: 0;
-            background-size: contain;
-            position: relative;
-            border-bottom: 1px solid var(--neutral-contrast)
-        }
-
-        h1, .version {
-            display: inline-block;
-        }
-
-        h1 {
-            text-indent: 1.75em;
-            margin: 0;
-        }
-
-        .version {
-            font-size: 1em;
-            font-family: 'Lobster Two', serif;
-        }
-
-        body.beta header::after {
-            font-family: 'Lobster Two', serif;
-            font-weight: bold;
-            transform: rotate(20deg);
-            background: var(--accent);
-            color: var(--neutral-contrast);
-            padding: 0.5em;
-            border-radius: 15px;
-            border: 2px solid var(--neutral-contrast);
-            content: "⚠ Beta version";
-            position: absolute;
-            right: -1.5em;
-            top: -0.25em;
-            font-size: 80%;
-            text-align: center;
-            display: block;
-            text-indent: 0;
-        }
-
-        h2 span {
-            display: inline;
-            border-bottom: 1px solid var(--neutral-contrast);
-        }
-
-        header img {
-            display: inline;
-            height: 1em;
-        }
-
-        a {
-            color: var(--neutral-contrast-alt);
-        }
-
-        section {
-            margin: 0 1em;
-        }
-
-        table {
-            width: 100%;
-            margin: 1em;
-        }
-
-        td, th {
-            text-align: center;
-        }
-
-        td > button:not(:last-child) {
-            margin-right: 0.25em;
-        }
-
-        input:not([type=checkbox]):not([type=radio]), button {
-            background: var(--neutral-contrast-alt);
-            color: var(--accent);
-            border: 2px solid var(--neutral-contrast);
-            border-radius: 0.5em;
-            padding: 0.25em 0.5em;
-        }
-
-        input:not([type=checkbox]):not([type=radio]):disabled, button:disabled {
-            opacity: 0.6;
-            cursor: not-allowed;
-        }
-
-        input[type=submit]:not(:disabled):hover, button:not(:disabled):hover {
-            background: var(--neutral-contrast);
-            cursor: pointer;
-        }
-
-        input[type=file] {
-            width: 15em;
-        }
-
-        .reset-all, #clear-history {
-            display: block;
-            margin: 0 auto;
-        }
-
-        #clear-history {
-            margin-bottom: 1em;
-        }
-
-        nav ul {
-            list-style: none;
-            padding: 1em;
-            text-align: center;
-            margin: 0;
-        }
-
-        nav li {
-            display: inline-block;
-        }
-
-        nav li:not(:last-child)::after {
-            content: ' \2022';
-        }
-
-        .fourcat-url-container, .zeeschuimer-master-switch, .import-container {
-            text-align: center;
-            margin-bottom: 0.5em;
-        }
-
-        #upload-status {
-            text-align: center;
-        }
-
-        .tooltippable:not(a):not(button) {
-            display: inline-block;
-            background: var(--neutral-contrast);
-            color: var(--neutral);
-            font-size: 0.75em;
-            border-radius: 0.75em;
-            width: 1.5em;
-            height: 1.5em;
-            text-align: center;
-            font-weight: bold;
-        }
-
-        /** fancy checkboxes **/
-        .toggle-switch {
-            display: inline-flex;
-            align-items: center;
-            justify-content: space-around;
-            width: 55px;
-            margin-left: 5px;
-            background-color: var(--neutral-contrast-alt);
-            border-radius: 0.5em;
-            position: relative;
-            cursor: pointer;
-            border: 2px solid var(--neutral-contrast);
-        }
-
-        .toggle-switch input {
-            -moz-appearance: none;
-            opacity: 0;
-        }
-
-        .toggle-switch label {
-            width: 100%;
-        }
-
-        .toggle:before {
-            content: "";
-            height: 1.1em;
-            width: 1.1em;
-            background-color: var(--neutral-contrast);
-            border-radius: 5px;
-            transition: all 0.2s;
-            position: absolute;
-            left: 5px;
-            top: 10%;
-            cursor: pointer;
-            z-index: 2;
-        }
-
-        .toggle:after {
-            content: "OFF";
-            font-size: .5em;
-            font-weight: 700;
-            text-transform: uppercase;
-            color: var(--accent);
-            position: absolute;
-            right: 10%;
-            top: 25%;
-            pointer-events: none;
-            z-index: 1;
-        }
-
-        .toggle-switch input:checked + .toggle:before {
-            transform: translateX(1.7em);
-            right: 10%;
-            background-color: var(--accent);
-        }
-
-        .toggle-switch input:checked + .toggle:after {
-            content: "ON";
-            left: -3em;
-        }
-
-        button.loading, button.loading:hover {
-            background: var(--neutral-contrast-alt) linear-gradient(90deg,
-                var(--neutral-contrast-alt) 0%,
-                var(--accent-alt) 0%,
-                var(--accent-alt) 15px,
-                var(--neutral-contrast-alt) 15px,
-                var(--neutral-contrast-alt) 100%);
-            background-repeat: repeat-y;
-            animation: move 2s linear infinite;
-        }
-
-        @keyframes move {
-            from { background-position-x: -15px; }
-            to { background-position-x: 75px; }
-        }
-    </style>
-    <link rel="shortcut icon" href="/images/zeeschuimer-96.png">
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Tidal Tales</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="icon" type="image/png" href="logo-blue.png">
 </head>
 <body>
-<article>
-    <header>
-        <h1>Zeeschuimer-F</h1>
-        <span class="version">v1.8.0</span>
-    </header>
-    <section id="status">
-        <h2><span>Captured data objects</span></h2>
-        <div>
-            <table id="item-table">
-                <thead>
-                <tr>
-                    <th>Active</th>
-                    <th>Platform</th>
-                    <th>Items</th>
-                    <th>Actions</th>
-                </tr>
-                </thead>
-                <tbody></tbody>
-            </table>
-            <button class="reset-all">Delete all items</button>
-        </div>
-    </section>
-    <!--
-    <section id="configuration">
-        <h2><span>Connect to 4CAT</span></h2>
-        <div class="fourcat-url-container">
-            <label>
-                <span>4CAT server URL:</span>
-                <input type="text" placeholder="https://4cat.example.com" id="fourcat-url">
-                <span class="tooltippable"
-                      title="The URL of the 4CAT server to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
-            </label>
-        </div>
-        <p id="upload-status"></p>
-        
-    </section>
-    <section>
-        <h2><span>Uploaded datasets</span></h2>
-        <table id="upload-table">
-            <thead>
-            <tr>
-                <th>Platform</th>
-                <th>Items</th>
-                <th>Date</th>
-                <th>Dataset Link</th>
-            </tr>
-            </thead>
-            <tbody></tbody>
-        </table>
-    </section>-->
-    <section>
+    <div class="container">
+        <header class="header">
+            <img src="../images/logo.png" alt="Tidal Tales Logo" class="logo">
+            <div class="title-block">
+                <h1>Tidal Tales Plugin</h1>
+                <span class="version">v1.8.0</span>
+            </div>
+        </header>
+        <div class="content-container">
+            <section class="status">
+            <h2><span>Captured data objects</span></h2>
+                <div>
+                    <table id="item-table">
+                        <thead>
+                        <tr>
+                            <th>Active</th>
+                            <th>Platform</th>
+                            <th>Items</th>
+                            <th>Actions</th>
+                        </tr>
+                        </thead>
+                        <tbody></tbody>
+                    </table>
+                    <button class="reset-all">Delete all items</button>
+                </div>
+            </section>
+
+    <section class="firebase">
         <h2><span>Connect to Firebase</span></h2>
         <div class="fourcat-url-container">
             <label>
@@ -412,29 +55,22 @@
             </label>
         </div>
     </section>
-    <section id="advanced-mode" aria-hidden="true">
-        <h2><span>Import from NDJSON</span></h2>
-        <p class="import-container">
-            <label>
-                NDJSON file:
-                <input name="ndjson-file" id="ndjson-file" type="file">
-                <button id="import-button">Import</button>
-            </label>
-        </p>
-    </section>
-</article>
-<footer>
-    <nav>
-        <ul>
-            <li><a href="https://tools.digitalmethods.net">DMI Tools</a></li>
+
+
+</main>
+        <footer class="footer">
+            <nav>
+                <ul>
             <li><a href="https://www.github.com/digitalmethodsinitiative/zeeschuimer">GitHub</a></li>
+            <li><a href="https://tidaltal.es">Tidal Tales Website</a></li>
+            <li><a href="https://tools.digitalmethods.net">DMI Tools</a></li>
             <li><a href="https://4cat.nl">4CAT</a></li>
             <li><a href="https://cat4smr.humanities.uva.nl">CAT4SMR</a></li>
             <li><a href="https://doi.org/10.5281/zenodo.6826877">Cite/DOI</a></li>
-            <li><a href="#" id="toggle-advanced-mode">Show advanced options</a></li>
-        </ul>
-    </nav>
-</footer>
+            </ul>
+            </nav>
+    </footer>
+    </div>
 <script type="text/javascript" src="tooltips.js"></script>
 <script type="text/javascript" src="interface.js"></script>
 </body>
