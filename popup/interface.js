@@ -396,6 +396,20 @@ async function button_handler(event) {
 
                 try {
                     let imported = JSON.parse(raw_json);
+
+                    // is this original format or 4CAT-ified? in the latter case, convert back
+                    if ('__import_meta' in imported) {
+                        let reformatted_import = imported['__import_meta'];
+                        reformatted_import['data'] = {};
+                        for (const field in imported) {
+                            if(field === '__import_meta') {
+                                continue;
+                            }
+                            reformatted_import['data'][field] = imported[field];
+                        }
+                        imported = reformatted_import;
+                    }
+
                     await background.db.items.add(imported);
                     imported_items += 1;
                 } catch (e) {
