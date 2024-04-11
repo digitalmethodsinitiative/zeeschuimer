@@ -8,6 +8,7 @@ import shutil
 import json
 import time
 import os
+import re
 
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
@@ -23,7 +24,7 @@ from glob import glob
 
 cli = argparse.ArgumentParser()
 cli.add_argument("--profiledir", help="Firefox profile folder", default="")
-cli.add_argument("--geckodriver", help="Path to geckodriver", default="geckodriver")
+cli.add_argument("--geckodriver", help="Path to geckodriver", default="")
 cli.add_argument("--login", help="Wait and allow user to login", default=True, action="store_true")
 cli.add_argument("--tests", help="Path to JSON file containing tests", default="tests.json")
 args = cli.parse_args()
@@ -70,9 +71,12 @@ else:
 profile_file = Path(".").joinpath(".temp-profile").resolve()
 if profile_file.exists():
     shutil.rmtree(profile_file)
+
 # do not copy cache and extensions since these can mess things up and can be
 # extremely large
-shutil.copytree(profile_dir, profile_file, ignore=lambda x, y: ["storage", "extensions"])
+# also do not copy signedInUser.json to not sync any changes we make to the
+# profile
+shutil.copytree(profile_dir, profile_file, ignore=lambda x, y: ["storage", "extensions", "signedInUser.json"])
 
 # set up selenium with zeeschuimer loaded
 print("Launching Firefox")
@@ -82,7 +86,8 @@ profile.set_preference("security.fileuri.strict_origin_policy", False)
 profile.update_preferences()
 
 options.profile = profile
-driver = webdriver.Firefox(service=Service(args.geckodriver), options=options)
+service = Service(args.geckodriver) if args.geckodriver else None
+driver = webdriver.Firefox(service=service, options=options)
 
 # load zeeschuimer from parent folder
 driver.install_addon(str(Path("..").resolve()), temporary=True)
@@ -169,22 +174,37 @@ for platform, testcases in tests.items():
                     pass
 
             # look in Zeeschuimer how many items have been captured
-            driver.switch_to.window(handles[0])
             safename = platform.replace(".", "")
-            num_items = driver.execute_script(
-                f"return document.querySelector('#stats-{safename} .num-items').innerText")
-            num_items = int(num_items.replace(",", "").replace(".", ""))
+            driver.switch_to.window(handles[0])
+            num_items = int(re.sub("[^0-9]", "", driver.execute_script(
+                f"return document.querySelector('#stats-{safename} .num-items').innerText")))
+
+            num_after_scroll = 0
+            try_scrolling = settings.get("more-after-scroll", False)
+            if try_scrolling:
+                # scroll and check if more items are loaded
+                driver.switch_to.window(handles[1])
+                driver.execute_script("window.scrollBy(0, document.querySelector('html').scrollHeight);")
+                time.sleep(settings.get("wait", 5))
+
+                driver.switch_to.window(handles[0])
+                num_after_scroll = int(re.sub("[^0-9]", "", driver.execute_script(
+                    f"return document.querySelector('#stats-{safename} .num-items').innerText")))
 
             msg = f"{indent} {str.rjust(str(num_items), 4, ' ')} items :: "
-            if num_items == settings["expected"]:
-                msg += colored("[✓]", "green", attrs=["bold"]) + " as expected"
-                passed += 1
-            elif num_items > settings["expected"]:
-                msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {settings['expected']:,}, but got more"
-                warnings += 1
+            if try_scrolling:
+                msg += f"{indent} {str.rjust(str(num_items), 4, ' ')} after scroll :: "
             else:
-                msg += colored("[⨯]", "red", attrs=["bold"]) + f" expected {settings['expected']:,}, but got fewer"
-                failed += 1
+                msg += f"      no scrolling :: "
+                if num_items == settings["expected"]:
+                    msg += colored("[✓]", "green", attrs=["bold"]) + " as expected"
+                    passed += 1
+                elif num_items > settings["expected"]:
+                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {settings['expected']:,}, but got more"
+                    warnings += 1
+                else:
+                    msg += colored("[⨯]", "red", attrs=["bold"]) + f" expected {settings['expected']:,}, but got fewer"
+                    failed += 1
 
             print(msg)
 
