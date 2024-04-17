@@ -244,7 +244,7 @@ async function get_stats() {
                 document.querySelector('#upload-table .empty-table-notice').remove();
             }
             let row = createElement("tr", {"id": row_id});
-            row.appendChild(createElement("td", {}, upload.platform));
+            row.appendChild(createElement("td", {}, background.zeeschuimer.modules[upload.platform]["name"]));
             row.appendChild(createElement("td", {}, new Intl.NumberFormat().format(upload.items)));
             row.appendChild(createElement("td", {}, (new Date(upload.timestamp)).toLocaleString('en-us', {
                 weekday: "long",
