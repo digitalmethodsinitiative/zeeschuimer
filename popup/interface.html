@@ -211,6 +211,10 @@
             text-align: center;
         }
 
+        th:first-child {
+            text-indent: 2em;
+        }
+
         td > button:not(:last-child) {
             margin-right: 0.25em;
         }
@@ -343,6 +347,18 @@
             left: -3em;
         }
 
+        .platform-icon img {
+            width: 1.25em;
+            position: relative;
+            top: 3px;
+            filter: grayscale(1) contrast(0.5);
+            transition: .2s;
+        }
+
+        *[data-enabled='1'] .platform-icon img {
+            filter: grayscale(0) contrast(1);
+        }
+
         button.loading, button.loading:hover {
             background: var(--neutral-contrast-alt) linear-gradient(90deg,
                 var(--neutral-contrast-alt) 0%,
@@ -373,7 +389,7 @@
             <table id="item-table">
                 <thead>
                 <tr>
-                    <th>Active</th>
+                    <th colspan="2">Active</th>
                     <th>Platform</th>
                     <th>Items</th>
                     <th>Actions</th>

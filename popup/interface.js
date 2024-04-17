@@ -154,6 +154,7 @@ async function toggle_listening(e) {
     let now = await background.browser.storage.local.get([platform]);
     let current = !!parseInt(now[platform]);
     let updated = current ? 0 : 1;
+    e.target.parentNode.parentNode.parentNode.parentNode.setAttribute('data-enabled', updated);
 
     await background.browser.storage.local.set({[platform]: String(updated)});
 }
@@ -192,7 +193,7 @@ async function get_stats() {
             let toggle_field = 'zs-enabled-' + platform;
             let enabled = await background.browser.storage.local.get([toggle_field])
             enabled = enabled.hasOwnProperty(toggle_field) && !!parseInt(enabled[toggle_field]);
-            let row = createElement("tr", {"id": row_id});
+            let row = createElement("tr", {"id": row_id, 'data-enabled': enabled ? '1' : '0'});
 
             // checkbox stuff
             let checker = createElement("label", {"for": toggle_field});
@@ -201,6 +202,7 @@ async function get_stats() {
             if(enabled) { checker.firstChild.setAttribute('checked', 'checked'); }
             checker.addEventListener('change', toggle_listening);
 
+            row.appendChild(createElement("td", {'class': 'platform-icon'}, createElement('img', {'src': '/images/platform-icons/' + platform.split('.')[0].split('-')[0] + '.png', 'alt': ''})));
             row.appendChild(createElement("td", {}, createElement('div', {'class': 'toggle-switch'}, checker)));
             row.appendChild(createElement("td", {}, createElement('a', {'href': 'https://' + platform}, platform_map[platform])));
             row.appendChild(createElement("td", {"class": "num-items"}, new Intl.NumberFormat().format(response[platform])));

@@ -25,7 +25,7 @@ zeeschuimer.register_module(
         // determine what part of instagram we're working in
         // 'view' unused for now but may have some bearing on how to parse the data
         // in any case
-        let path = source_platform_url.split("/");
+        let path = source_platform_url.split('?')[0].replace(/\/$/, '').split("/");
         let view = "";
         if (path.length === 3) {
             // www.instagram.com, no sub URL
@@ -98,6 +98,7 @@ zeeschuimer.register_module(
                     json_bit = json_bit.split(']]}}')[0];
                 }
 
+
                 try {
                     datas.push(JSON.parse(json_bit));
                 } catch {
@@ -105,7 +106,7 @@ zeeschuimer.register_module(
                 }
             }
 
-            if (!datas) {
+            if (datas.length === 0) {
                 return [];
             }
         }
@@ -209,6 +210,7 @@ zeeschuimer.register_module(
                             // these next two are ads, which are not actually shown in the feed but still loaded in the
                             // background
                             && (!("product type" in node ) || node["product_type"] !== "ad")
+                            && (!("ad_action" in node) || node["ad_action"] === null)
                             && (!("link" in node) || !node["link"] || !node["link"].startsWith('https://www.facebook.com/ads/'))
                     }));
                 } else if (typeof (obj[property]) === "object") {
