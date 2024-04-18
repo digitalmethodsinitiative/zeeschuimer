@@ -25,8 +25,9 @@ from glob import glob
 cli = argparse.ArgumentParser()
 cli.add_argument("--profiledir", help="Firefox profile folder", default="")
 cli.add_argument("--geckodriver", help="Path to geckodriver", default="")
-cli.add_argument("--login", help="Wait and allow user to login", default=True, action="store_true")
+cli.add_argument("--login", help="Wait and allow user to login", default=False, action="store_true")
 cli.add_argument("--tests", help="Path to JSON file containing tests", default="tests.json")
+cli.add_argument("--sources", help="Sources to test, comma-separated; by default, test all", default="")
 args = cli.parse_args()
 
 # find profile
@@ -121,10 +122,17 @@ print("Running tests")
 with open(args.tests) as infile:
     tests = json.load(infile)
 
-print("Tests found for platforms: {}\n".format(", ".join(tests.keys())))
+selected_tests = args.sources.split(",")
+print("Tests found for platforms: {}".format(", ".join(tests.keys())))
+if selected_tests:
+    print(f"Tests to run: {', '.join(selected_tests)}")
+else:
+    print("Running all tests.")
+
 if args.login:
     input("Press Enter after you have logged in to the platforms you want to test")
 
+print("")
 passed = 0
 failed = 0
 warnings = 0
@@ -144,6 +152,10 @@ for platform, testcases in tests.items():
                                                                                        "\\\\.") + "').forEach((e) => { if(!e.checked) { e.click(); }}); ")
 
     print(hr)
+    if selected_tests and platform not in selected_tests:
+        print(f"{platform} :: skipping")
+        continue
+
     for testcase, urls in testcases.items():
         for url, settings in urls.items():
             print(f"{platform} :: {testcase} :: {url}")
@@ -163,18 +175,17 @@ for platform, testcases in tests.items():
                 print(f"{indent} {colored('[⨯]', 'yellow', attrs=['bold'])} page took longer than timeout to load")
 
             # Check for captcha
-            if settings.get("captcha_xpath", False):
+            if settings.get("captcha-selector", False):
                 # NOTE: captcha detection may require longer wait times as they do not display immediately
                 try:
-                    captcha_element = driver.find_element(By.XPATH, settings.get("captcha_xpath"))
+                    captcha_element = driver.find_element(By.CSS_SELECTOR, settings.get("captcha-selector"))
                     if captcha_element.is_displayed():
-                        print("Captcha detected...")
-                        input("Press Enter after you have solved the captcha")
+                        print(colored(f"{indent} :: [⚠️] Captcha detected... Press Enter after you have solved the captcha", yellow))
                 except selenium_exceptions.NoSuchElementException:
                     pass
 
             # look in Zeeschuimer how many items have been captured
-            safename = platform.replace(".", "")
+            safename = platform.replace(".", "").replace("-", "")
             driver.switch_to.window(handles[0])
             num_items = int(re.sub("[^0-9]", "", driver.execute_script(
                 f"return document.querySelector('#stats-{safename} .num-items').innerText")))
@@ -193,7 +204,19 @@ for platform, testcases in tests.items():
 
             msg = f"{indent} {str.rjust(str(num_items), 4, ' ')} items :: "
             if try_scrolling:
-                msg += f"{indent} {str.rjust(str(num_items), 4, ' ')} after scroll :: "
+                msg += f" {str.rjust(str(num_after_scroll), 4, ' ')} after scroll :: "
+                if num_items >= settings["expected"] and num_after_scroll > num_items:
+                    msg += colored("[✓]", "green", attrs=["bold"]) + " as expected"
+                    passed += 1
+                elif num_items < settings["expected"] and num_after_scroll > num_items:
+                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {settings['expected']:,}, get fewer, but more after scrolling"
+                    warnings += 1
+                elif num_items >= settings["expected"] and num_after_scroll == num_items:
+                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" as expected, but no increase after scrolling"
+                    warnings += 1
+                else:
+                    msg += colored("[⨯]", "red", attrs=["bold"]) + f" expected more after scroll, but no increase"
+                    failed += 1
             else:
                 msg += f"      no scrolling :: "
                 if num_items == settings["expected"]:
@@ -216,5 +239,5 @@ print(hr)
 print(f"{sum([passed, failed, warnings]):,} tests completed.")
 print(f"Tests took {time.time() - start_time:.2f} seconds")
 print("- " + colored(f"[✓] {passed:,}", "green", attrs=["bold"]) + " passed")
-print("- " + colored(f"[⋯] {warnings:,}", "yellow", attrs=["bold"]) + " warnings (more items than expected)")
+print("- " + colored(f"[⋯] {warnings:,}", "yellow", attrs=["bold"]) + " warnings (more items than expected, or unexpected result after scrolling)")
 print("- " + colored(f"[⨯] {failed:,}", "red", attrs=["bold"]) + " failures (fewer items than expected)")

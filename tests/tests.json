@@ -61,38 +61,53 @@
     "Front page": {
       "https://www.tiktok.com": {
         "expected": 9,
-        "more-after-scroll": true
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
       }
     },
     "Audio overview page": {
       "https://www.tiktok.com/music/Oh-No-6586947002464996102": {
         "expected": 24,
-        "more-after-scroll": true
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
       }
     },
     "User page": {
       "https://www.tiktok.com/@eliminatehq": {
         "expected": 35,
         "more-after-scroll": true,
-        "wait": 10
+        "wait": 10,
+        "captcha-selector": "div#tiktok-verify-ele"
       }
     },
     "Tag overview page": {
       "https://www.tiktok.com/tag/blessed": {
         "expected": 27,
-        "more-after-scroll": true
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
       }
     },
     "Search results (video tab)": {
       "https://www.tiktok.com/search/video?q=ok boomer": {
         "expected": 11,
-        "more-after-scroll": true
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
       }
     },
     "Explore page": {
       "https://www.tiktok.com/explore": {
         "expected": 14,
-        "more-after-scroll": true
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    }
+  },
+  "tiktok-comments": {
+    "Comments": {
+      "https://www.tiktok.com/@eliminatehq/video/7340364794802752811": {
+        "expected": 20,
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
       }
     }
   },
@@ -225,7 +240,7 @@
         "more-after-scroll": true,
         "wait": 10,
         "comment": "Douyin loves captchas; longer wait is needed until for them to load",
-        "captcha_xpath": "//div[@id='captcha_container']"
+        "captcha-selector": "div#captcha_container"
       }
     },
     "Recommended": {
@@ -233,7 +248,7 @@
         "expected": 2,
         "more-after-scroll": true,
         "wait": 10,
-        "captcha_xpath": "//div[@id='captcha_container']"
+        "captcha-selector": "div#captcha_container"
       }
     },
     "User page": {
@@ -242,7 +257,7 @@
         "more-after-scroll": false,
         "wait": 10,
         "comment": "more-after-scroll is true if logged in, false if not",
-        "captcha_xpath": "//div[@id='captcha_container']"
+        "captcha-selector": "div#captcha_container"
       }
     },
     "Search": {
@@ -250,7 +265,7 @@
         "expected": 9,
         "more-after-scroll": true,
         "wait": 10,
-        "captcha_xpath": "//div[@id='captcha_container']"
+        "captcha-selector": "div#captcha_container"
       }
     },
     "Hot": {
@@ -258,7 +273,7 @@
         "expected": 20,
         "more-after-scroll": true,
         "wait": 10,
-        "captcha_xpath": "//div[@id='captcha_container']"
+        "captcha-selector": "div#captcha_container"
       }
     },
     "Channels": {
@@ -266,7 +281,7 @@
         "expected": 20,
         "more-after-scroll": true,
         "wait": 10,
-        "captcha_xpath": "//div[@id='captcha_container']"
+        "captcha-selector": "div#captcha_container"
       }
     },
     "Individual post page": {
@@ -275,7 +290,7 @@
         "more-after-scroll": false,
         "wait": 10,
         "comment": "Douyin loads additional videos ready to scroll to even on individual post pages",
-        "captcha_xpath": "//div[@id='captcha_container']"
+        "captcha-selector": "div#captcha_container"
       }
     }
   }
