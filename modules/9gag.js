@@ -26,12 +26,12 @@ zeeschuimer.register_module(
             } catch (e) {
                 return [];
             }
-        }
-
-        try {
-            data = JSON.parse(response);
-        } catch (SyntaxError) {
-            return [];
+        } else {
+            try {
+                data = JSON.parse(response);
+            } catch (SyntaxError) {
+                return [];
+            }
         }
 
         if(!("data" in data) || typeof data["data"] !== 'object' || !("posts" in data["data"])) {
