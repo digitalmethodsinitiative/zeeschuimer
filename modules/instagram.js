@@ -66,43 +66,53 @@ zeeschuimer.register_module(
             datas.push(JSON.parse(response));
         } catch {
             // data can be embedded in the HTML in these JavaScript statements
+            // this is mostly used for:
+            // - single post pages (e.g. https://www.instagram.com/p/C1hWCZLPQ9T/)
+            //   ✔️ confirmed working as of 2024-apr-19
+
             let js_prefixes = [
-                "window._sharedData = {",
-                "window.__additionalDataLoaded('feed',{",
-                "window.__additionalDataLoaded('feed_v2',{",
-                " data-sjs>{",
                 "{\"require\":[[\"ScheduledServerJS\",\"handle\",null,[{\"__bbox\":{\"require\":[[\"RelayPrefetchedStreamCache\",\"next\",[],["
             ];
 
             let prefix;
+            const dummyDocument = document.implementation.createDocument(null, '', null);
 
             while (js_prefixes.length > 0) {
                 prefix = js_prefixes.shift();
-                if (response.indexOf(prefix) === -1) {
-                    // prefix not found
-                    continue
-                }
-                //console.log(`caught ${prefix}`)
 
-                let json_bit = response.split(prefix.slice(0, -1))[1].split('</script>')[0].trim();
-                if (json_bit.endsWith(';')) {
-                    json_bit = json_bit.substring(0, -1);
-                }
+                // we go through the response line by line, because prefixes may
+                // occur multiple times but always on a single line
+                for (const line of response.split("\n")) {
+                    if (line.indexOf(prefix) === -1) {
+                        // prefix not found
+                        continue;
+                    }
 
-                if (prefix.indexOf("additionalDataLoaded") !== -1) {
-                    // remove trailing )
-                    json_bit = json_bit.slice(0, -1);
-                } else if (js_prefixes.length === 0) {
-                    // last prefix has some special handling
-                    // remove trailing stuff...
-                    json_bit = json_bit.split(']]}}')[0];
-                }
+                    let json_bit = line.split(prefix.slice(0, -1))[1].split('</script>')[0].trim();
+                    if (json_bit.endsWith(';')) {
+                        json_bit = json_bit.substring(0, -1);
+                    }
+
+                    if (json_bit.indexOf('adp_PolarisDesktopPostPageRelatedMediaGridQueryRelayPreloader') >= 0) {
+                        // 'related posts', this is never what we are looking for
+                        continue;
+                    }
+
+                    if (prefix.indexOf("additionalDataLoaded") !== -1) {
+                        // remove trailing )
+                        json_bit = json_bit.slice(0, -1);
+                    } else if (js_prefixes.length === 0) {
+                        // last prefix has some special handling
+                        // remove trailing stuff...
+                        json_bit = json_bit.split(']]}}')[0];
+                    }
 
 
-                try {
-                    datas.push(JSON.parse(json_bit));
-                } catch {
-                    // fine, not JSON after all
+                    try {
+                        datas.push(JSON.parse(json_bit));
+                    } catch {
+                        // fine, not JSON after all
+                    }
                 }
             }
 
