@@ -27,17 +27,25 @@ zeeschuimer.register_module(
             }
         }
 
+        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed"]
         for (const data_bit of data) {
             // now we have the data, try to parse it
             // is this object post data?
-            let item_index;
+            let item_index = [];
             if ("data" in data_bit && "included" in data_bit) {
                 // items may be referenced as 'results' for search result pages or 'elements' for the feed
                 let item_key = '';
-                if ("results" in data_bit["data"]) {
+                if ("*elements" in data_bit["data"]) {
+                    item_index = data_bit["data"]["*elements"];
+                } else if ("results" in data_bit["data"]) {
                     item_index = data_bit["data"]["results"];
-                } else if ("data" in data_bit["data"] && "feedDashMainFeedByMainFeed" in data_bit["data"]["data"]) {
-                    item_index = data_bit["data"]["data"]["feedDashMainFeedByMainFeed"]["*elements"];
+                } else if ("data" in data_bit["data"] && Object.keys(data_bit["data"]["data"]).filter(k => eligible_list_types.includes(k))) {
+                    for(const k of eligible_list_types) {
+                        if(k in data_bit["data"]["data"]) {
+                            item_index = data_bit["data"]["data"][k]["*elements"];
+                            break;
+                        }
+                    }
                 } else {
                     return [];
                 }
