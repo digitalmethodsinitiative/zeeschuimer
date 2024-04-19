@@ -79,6 +79,16 @@ if profile_file.exists():
 # profile
 shutil.copytree(profile_dir, profile_file, ignore=lambda x, y: ["storage", "extensions", "signedInUser.json"])
 
+with open(args.tests) as infile:
+    tests = json.load(infile)
+
+selected_tests = [f for f in args.sources.split(",") if f.strip()]
+print("Tests found for platforms: {}".format(", ".join(tests.keys())))
+if selected_tests:
+    print(f"Tests to run: {', '.join(selected_tests)}")
+else:
+    print("Running all tests.")
+
 # set up selenium with zeeschuimer loaded
 print("Launching Firefox")
 options = Options()
@@ -119,15 +129,6 @@ driver.switch_to.new_window("tab")
 handles = driver.window_handles
 
 print("Running tests")
-with open(args.tests) as infile:
-    tests = json.load(infile)
-
-selected_tests = args.sources.split(",")
-print("Tests found for platforms: {}".format(", ".join(tests.keys())))
-if selected_tests:
-    print(f"Tests to run: {', '.join(selected_tests)}")
-else:
-    print("Running all tests.")
 
 if args.login:
     input("Press Enter after you have logged in to the platforms you want to test")
@@ -180,7 +181,7 @@ for platform, testcases in tests.items():
                 try:
                     captcha_element = driver.find_element(By.CSS_SELECTOR, settings.get("captcha-selector"))
                     if captcha_element.is_displayed():
-                        print(colored(f"{indent} :: [⚠️] Captcha detected... Press Enter after you have solved the captcha", yellow))
+                        print(colored(f"{indent} :: [⚠️] Captcha detected... Press Enter after you have solved the captcha", "yellow"))
                 except selenium_exceptions.NoSuchElementException:
                     pass
 
