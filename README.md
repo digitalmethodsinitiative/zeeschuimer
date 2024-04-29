@@ -16,16 +16,17 @@ analysis and storage. Zeeschuimer is primarily intended as a companion to 4CAT, 
 into your own analysis pipeline.
 
 Currently, it supports the following platforms:
-* [TikTok](https://www.tiktok.com)
+* [TikTok](https://www.tiktok.com) (posts and comments)
 * [Instagram](https://www.instagram.com) (posts only)
 * [Twitter](https://www.twitter.com)
 * [LinkedIn](https://www.linkedin.com)
 * [9gag](https://9gag.com)
 * [Imgur](https://imgur.com)
 * [Douyin](https://douyin.com)
+* [Gab](https://gab.com)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
-welcome issues and pull requests.
+welcome issues and pull requests. See 'Limitations' below for some known limitations to data capture.
 
 The extension does not interfere with your normal browsing and never uploads data automatically, only when you
 explicitly ask it to do so. It uses the
