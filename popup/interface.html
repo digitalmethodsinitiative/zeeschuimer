@@ -219,7 +219,7 @@
             margin-right: 0.25em;
         }
 
-        input:not([type=checkbox]):not([type=radio]), button {
+        input:not([type=checkbox]):not([type=radio]), button, select {
             background: var(--neutral-contrast-alt);
             color: var(--accent);
             border: 2px solid var(--neutral-contrast);
@@ -265,9 +265,13 @@
             content: ' \2022';
         }
 
-        .fourcat-url-container, .zeeschuimer-master-switch, .import-container {
+        .fourcat-url-container, .zeeschuimer-master-switch, .import-container, .fourcat-pseudonymisation-container {
             text-align: center;
             margin-bottom: 0.5em;
+        }
+
+        .fourcat-pseudonymisation-container select {
+            max-width: 15em;
         }
 
         #upload-status {
@@ -408,6 +412,18 @@
                 <input type="text" placeholder="https://4cat.example.com" id="fourcat-url">
                 <span class="tooltippable"
                       title="The URL of the 4CAT server to upload datasets to. Make sure you're logged in to this URL with this browser.">?</span>
+            </label>
+        </div>
+        <div class="fourcat-pseudonymisation-container">
+            <label>
+                <span>Pseudonymise data in 4CAT:</span>
+                <select id="fourcat-pseudonymisation">
+                    <option value="anonymise">Anonymise - Replace author information with 'REDACTED'</option>
+                    <option value="pseudonymise">Pseudonymise - Replace author information with hashed values</option>
+                    <option value="none">Leave author information as-is</option>
+                </select>
+                <span class="tooltippable"
+                        title="4CAT can pseudonymise the data after importing it in a number of ways. Note that this happens AFTER uploading and non-pseudonymised data will always be sent to the 4CAT server first.">?</span>
             </label>
         </div>
         <p id="upload-status"></p>
