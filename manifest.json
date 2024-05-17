@@ -40,7 +40,7 @@
       "modules/linkedin.js",
       "modules/9gag.js",
       "modules/imgur.js",
-      "modules/twitter.js",
+      "modules/x.js",
       "modules/douyin.js",
       "modules/gab.js",
       "modules/truth.js"
