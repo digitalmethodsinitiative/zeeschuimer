@@ -15,6 +15,7 @@ zeeschuimer.register_module(
                 && source_url.indexOf('UserTweets') < 0
                 && source_url.indexOf('Likes') < 0
                 && source_url.indexOf('SearchTimeline') < 0
+                && source_url.indexOf('TweetDetail') < 0
                 // this one is not enabled because it is always loaded when viewing a user profile
                 // even when not viewing the media tab
                 // && source_url.indexOf('UserMedia') < 0
@@ -49,10 +50,14 @@ zeeschuimer.register_module(
                     )
                     && child.hasOwnProperty('entries')
                 ) {
+
                     for (let entry in child['entries']) {
                         entry = child['entries'][entry];
                         if('itemContent' in entry['content']) {
                             // tweets are sometimes embedded directly in this object
+                            if(entry['content']['itemContent']['itemType'].indexOf('Cursor') >= 0) {
+                                continue;
+                            }
                             let tweet = entry['content']['itemContent']['tweet_results']['result']
                             if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
                                 // this sometimes happens
@@ -65,8 +70,21 @@ zeeschuimer.register_module(
                                 tweet = tweet['tweet'];
                             }
                             tweet['id'] = tweet['legacy']['id_str'];
+                            // distinguish tweets that were included because they were "promoted" from
+                            // those that are actually part of the user/home timeline or search result.
+                            // assume a tweet was promoted if itemContent has promotedMetadata
+                            tweet['promoted'] = ('promotedMetadata' in entry['content']['itemContent']);
                             tweets.push(tweet);
 
+                        } else if ('__typename' in entry['content'] && entry['content']['__typename'] === 'TimelineTimelineModule') {
+                            // this is for replies to a tweet when viewing a single tweet
+                            for (const reply_tweet of entry['content']['items'].filter(item => {
+                                return ['Tweet', 'TimelineTweet'].includes(item['item']['itemContent']['__typename']);
+                            }).map(item => {
+                                return item['item']['itemContent']['tweet_results']['result']
+                            })) {
+                                tweets.push({...reply_tweet, id: parseInt(reply_tweet['rest_id'])});
+                            }
                         } else {
                             // in other cases this object only contains a reference to the full tweet, which is in turn
                             // stored elsewhere in the parent object

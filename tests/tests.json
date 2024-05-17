@@ -1,0 +1,297 @@
+{
+  "instagram.com": {
+    "Front page": {
+      "https://instagram.com": {
+        "expected": 4,
+        "more-after-scroll": false
+      }
+    },
+    "Explore page": {
+      "https://www.instagram.com/explore/": {
+        "expected": 0,
+        "more-after-scroll": false
+      }
+    },
+    "User page": {
+      "https://www.instagram.com/ogata.yoshiyuki/": {
+        "expected": 12,
+        "more-after-scroll": true
+      }
+    },
+    "User page (tagged tab)": {
+      "https://www.instagram.com/steveo/tagged/": {
+        "expected": 0,
+        "more-after-scroll": false
+      }
+    },
+    "User page (reels tab)": {
+      "https://www.instagram.com/ogata.yoshiyuki/reels/": {
+        "expected": 0,
+        "more-after-scroll": false
+      }
+    },
+    "Tag overview page": {
+      "https://www.instagram.com/explore/tags/blessed/": {
+        "expected": 28,
+        "more-after-scroll": false
+      }
+    },
+    "Location overview page": {
+      "https://www.instagram.com/explore/locations/290958191/hongerige-wolf-groningen-netherlands/": {
+        "expected": 91,
+        "more-after-scroll": true,
+        "wait": 10
+      }
+    },
+    "Audio overview page": {
+      "https://www.instagram.com/reels/audio/217239608990598/": {
+        "expected": 22,
+        "more-after-scroll": false
+      }
+    },
+    "Individual post page": {
+      "https://www.instagram.com/p/C1hWCZLPQ9T/": {
+        "expected": 1,
+        "more-after-scroll": false,
+        "wait": 10
+      }
+    }
+  },
+  "tiktok.com": {
+    "Front page": {
+      "https://www.tiktok.com": {
+        "expected": 9,
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    },
+    "Audio overview page": {
+      "https://www.tiktok.com/music/Oh-No-6586947002464996102": {
+        "expected": 24,
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    },
+    "User page": {
+      "https://www.tiktok.com/@eliminatehq": {
+        "expected": 35,
+        "more-after-scroll": true,
+        "wait": 10,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    },
+    "Tag overview page": {
+      "https://www.tiktok.com/tag/blessed": {
+        "expected": 27,
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    },
+    "Search results (video tab)": {
+      "https://www.tiktok.com/search/video?q=ok boomer": {
+        "expected": 11,
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    },
+    "Explore page": {
+      "https://www.tiktok.com/explore": {
+        "expected": 14,
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    }
+  },
+  "tiktok-comments": {
+    "Comments": {
+      "https://www.tiktok.com/@eliminatehq/video/7340364794802752811": {
+        "expected": 20,
+        "more-after-scroll": true,
+        "captcha-selector": "div#tiktok-verify-ele"
+      }
+    }
+  },
+  "imgur.com": {
+    "Front page": {
+      "https://imgur.com/": {
+        "expected": 60,
+        "more-after-scroll": true
+      }
+    },
+    "Tag overview page": {
+      "https://imgur.com/t/ok_boomer": {
+        "expected": 60,
+        "more-after-scroll": true
+      }
+    },
+    "Search results": {
+      "https://imgur.com/search?q=yakuza": {
+        "expected": 55,
+        "more-after-scroll": true
+      }
+    }
+  },
+  "9gag.com": {
+    "Front page": {
+      "https://9gag.com/": {
+        "expected": 8,
+        "more-after-scroll": true
+      }
+    },
+    "Tag overview page": {
+      "https://9gag.com/tag/latest-news": {
+        "expected": 8,
+        "more-after-scroll": true
+      }
+    },
+    "Tag overview page ('Fresh' tab)": {
+      "https://9gag.com/tag/latest-news/fresh": {
+        "expected": 8,
+        "more-after-scroll": true
+      }
+    },
+    "Trending page": {
+      "https://9gag.com/trending": {
+        "expected": 8,
+        "more-after-scroll": true
+      }
+    },
+    "Search results": {
+      "https://9gag.com/search?query=yakuza": {
+        "expected": 8,
+        "more-after-scroll": true
+      }
+    }
+  },
+  "linkedin.com": {
+    "Home feed": {
+      "https://www.linkedin.com/feed/": {
+        "expected": 5,
+        "more-after-scroll": true
+      }
+    },
+    "Search results": {
+      "https://www.linkedin.com/search/results/content/?keywords=yakuza": {
+        "expected": 9,
+        "more-after-scroll": true
+      }
+    },
+    "Tag overview": {
+      "https://www.linkedin.com/feed/hashtag/?keywords=yakuza": {
+        "expected": 5,
+        "more-after-scroll": true
+      }
+    },
+    "User posts": {
+      "https://www.linkedin.com/in/satyanadella/recent-activity/all/": {
+        "expected": 5,
+        "more-after-scroll": true
+      }
+    }
+  },
+  "twitter.com": {
+    "Home feed (algorithmic)": {
+      "https://twitter.com/home": {
+        "expected": 30,
+        "more-after-scrolll": true
+      }
+    },
+    "User page (home)": {
+      "https://twitter.com/HIDEO_KOJIMA_EN": {
+        "expected": 20,
+        "more-after-scroll": true
+      }
+    },
+    "User page (with replies)": {
+      "https://twitter.com/HIDEO_KOJIMA_EN/with_replies": {
+        "expected": 20,
+        "more-after-scroll": true
+      }
+    },
+    "User page (likes)": {
+      "https://twitter.com/HIDEO_KOJIMA_EN/likes": {
+        "expected": 20,
+        "more-after-scroll": true
+      }
+    },
+    "Search results (hashtag)": {
+      "https://twitter.com/search?q=%23blessed": {
+        "expected": 20,
+        "more-after-scroll": true
+      }
+    },
+    "List": {
+      "https://twitter.com/i/lists/1578244310398640133": {
+        "expected": 80,
+        "more-after-scroll": true
+      }
+    },
+    "Single tweet with replies": {
+      "https://twitter.com/dril/status/247222360309121024": {
+        "expected": 10,
+        "more-after-scroll": true
+      }
+    }
+  },
+  "douyin.com": {
+    "Front Page": {
+      "https://www.douyin.com/discover": {
+        "expected": 20,
+        "more-after-scroll": true,
+        "wait": 10,
+        "comment": "Douyin loves captchas; longer wait is needed until for them to load",
+        "captcha-selector": "div#captcha_container"
+      }
+    },
+    "Recommended": {
+      "https://www.douyin.com/": {
+        "expected": 2,
+        "more-after-scroll": true,
+        "wait": 10,
+        "captcha-selector": "div#captcha_container"
+      }
+    },
+    "User page": {
+      "https://www.douyin.com/user/MS4wLjABAAAAqtpQNZmjRtGJdpyk0gbAh6OpqqBjJddNTgLhmK3Y0CI": {
+        "expected": 21,
+        "more-after-scroll": false,
+        "wait": 10,
+        "comment": "more-after-scroll is true if logged in, false if not",
+        "captcha-selector": "div#captcha_container"
+      }
+    },
+    "Search": {
+      "https://www.douyin.com/search/%E6%90%9E%E7%AC%91": {
+        "expected": 9,
+        "more-after-scroll": true,
+        "wait": 10,
+        "captcha-selector": "div#captcha_container"
+      }
+    },
+    "Hot": {
+      "https://www.douyin.com/hot": {
+        "expected": 20,
+        "more-after-scroll": true,
+        "wait": 10,
+        "captcha-selector": "div#captcha_container"
+      }
+    },
+    "Channels": {
+      "https://www.douyin.com/channel/300205": {
+        "expected": 20,
+        "more-after-scroll": true,
+        "wait": 10,
+        "captcha-selector": "div#captcha_container"
+      }
+    },
+    "Individual post page": {
+      "https://www.douyin.com/?modal_id=7092325988377316616": {
+        "expected": 10,
+        "more-after-scroll": false,
+        "wait": 10,
+        "comment": "Douyin loads additional videos ready to scroll to even on individual post pages",
+        "captcha-selector": "div#captcha_container"
+      }
+    }
+  }
+}

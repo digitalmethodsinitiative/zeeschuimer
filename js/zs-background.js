@@ -16,10 +16,16 @@ window.zeeschuimer = {
      * @param name  Module identifier
      * @param domain  Module primary domain name
      * @param callback  Function to parse request content with, returning an Array of extracted items
+     * @param module_id  Module ID; if not given, use domain name as module ID. Use this if multiple modules read from
+     *                   the same domain.
      */
-    register_module: function (name, domain, callback) {
-        this.modules[domain] = {
+    register_module: function (name, domain, callback, module_id=null) {
+        if(!module_id) {
+            module_id = domain;
+        }
+        this.modules[module_id] = {
             name: name,
+            domain: domain,
             callback: callback
         };
     },
@@ -40,6 +46,20 @@ window.zeeschuimer = {
         this.session = session["value"];
         await db.settings.update("session", session);
         await db.nav.where("session").notEqual(this.session).delete();
+
+        // synchronise browser icon with whether capture is enabled or not
+        setInterval(async function () {
+            let enabled = [];
+            for (const module in zeeschuimer.modules) {
+                const enabled_key = 'zs-enabled-' + module;
+                const is_enabled = await browser.storage.local.get(enabled_key);
+                if (is_enabled.hasOwnProperty(enabled_key) && !!parseInt(is_enabled[enabled_key])) {
+                    enabled.push(module);
+                }
+            }
+            let path = enabled.length > 0 ? 'images/zeeschuimer-icon-active.png' : 'images/zeeschuimer-icon-inactive.png';
+            browser.browserAction.setIcon({path: path})
+        }, 500);
     },
 
     /**
@@ -51,8 +71,21 @@ window.zeeschuimer = {
         let filter = browser.webRequest.filterResponseData(details.requestId);
         let decoder = new TextDecoder("utf-8");
         let full_response = '';
-        let source_url = details.url;
-        let source_platform_url = details.hasOwnProperty("originUrl") ? details.originUrl : source_url;
+
+        const document_url = details.url;
+        const origin_url = details.hasOwnProperty("originUrl") && details.originUrl ? details.originUrl : document_url;
+
+        // both the domain of the document itself, as well as the domain of the document it was requested by via fetch
+        const document_source_domain = document_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase();
+        const possible_source_domains = [
+            document_source_domain,
+            origin_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase()
+        ];
+
+        // the document can be parsed by all modules listening on either the origin or document's URL's domain
+        let eligible_modules = Object.fromEntries(Object.entries(window.zeeschuimer.modules).filter(entry => {
+            return possible_source_domains.includes(entry[1]["domain"].toLowerCase());
+        }));
 
         filter.ondata = event => {
             let str = decoder.decode(event.data, {stream: true});
@@ -61,13 +94,15 @@ window.zeeschuimer = {
         }
 
         filter.onstop = async (event) => {
-            let base_url = source_platform_url ? source_platform_url : source_url;
-            let source_platform = base_url.split('://').pop().split('/')[0].replace(/^www\./, '').toLowerCase();
-            let enabled_key = 'zs-enabled-' + source_platform;
-            let is_enabled = await browser.storage.local.get(enabled_key);
-            let enabled = is_enabled.hasOwnProperty(enabled_key) && !!parseInt(is_enabled[enabled_key]);
-            if (enabled) {
-                zeeschuimer.parse_request(full_response, source_platform_url, source_url, details.tabId);
+            // pass the document to all eligible modules that are also enabled
+            for(const module_id in eligible_modules) {
+                const module_enabled_key = 'zs-enabled-' + module_id;
+                let module_enabled = await browser.storage.local.get(module_enabled_key);
+                module_enabled = module_enabled.hasOwnProperty(module_enabled_key) && !!parseInt(module_enabled[module_enabled_key]);
+
+                if(module_enabled) {
+                    await zeeschuimer.parse_request(full_response, origin_url, document_url, details.tabId);
+                }
             }
             filter.disconnect();
             full_response = '';
@@ -79,13 +114,13 @@ window.zeeschuimer = {
     /**
      * Parse captured request
      * @param response  Content of the request
-     * @param source_platform_url  URL of the *page* the data was requested from
-     * @param source_url  URL of the content that was captured
+     * @param origin_url  URL of the *page* the data was requested from
+     * @param document_url  URL of the content that was captured
      * @param tabId  ID of the tab in which the request was captured
      */
-    parse_request: async function (response, source_platform_url, source_url, tabId) {
-        if (!source_platform_url) {
-            source_platform_url = source_url;
+    parse_request: async function (response, origin_url, document_url, tabId) {
+        if (!origin_url) {
+            origin_url = document_url;
         }
 
         // what url was loaded in the tab the previous time?
@@ -98,7 +133,7 @@ window.zeeschuimer = {
             // get the *actual url* of the tab, not the url that the request
             // reports, which may be wrong
             let tab = await browser.tabs.get(tabId);
-            source_platform_url = tab.url;
+            origin_url = tab.url;
         } catch (Error) {
             tabId = -1;
             // invalid tab id, use provided originUrl
@@ -107,11 +142,11 @@ window.zeeschuimer = {
         // sometimes the tab URL changes without triggering a webNavigation
         // event! so check if the URL changes, and then increase the nav
         // index *as if* an event had triggered if it does
-        if (old_url && source_platform_url !== old_url) {
+        if (old_url && origin_url !== old_url) {
             await zeeschuimer.nav_handler(tabId);
         }
 
-        this.tab_url_map[tabId] = source_platform_url;
+        this.tab_url_map[tabId] = origin_url;
 
         // get the navigation index for the tab
         // if any of the processed items already exist for this combination of
@@ -124,8 +159,8 @@ window.zeeschuimer = {
         nav_index = nav_index.session + ":" + nav_index.tab_id + ":" + nav_index.index;
 
         let item_list = [];
-        for (let module in this.modules) {
-            item_list = this.modules[module].callback(response, source_platform_url, source_url);
+        for (let module_id in this.modules) {
+            item_list = this.modules[module_id].callback(response, origin_url, document_url);
             if (item_list && item_list.length > 0) {
                 await Promise.all(item_list.map(async (item) => {
                     if (!item) {
@@ -140,9 +175,9 @@ window.zeeschuimer = {
                             "nav_index": nav_index,
                             "item_id": item_id,
                             "timestamp_collected": Date.now(),
-                            "source_platform": module,
-                            "source_platform_url": source_platform_url,
-                            "source_url": source_url,
+                            "source_platform": module_id,
+                            "source_platform_url": origin_url,
+                            "source_url": document_url,
                             "user_agent": navigator.userAgent,
                             "data": item
                         });

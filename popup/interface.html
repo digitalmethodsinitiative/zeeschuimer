@@ -4,6 +4,7 @@
     <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
     <meta http-equiv="Content-Security-Policy" content="script-src *;">
     <link rel="stylesheet" href="tooltips.css">
+    <link rel="stylesheet" href="fontawesome/css/all.css">
     <!--<script src="../js/webtorrent.min.js"></script>
     <script src="../js/ponyfill-2.0.2.js"></script>
     <script src="../js/streamsaver-2.0.3.js"></script>-->
@@ -143,6 +144,27 @@
             font-family: 'Lobster Two', serif;
         }
 
+        .version a {
+            color: inherit;
+        }
+
+        .new-version {
+            position: absolute;
+            top: 5.3em;
+            left: 20em;
+            max-width: 15em;
+            background: var(--accent-alt);
+            font-size: 0.75em;
+            color: var(--accent);
+            padding: 1em;
+            text-align: center;
+            box-shadow: 0 0 15px var(--neutral-contrast);
+        }
+
+        .new-version button {
+            margin-top: 0.5em;
+        }
+
         body.beta header::after {
             font-family: 'Lobster Two', serif;
             font-weight: bold;
@@ -187,6 +209,10 @@
 
         td, th {
             text-align: center;
+        }
+
+        th:first-child {
+            text-indent: 2em;
         }
 
         td > button:not(:last-child) {
@@ -321,6 +347,18 @@
             left: -3em;
         }
 
+        .platform-icon img {
+            width: 1.25em;
+            position: relative;
+            top: 3px;
+            filter: grayscale(1) contrast(0.5);
+            transition: .2s;
+        }
+
+        *[data-enabled='1'] .platform-icon img {
+            filter: grayscale(0) contrast(1);
+        }
+
         button.loading, button.loading:hover {
             background: var(--neutral-contrast-alt) linear-gradient(90deg,
                 var(--neutral-contrast-alt) 0%,
@@ -343,7 +381,7 @@
 <article>
     <header>
         <h1>Zeeschuimer</h1>
-        <span class="version">v1.8.0</span>
+        <span class="version"><a href="https://github.com/digitalmethodsinitiative/zeeschuimer/releases/tag/v1.10.0">v1.10.0</a></span>
     </header>
     <section id="status">
         <h2><span>Captured data objects</span></h2>
@@ -351,7 +389,7 @@
             <table id="item-table">
                 <thead>
                 <tr>
-                    <th>Active</th>
+                    <th colspan="2">Active</th>
                     <th>Platform</th>
                     <th>Items</th>
                     <th>Actions</th>
@@ -359,7 +397,7 @@
                 </thead>
                 <tbody></tbody>
             </table>
-            <button class="reset-all">Delete all items</button>
+            <button class="reset-all"><i class="fa fa-times"></i> Delete all items</button>
         </div>
     </section>
     <section id="configuration">

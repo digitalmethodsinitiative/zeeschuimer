@@ -2,6 +2,7 @@ const background = browser.extension.getBackgroundPage();
 var have_4cat = false;
 var xhr;
 var is_uploading = false;
+const downloadUrls = new Map();
 
 /**
  * StreamSaver init
@@ -28,9 +29,10 @@ window.isSecureContext && window.addEventListener('beforeunload', evt => {
  * @param tag  Tag of element
  * @param attributes  Element attributes
  * @param content  Text content of attribute
+ * @param prepend_icon  Font awesome icon ID to prepend to content
  * @returns {*}
  */
-function createElement(tag, attributes={}, content=undefined) {
+function createElement(tag, attributes={}, content=undefined, prepend_icon=undefined) {
     let element = document.createElement(tag);
     for(let attribute in attributes) {
         element.setAttribute(attribute, attributes[attribute]);
@@ -39,6 +41,14 @@ function createElement(tag, attributes={}, content=undefined) {
         element.appendChild(content);
     } else if(content !== undefined) {
         element.textContent = content;
+    }
+
+    if(prepend_icon) {
+        const icon_element = document.createElement('i');
+        icon_element.classList.add('fa')
+        icon_element.classList.add('fa-' + prepend_icon);
+        element.textContent = ' ' + element.textContent;
+        element.prepend(icon_element);
     }
 
     return element;
@@ -144,8 +154,19 @@ async function toggle_listening(e) {
     let now = await background.browser.storage.local.get([platform]);
     let current = !!parseInt(now[platform]);
     let updated = current ? 0 : 1;
+    e.target.parentNode.parentNode.parentNode.parentNode.setAttribute('data-enabled', updated);
 
     await background.browser.storage.local.set({[platform]: String(updated)});
+}
+
+
+/**
+ * Update favicon depending on whether capture is enabled
+ */
+function update_icon() {
+    const any_enabled = Array.from(document.querySelectorAll('.toggle-switch input')).filter(item => item.checked);
+    const path = any_enabled.length > 0 ? '/images/zeeschuimer-icon-active.png' : '/images/zeeschuimer-icon-inactive.png';
+    document.querySelector('link[rel~=icon]').setAttribute('href', path);
 }
 
 /**
@@ -172,7 +193,7 @@ async function get_stats() {
             let toggle_field = 'zs-enabled-' + platform;
             let enabled = await background.browser.storage.local.get([toggle_field])
             enabled = enabled.hasOwnProperty(toggle_field) && !!parseInt(enabled[toggle_field]);
-            let row = createElement("tr", {"id": row_id});
+            let row = createElement("tr", {"id": row_id, 'data-enabled': enabled ? '1' : '0'});
 
             // checkbox stuff
             let checker = createElement("label", {"for": toggle_field});
@@ -181,8 +202,9 @@ async function get_stats() {
             if(enabled) { checker.firstChild.setAttribute('checked', 'checked'); }
             checker.addEventListener('change', toggle_listening);
 
+            row.appendChild(createElement("td", {'class': 'platform-icon'}, createElement('img', {'src': '/images/platform-icons/' + platform.split('.')[0].split('-')[0] + '.png', 'alt': ''})));
             row.appendChild(createElement("td", {}, createElement('div', {'class': 'toggle-switch'}, checker)));
-            row.appendChild(createElement("td", {}, createElement('a', {'href': 'https://' + platform}, platform_map[platform])));
+            row.appendChild(createElement("td", {}, createElement('a', {'href': 'https://' + background.zeeschuimer.modules[platform]['domain']}, platform_map[platform])));
             row.appendChild(createElement("td", {"class": "num-items"}, new Intl.NumberFormat().format(response[platform])));
 
             let actions = createElement("td");
@@ -207,7 +229,7 @@ async function get_stats() {
         }
     }
 
-    let uploads = await background.db.uploads.orderBy("id").limit(10);
+    let uploads = await background.db.uploads.orderBy("id").reverse().limit(10);
     let num_uploads = parseInt(await background.db.uploads.orderBy("id").limit(10).count());
 
     if(num_uploads > 0 && !document.querySelector('#clear-history')) {
@@ -224,7 +246,7 @@ async function get_stats() {
                 document.querySelector('#upload-table .empty-table-notice').remove();
             }
             let row = createElement("tr", {"id": row_id});
-            row.appendChild(createElement("td", {}, upload.platform));
+            row.appendChild(createElement("td", {}, background.zeeschuimer.modules[upload.platform]["name"]));
             row.appendChild(createElement("td", {}, new Intl.NumberFormat().format(upload.items)));
             row.appendChild(createElement("td", {}, (new Date(upload.timestamp)).toLocaleString('en-us', {
                 weekday: "long",
@@ -233,12 +255,13 @@ async function get_stats() {
                 day: "numeric"
             })));
             row.appendChild(createElement("td", {}, createElement("a", {"href": upload.url, "target": "_blank"}, upload.url.split("/")[2])));
-            document.querySelector("#upload-table tbody").prepend(row);
+            document.querySelector("#upload-table tbody").append(row);
         }
     });
 
     set_4cat_url(true);
     activate_buttons();
+    update_icon();
     init_tooltips();
 }
 
@@ -270,11 +293,13 @@ async function button_handler(event) {
         //let blob = await download_blob(platform, 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson');
         let blob = await get_blob(platform);
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson';
-        await browser.downloads.download({
+        const downloadUrl = window.URL.createObjectURL(blob);
+        const downloadId = await browser.downloads.download({
             url: window.URL.createObjectURL(blob),
             filename: filename,
             conflictAction: 'uniquify'
         });
+        downloadUrls.set(downloadId, downloadUrl);
 
         event.target.classList.remove('loading');
 
@@ -373,6 +398,20 @@ async function button_handler(event) {
 
                 try {
                     let imported = JSON.parse(raw_json);
+
+                    // is this original format or 4CAT-ified? in the latter case, convert back
+                    if ('__import_meta' in imported) {
+                        let reformatted_import = imported['__import_meta'];
+                        reformatted_import['data'] = {};
+                        for (const field in imported) {
+                            if(field === '__import_meta') {
+                                continue;
+                            }
+                            reformatted_import['data'][field] = imported[field];
+                        }
+                        imported = reformatted_import;
+                    }
+
                     await background.db.items.add(imported);
                     imported_items += 1;
                 } catch (e) {
@@ -568,6 +607,21 @@ async function iterate_items(platform, callback) {
 }
 
 /**
+ * Listen for completed downloads, and if the download that has completed
+ * was one of our object URLs, then revoke it.
+ * @param delta object representing the changes that caused this event to fire.
+ */
+function downloadListener(delta) {
+    if(delta.state && delta.state.current === "complete") {
+        const url = downloadUrls.get(delta.id);
+        if(url) {
+            window.URL.revokeObjectURL(url);
+            downloadUrls.delete(delta.id);
+        }
+    }
+}
+
+/**
  * Helper function for Dexie pagination
  *
  * Used to paginate through results where large result sets may be too much for
@@ -602,6 +656,22 @@ document.addEventListener('DOMContentLoaded', async function () {
     document.addEventListener('keyup', set_4cat_url);
     document.addEventListener('change', set_4cat_url);
 
+    const version_container = document.querySelector('.version a');
+    const current_version = version_container.innerText;
+    const known_version = await background.browser.storage.local.get('zs-version');
+    if(!known_version || current_version !== known_version['zs-version']) {
+        const version_alert = createElement('span', {'class': 'popup new-version'}, 'Zeeschuimer has been updated to a new version! You can read the release notes via this link.');
+        const ok_button = createElement('button', {'class': 'close-popup'}, 'OK');
+        ok_button.addEventListener('click', async function(e) {
+            await background.browser.storage.local.set({'zs-version': current_version});
+            document.querySelector('.new-version').remove();
+        });
+        version_alert.appendChild(ok_button);
+        document.querySelector('header').appendChild(version_alert);
+    }
+
     const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
+    browser.downloads.onChanged.addListener(downloadListener);
 });

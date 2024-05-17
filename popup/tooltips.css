@@ -2,7 +2,7 @@
     cursor: help;
 }
 
-#tooltip {
+.new-version, #tooltip {
     background: #b45d3d;
     color: #FEFFCF;
     padding: 0.25em 1em;
@@ -15,7 +15,7 @@
     text-align: center;
 }
 
-#tooltip:after, #tooltip:before {
+.new-version:after, #tooltip:after, #tooltip:before {
     top: 100%;
     left: 50%;
     border: solid transparent;
@@ -26,31 +26,31 @@
     pointer-events: none;
 }
 
-#tooltip.point-up:after, #tooltip.point-up:before {
+.new-version:after, .new-version:before, #tooltip.point-up:after, #tooltip.point-up:before {
     bottom: 100%;
     top: auto;
 }
 
-#tooltip:after {
+.new-version:after, #tooltip:after {
     border-color: rgba(255, 255, 255, 0);
     border-top-color: #b45d3d;
     border-width: 5px;
     margin-left: -5px;
 }
 
-#tooltip.point-up:after {
+.new-version:after, #tooltip.point-up:after {
     border-bottom-color: #b45d3d;
     border-top-color: rgba(255, 255, 255, 0);
 }
 
-#tooltip:before {
+.new-version:before, #tooltip:before {
     border-color: rgba(0, 0, 0, 0);
     border-top-color: #0000;
     border-width: 6px;
     margin-left: -6px;
 }
 
-#tooltip.point-up:before {
+.new-version:before, #tooltip.point-up:before {
     border-top-color: rgba(0, 0, 0, 0);
     border-bottom-color: #0000
 }

@@ -1,5 +1,5 @@
 zeeschuimer.register_module(
-    'TikTok',
+    'TikTok (posts)',
     "tiktok.com",
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');

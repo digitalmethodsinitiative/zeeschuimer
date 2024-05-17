@@ -1,2 +1,9 @@
 # Development and Build artefacts
 .idea
+.vs
+
+# Testing artefacts
+.temp-profile
+
+# logs
+geckodriver.log
