@@ -1,11 +1,11 @@
 zeeschuimer.register_module(
-    'Twitter',
-    'twitter.com',
+    'X/Twitter',
+    'x.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
 
         if (
-            !["twitter.com"].includes(domain)
+            !["x.com"].includes(domain)
             || (
                 // these are known API endpoints used to fetch tweets for the interface
                 source_url.indexOf('adaptive.json') < 0
@@ -124,5 +124,6 @@ zeeschuimer.register_module(
 
         traverse(data);
         return tweets;
-    }
+    },
+    'twitter.com'
 );
