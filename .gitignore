@@ -1,6 +1,7 @@
 # Development and Build artefacts
 .idea
 .vs
+.DS_Store
 
 # Testing artefacts
 .temp-profile
