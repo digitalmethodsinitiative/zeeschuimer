@@ -191,43 +191,43 @@
   },
   "twitter.com": {
     "Home feed (algorithmic)": {
-      "https://twitter.com/home": {
+      "https://x.com/home": {
         "expected": 30,
         "more-after-scrolll": true
       }
     },
     "User page (home)": {
-      "https://twitter.com/HIDEO_KOJIMA_EN": {
+      "https://x.com/HIDEO_KOJIMA_EN": {
         "expected": 20,
         "more-after-scroll": true
       }
     },
     "User page (with replies)": {
-      "https://twitter.com/HIDEO_KOJIMA_EN/with_replies": {
+      "https://x.com/HIDEO_KOJIMA_EN/with_replies": {
         "expected": 20,
         "more-after-scroll": true
       }
     },
     "User page (likes)": {
-      "https://twitter.com/HIDEO_KOJIMA_EN/likes": {
+      "https://x.com/HIDEO_KOJIMA_EN/likes": {
         "expected": 20,
         "more-after-scroll": true
       }
     },
     "Search results (hashtag)": {
-      "https://twitter.com/search?q=%23blessed": {
+      "https://x.com/search?q=%23blessed": {
         "expected": 20,
         "more-after-scroll": true
       }
     },
     "List": {
-      "https://twitter.com/i/lists/1578244310398640133": {
+      "https://x.com/i/lists/216472995": {
         "expected": 80,
         "more-after-scroll": true
       }
     },
     "Single tweet with replies": {
-      "https://twitter.com/dril/status/247222360309121024": {
+      "https://x.com/dril/status/247222360309121024": {
         "expected": 10,
         "more-after-scroll": true
       }
