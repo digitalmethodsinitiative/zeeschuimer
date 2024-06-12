@@ -10,45 +10,75 @@ zeeschuimer.register_module(
         // objects embedded in HTML are identified by this bit of text
         let items = [];
         let data = [];
+        let data_type = "";
         try {
             // when dealing with JSON, just parse that JSON and process it
             data.push(JSON.parse(response));
+            data_type = "JSON";
         } catch (e) {
             // data is not JSON, so it's probably HTML
             // HTML has data embedded in <code> tags
             // store these for processing
-            const code_regex = RegExp(/<code>(.[^<]+)<\/code>/g);
+            const code_regex = RegExp(/<code(.[^<]+)<\/code>/g);
+
             for (const code_bit of response.matchAll(code_regex)) {
+                // console.log("Code; checking for JSON");
                 try {
                     // use he to decode from HTML entities (the way the data is embedded)
                     data.push(JSON.parse(he.decode(code_bit)));
+                    data_type = "HTML";
+                    // console.log("Found JSON in code block");
                 } catch (e) {
                 }
             }
         }
 
         const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed"]
+        const uninterseting_list_types = ["*dashMySettings", "messagingDashMessagingSettings", "*searchDashSearchHome", "searchDashTypeaheadByGlobalTypeahead", "messagingDashAffiliatedMailboxesAll", "legoDashPageContentsByPageKeyAndSlotId", "searchDashFilterClustersByFilters"]
         for (const data_bit of data) {
             // now we have the data, try to parse it
             // is this object post data?
             let item_index = [];
+            let location = "";
             if ("data" in data_bit && "included" in data_bit) {
                 // items may be referenced as 'results' for search result pages or 'elements' for the feed
                 let item_key = '';
                 if ("*elements" in data_bit["data"]) {
                     item_index = data_bit["data"]["*elements"];
+                    location = "data.*elements";
                 } else if ("results" in data_bit["data"]) {
                     item_index = data_bit["data"]["results"];
+                    location = "data.results";
                 } else if ("data" in data_bit["data"] && Object.keys(data_bit["data"]["data"]).filter(k => eligible_list_types.includes(k))) {
                     for(const k of eligible_list_types) {
                         if(k in data_bit["data"]["data"]) {
                             item_index = data_bit["data"]["data"][k]["*elements"];
+                            location = `data.data.${k}.*elements`;
                             break;
                         }
                     }
+                    if (location === "") {
+                        // Found nothing eligible
+                        let uninteresting = false;
+                        for (const k of uninterseting_list_types) {
+                            if(k in data_bit["data"]["data"]) {
+                                uninteresting = true;
+                            }
+                        }
+
+                        if (!uninteresting) {
+                            // Possibly interesting data
+                            // console.log("No items found in data_bit:");
+                            // console.log(data_bit);
+                        }
+                        continue;
+                    }
                 } else {
-                    return [];
+                    // console.log("No items found in data:");
+                    // console.log(data_bit);
+                    continue;
                 }
+                //console.log(`Searching items at ${location} from ${data_type} data on ${source_platform_url}`);
 
                 // there is a list of objects, each with an ID
                 // and a separate list of items to display, a list of those IDs
@@ -61,6 +91,7 @@ zeeschuimer.register_module(
 
                 // then we get the objects with the IDs in the item list
                 // and that is our result set!
+                let num_items = 0;
                 for (let object_ref in item_index) {
                     let result = item_index[object_ref];
 
@@ -72,6 +103,7 @@ zeeschuimer.register_module(
                     // we are (for now?) only interested in posts, which are identified in this way
                     if (result.indexOf('urn:li:fs_updateV2:(urn:li:activity:') !== 0
                       && result.indexOf('urn:li:fsd_update:(urn:li:activity:') !== 0) {
+                        // console.log(`Skipping non-post item ${result}`);
                         continue;
                     }
 
@@ -79,7 +111,9 @@ zeeschuimer.register_module(
                     result_object["id"] = result;
 
                     items.push(result_object);
+                    num_items++;
                 }
+                console.log(`Found ${num_items} items in ${location} from ${data_type} data on ${source_platform_url}`);
 
             }
         }
