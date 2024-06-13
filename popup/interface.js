@@ -82,7 +82,7 @@ async function get_4cat_url(e) {
  * @returns {Promise<void>}
  */
 async function set_4cat_url(e) {
-    if(e !== true && !e.target.matches('#fourcat-url')) {
+    if(e !== true && !e.target.matches('#fourcat-url') && !e.target.matches('#fourcat-pseudonymisation')) {
         return;
     }
 
@@ -104,6 +104,8 @@ async function set_4cat_url(e) {
             url = '';
         }
     }
+
+    await background.browser.storage.local.set({'4cat-pseudonymise': document.querySelector('#fourcat-pseudonymisation').value});
 
     have_4cat = (url && url.length > 0);
 }
@@ -314,8 +316,10 @@ async function button_handler(event) {
         xhr = new XMLHttpRequest();
         xhr.aborted = false;
         let upload_url = await get_4cat_url();
+        let pseudonymise_bit = document.querySelector('#fourcat-pseudonymisation').value
+        pseudonymise_bit = pseudonymise_bit !== 'none' ? '?pseudonymise=' + pseudonymise_bit : ''
 
-        xhr.open("POST", upload_url + "/api/import-dataset/", true);
+        xhr.open("POST", upload_url + "/api/import-dataset/" + pseudonymise_bit, true);
         xhr.setRequestHeader("X-Zeeschuimer-Platform", platform)
         xhr.onloadstart = function () {
             status.innerText = 'Starting upload...';
@@ -672,6 +676,10 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
+    const pseudonymise = await background.browser.storage.local.get('4cat-pseudonymise');
+    console.log(pseudonymise);
+    document.querySelector('#fourcat-pseudonymisation').value = pseudonymise['4cat-pseudonymise'] ? pseudonymise['4cat-pseudonymise'] : 'none';
 
     browser.downloads.onChanged.addListener(downloadListener);
 });
