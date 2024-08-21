@@ -3,24 +3,11 @@ zeeschuimer.register_module(
     'instagram.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
-        let endpoint = source_url.split("/").slice(3).join("/").split("?")[0].split("#")[0].replace(/\/$/, '');
 
         if (!["instagram.com"].includes(domain)) {
+            console.log('ignoring non-instagram url ' + source_url);
             return [];
         }
-
-        /*let whitelisted_endpoints = [
-            "graphql/query", //live-loading @ front page
-            "api/v1/collections/list",
-            "api/v1/feed/user/33646200", //live-loading @ user page
-            "api/v1/tags/blessed/sections", //live-loading @ tag explore page
-            "api/v1/locations/214262158/sections", //live-loading @ location explore page
-            "api/v1/clips/music", //live-loading @ music overview page
-        ]
-
-        if(!whitelisted_endpoints.includes(endpoint)) {
-            return [];
-        }*/
 
         // determine what part of instagram we're working in
         // 'view' unused for now but may have some bearing on how to parse the data
@@ -32,11 +19,13 @@ zeeschuimer.register_module(
             view = "frontpage";
         } else if (["direct", "account", "directory", "lite", "legal"].includes(path[3])) {
             // not post listings but misc instagram views/pages
+            // console.log('ignoring misc url ' + source_url);
             return [];
         } else if (source_url.indexOf('injected_story_units') >= 0) {
             // injected ads (this URL appears on many ad blocklists!)
             // might enable if we decide to also capture ads? but not clear where these actually show up in the
             // interface...
+            // console.log('ignoring ads from ' + source_url);
             return [];
         } else if (path[3] === "explore") {
             // hashtag, location view
@@ -52,13 +41,13 @@ zeeschuimer.register_module(
         if ((source_platform_url.indexOf('reels/audio') >= 0
                 || source_platform_url.indexOf('/explore/') >= 0
             )
-            && source_url.endsWith('graphql')) {
+            && (source_url.endsWith('graphql') || source_url.endsWith('graphql/query'))) {
             // reels audio page f.ex. loads personalised reels in the background (unrelated to the audio) but doesn't
-            // seem to actually use them
+            // seem to actually use them)
 
+            // console.log('ignoring pre-cache ' + source_url);
             return [];
         }
-
 
         let datas = [];
         try {
@@ -68,7 +57,7 @@ zeeschuimer.register_module(
             // data can be embedded in the HTML in these JavaScript statements
             // this is mostly used for:
             // - single post pages (e.g. https://www.instagram.com/p/C1hWCZLPQ9T/)
-            //   ✔️ confirmed working as of 2024-apr-19
+            //   ✔️ confirmed working as of 2024-aug-21
 
             let js_prefixes = [
                 "{\"require\":[[\"ScheduledServerJS\",\"handle\",null,[{\"__bbox\":{\"require\":[[\"RelayPrefetchedStreamCache\",\"next\",[],["
@@ -93,7 +82,7 @@ zeeschuimer.register_module(
                         json_bit = json_bit.substring(0, -1);
                     }
 
-                    if (json_bit.indexOf('adp_PolarisDesktopPostPageRelatedMediaGridQueryRelayPreloader') >= 0) {
+                    if (json_bit.indexOf('adp_PolarisDesktopPostPageRelatedMediaGrid') >= 0) {
                         // 'related posts', this is never what we are looking for
                         continue;
                     }
@@ -117,12 +106,14 @@ zeeschuimer.register_module(
             }
 
             if (datas.length === 0) {
+                // console.log('no datas for ' + source_url);
                 return [];
             }
         }
 
         if (datas.length === 1 && 'lightspeed_web_request_for_igd' in datas[0] && source_url.endsWith('graphql')) {
             // this is one of those background requests
+            // console.log('ignoring background request ' + source_url);
             datas = [];
         }
 
@@ -142,11 +133,11 @@ zeeschuimer.register_module(
 
                 // pages not covered:
                 // - explore (e.g. https://www.instagram.com/explore/)
-                //   ❌ as of 2024-feb-20
+                //   ❌ as of 2024-aug-21
                 // - 'tagged' pages for a user (e.g. https://www.instagram.com/steveo/tagged/)
-                //   ❌ as of 2024-feb-20
+                //   ❌ as of 2024-aug-21
                 // - 'reels' user pages (e.g. https://www.instagram.com/ogata.yoshiyuki/reels/)
-                //   ❌ as of 2024-feb-20
+                //   ❌ as of 2024-aug-21
                 // these do not load enough post metadata (e.g. author or caption), so too different from other items
                 // to parse
                 // - suggested posts on user feed
@@ -155,11 +146,11 @@ zeeschuimer.register_module(
                 if (possible_item_lists.includes(property) || property === "items") {
                     // - posts on explore pages for specific tags (e.g. https://www.instagram.com/explore/tags/blessed/)
                     // - posts on explore pages for locations (e.g. https://www.instagram.com/explore/locations/238875664/switzerland/)
-                    //   ✔️ confirmed working as of 2024-feb-20
+                    //   ✔️ confirmed working as of 2024-aug-21
                     // - posts on explore pages for sounds (e.g. https://www.instagram.com/reels/audio/290315579897542/)
-                    //   ✔️ confirmed working as of 2024-feb-20
+                    //   ✔️ confirmed working as of 2024-aug-21
                     // - posts when opened by clicking on them
-                    //   ✔️ confirmed working as of 2024-feb-20
+                    //   ✔️ confirmed working as of 2024-aug-21
                     let items;
                     if (property === "medias" || property === "fill_items") {
                         items = obj[property].map(media => media["media"]);
@@ -167,7 +158,7 @@ zeeschuimer.register_module(
                         items = obj[property].map(media => media["media_or_ad"]);
                     } else if (property === "items" && obj[property].length === obj[property].filter(i => Object.getOwnPropertyNames(i).join('') === 'media').length) {
                         // - posts on explore pages for sounds (e.g. https://www.instagram.com/reels/audio/290315579897542/)
-                        //   ✔️ confirmed working as of 2024-feb-20
+                        //   ✔️ confirmed working as of 2024-aug-21
                         if(property === 'items' && 'design' in obj) {
                             // this is loaded, but never actually displayed...
                             // seems to be a preview of reels for a given tag, but again, not
@@ -211,7 +202,7 @@ zeeschuimer.register_module(
                     }).map(node => node["media"]));
                 } else if (["xdt_api__v1__feed__user_timeline_graphql_connection"].includes(property)) {
                     // - posts on user pages (e.g. https://www.instagram.com/ogata.yoshiyuki/)
-                    //   ✔️ confirmed working as of 2024-feb-20
+                    //   ✔️ confirmed working as of 2024-aug-21
                     edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
                         return node !== null
                             && "id" in node
@@ -236,6 +227,7 @@ zeeschuimer.register_module(
             }
         }
 
+        // console.log('got ' + edges.length + ' via ' + source_url)
         return edges;
     }
 );
