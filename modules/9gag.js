@@ -22,19 +22,20 @@ zeeschuimer.register_module(
                 return [];
             }
             try {
-                response = JSON.parse(response.split(embedded_sigil_end)[0]);
+                const embedded_json = response.split(embedded_sigil_end)[0];
+                response = JSON.parse(embedded_json);
             } catch (e) {
-                return [];
-            }
-        } else {
-            try {
-                data = JSON.parse(response);
-            } catch (SyntaxError) {
                 return [];
             }
         }
 
-        if(!("data" in data) || typeof data["data"] !== 'object' || !("posts" in data["data"])) {
+        try {
+            data = JSON.parse(response);
+        } catch (e) {
+            return [];
+        }
+
+        if(!data || typeof data["data"] !== 'object' || !("data" in data) || !("posts" in data["data"])) {
             return [];
         }
 
