@@ -182,6 +182,7 @@ for platform, testcases in tests.items():
                     captcha_element = driver.find_element(By.CSS_SELECTOR, settings.get("captcha-selector"))
                     if captcha_element.is_displayed():
                         print(colored(f"{indent} :: [⚠️] Captcha detected... Press Enter after you have solved the captcha", "yellow"))
+                        input()
                 except selenium_exceptions.NoSuchElementException:
                     pass
 
@@ -197,7 +198,11 @@ for platform, testcases in tests.items():
                 # scroll and check if more items are loaded
                 driver.switch_to.window(handles[1])
                 driver.execute_script("window.scrollBy(0, document.querySelector('html').scrollHeight);")
-                time.sleep(settings.get("wait", 5))
+                time.sleep(0.5)
+                driver.execute_script("window.scrollBy(0, document.querySelector('html').scrollHeight);")
+                time.sleep(0.5)
+                driver.execute_script("window.scrollBy(0, document.querySelector('html').scrollHeight);")
+                time.sleep(settings.get("wait", 5) - 1)
 
                 driver.switch_to.window(handles[0])
                 num_after_scroll = int(re.sub("[^0-9]", "", driver.execute_script(
