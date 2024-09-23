@@ -12,20 +12,24 @@ zeeschuimer.register_module(
         let data = [];
         let data_type = "";
         try {
+            if(response.indexOf('<!DOCTYPE html>') >= 0) {
+                throw new Error();
+            }
             // when dealing with JSON, just parse that JSON and process it
-            data.push(JSON.parse(response));
+            const json_data = JSON.parse(response);
+            data.push(json_data);
             data_type = "JSON";
         } catch (e) {
             // data is not JSON, so it's probably HTML
             // HTML has data embedded in <code> tags
             // store these for processing
-            const code_regex = RegExp(/<code(.[^<]+)<\/code>/g);
+            const code_regex = RegExp(/<code.*>([^<]+)<\/code>/g);
 
             for (const code_bit of response.matchAll(code_regex)) {
                 // console.log("Code; checking for JSON");
                 try {
                     // use he to decode from HTML entities (the way the data is embedded)
-                    data.push(JSON.parse(he.decode(code_bit)));
+                    data.push(JSON.parse(he.decode(code_bit[1].trim())));
                     data_type = "HTML";
                     // console.log("Found JSON in code block");
                 } catch (e) {
@@ -33,8 +37,8 @@ zeeschuimer.register_module(
             }
         }
 
-        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed"]
-        const uninterseting_list_types = ["*dashMySettings", "messagingDashMessagingSettings", "*searchDashSearchHome", "searchDashTypeaheadByGlobalTypeahead", "messagingDashAffiliatedMailboxesAll", "legoDashPageContentsByPageKeyAndSlotId", "searchDashFilterClustersByFilters"]
+        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed", "searchDashClustersByAll"]
+        const uninteresting_list_types = ["*dashMySettings", "messagingDashMessagingSettings", "*searchDashSearchHome", "searchDashTypeaheadByGlobalTypeahead", "messagingDashAffiliatedMailboxesAll", "legoDashPageContentsByPageKeyAndSlotId", "searchDashFilterClustersByFilters"]
         for (const data_bit of data) {
             // now we have the data, try to parse it
             // is this object post data?
@@ -52,15 +56,23 @@ zeeschuimer.register_module(
                 } else if ("data" in data_bit["data"] && Object.keys(data_bit["data"]["data"]).filter(k => eligible_list_types.includes(k))) {
                     for(const k of eligible_list_types) {
                         if(k in data_bit["data"]["data"]) {
-                            item_index = data_bit["data"]["data"][k]["*elements"];
-                            location = `data.data.${k}.*elements`;
+                            const elements_key = (data_bit["data"]["data"]['*elements'] !== undefined) ? '*elements' : 'elements';
+                            item_index = data_bit["data"]["data"][k][elements_key];
+                            location = `data.data.${k}.${elements_key}`;
+
+                            if (typeof (item_index) !== 'string' && item_index.length > 0 && item_index[0]['items'] !== undefined) {
+                                // embedded results on search page
+                                item_index = item_index[0]['items'].map(item => {
+                                    return item['item']['searchFeedUpdate']['*update'];
+                                });
+                            }
                             break;
                         }
                     }
                     if (location === "") {
                         // Found nothing eligible
                         let uninteresting = false;
-                        for (const k of uninterseting_list_types) {
+                        for (const k of uninteresting_list_types) {
                             if(k in data_bit["data"]["data"]) {
                                 uninteresting = true;
                             }
