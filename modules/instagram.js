@@ -5,7 +5,6 @@ zeeschuimer.register_module(
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
 
         if (!["instagram.com"].includes(domain)) {
-            console.log('ignoring non-instagram url ' + source_url);
             return [];
         }
 
