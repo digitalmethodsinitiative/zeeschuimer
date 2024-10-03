@@ -88,25 +88,50 @@ zeeschuimer.register_module(
             return [];
         }
 
+        let usable_items = [];
         if (from_embed) {
             // Embedded data
-            if (("value" in data) && ("recommendAwemeList" in data["value"])) {
-                let usable_items = [];
-                for(let i in data["value"]["recommendAwemeList"]) {
-                    let item = data["value"]["recommendAwemeList"][i];
-                    item["id"] = item["awemeId"];
-                    item["ZS_collected_from_embed"] = from_embed;
-                    usable_items.push(item);
+            if ("value" in data) {
+                // Two places where we can find videos (at least...)
+                let awemeList_count = 0;
+                if (("homeFetchData" in data["value"]) && ("awemeList" in data["value"]["homeFetchData"])) {
+                    for (let i in data["value"]["homeFetchData"]["awemeList"]) {
+                        let item = data["value"]["homeFetchData"]["awemeList"][i];
+                        item["id"] = item["awemeId"];
+                        item["ZS_collected_from_embed"] = from_embed;
+                        usable_items.push(item);
+                    }
+                    awemeList_count = data["value"]["homeFetchData"]["awemeList"].length;
                 }
-                console.log(`Collected ${usable_items.length} Douyin videos from embedded HTML`)
-                return usable_items;
-            } else {
-                console.log("Unable to parse embedded data:")
-                console.log(data)
+                let recommendAwemeList_count = 0;
+                if ("recommendAwemeList" in data["value"]) {
+                    for (let i in data["value"]["recommendAwemeList"]) {
+                        let item = data["value"]["recommendAwemeList"][i];
+                        item["id"] = item["awemeId"];
+                        item["ZS_collected_from_embed"] = from_embed;
+                        usable_items.push(item);
+                    }
+                    recommendAwemeList_count = data["value"]["recommendAwemeList"].length;
+                }
+
+                if (usable_items.length === 0) {
+                    console.log("Unable to parse embedded data:")
+                    console.log(data)
+                } else {
+                    console.log(`Collected ${usable_items.length} Douyin videos from embedded HTML (awemeList ${awemeList_count}, recommendAwemeList ${recommendAwemeList_count})`)
+                }
             }
+
         } else if ("cards" in data) {
             // Front Page (首页) tab
-            let usable_items = [];
+
+            // Douyin, may attempt to load these on other pages, but they are not visible.
+            if (source_platform_url.includes("discover")) {
+                // They will be displayed if we navigate to the Front Page though, so perhaps we need to cache them?
+            }
+
+            //chime_video_list may be linked to trending videos and not shown, but I cannot find where they are displayed
+
             for(let i in data["cards"]) {
                 let item = data["cards"][i]["aweme"];
                 try {
@@ -119,11 +144,10 @@ zeeschuimer.register_module(
 
             }
             console.log(`Collected ${usable_items.length} Douyin videos from Front page tab`)
-            return usable_items;
         } else if ("aweme_list" in data) {
             // Recommend (推荐) tab, Hot (热点) tab, and Channels (e.g. game (游戏), entertainment (娱乐), music (音乐))
             // Also collects extra videos from mixes/collections (e.g. from Search page)
-            let usable_items = [];
+            // And collects the "recommended" videos from clicking on a video from ANY page
             for(let i in data["aweme_list"]) {
                 let item_data = data["aweme_list"][i];
                 item_data["id"] = item_data["aweme_id"];
@@ -135,13 +159,11 @@ zeeschuimer.register_module(
                 usable_items.push(item_data);
             }
             console.log(`Collected ${usable_items.length} Douyin videos downloaded`)
-            return usable_items;
         } else if (("data" in data)  && Array.isArray(data["data"]) && ("global_doodle_config" in data)) {
             // Search
             let videos_count = 0;
             let mix_count = 0;
             let mix_video_count = 0;
-            let usable_items = [];
             for(let i in data["data"]) {
                 let search_result = data["data"][i];
                 // Search items can also return "mixes"/"collections"
@@ -182,13 +204,29 @@ zeeschuimer.register_module(
                 }
             }
             console.log(`Collected ${videos_count} Douyin videos and ${mix_count} mixes (containing ${mix_video_count} videos)`)
-            return usable_items;
         } else if ((("e" in data) && ("sc" in data) && ("tc" in data) && (3 === Object.keys(data).length)) || ("StabilityStatistics" in data)) {
             // These appear to be status pings of some kind
             return [];
         } else {
             // console.log("MAYBE INTERESTING")
             // console.log(data)
+        }
+        if (!(usable_items.length === 0)) {
+            // Return the usable items; logging to console to compare with what is displayed on the page
+            // let usable_count = 0;
+            // for (let i in usable_items) {
+            //     usable_count++;
+            //     let item = usable_items[i];
+            //     if ('desc' in item) {
+            //         // streams' desc are $undefined
+            //         console.log(` Item ${i}: ${item['desc']}`);
+            //     } else {
+            //         console.log(`Item ${i} has no description`);
+            //     }
+            // }
+            return usable_items;
+        } else {
+            //console.log("Detected expected object by no usable items found")
         }
 
         // if () {
