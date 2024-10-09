@@ -1,5 +1,5 @@
 zeeschuimer.register_module(
-    'Instagram (Posts)',
+    'Instagram (posts)',
     'instagram.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
@@ -192,12 +192,19 @@ zeeschuimer.register_module(
                 } else if (view !== 'user' && ["xdt_api__v1__feed__timeline__connection"].includes(property)) {
                     // - posts in personal feed *that are followed* (i.e. not suggested; e.g. https://instagram.com)
                     //   ✔️ confirmed working 2024-feb-20
-                    edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
+                    edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).map(edge => {
+                        // this ensures suggested posts are also included
+                        if(edge['media'] === null && edge['explore_story'] && edge['explore_story']['media']) {
+                            return edge['explore_story'];
+                        } else {
+                            return edge;
+                        }
+                    }).filter(node => {
                         return "media" in node
                             && node["media"] !== null
                             && "id" in node["media"]
                             && "user" in node["media"]
-                            && !!node["media"]["user"];
+                            && !!node["media"]["user"]
                     }).map(node => node["media"]));
                 } else if (["xdt_api__v1__feed__user_timeline_graphql_connection"].includes(property)) {
                     // - posts on user pages (e.g. https://www.instagram.com/ogata.yoshiyuki/)
@@ -227,6 +234,7 @@ zeeschuimer.register_module(
         }
 
         // console.log('got ' + edges.length + ' via ' + source_url)
-        return edges;
+        // generic ad filter...
+        return edges.filter(edge => edge["product_type"] !== "ad");
     }
 );
