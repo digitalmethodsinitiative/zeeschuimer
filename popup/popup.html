@@ -1,0 +1,196 @@
+<!DOCTYPE html>
+<head>
+    <meta http-equiv="Content-Type" content="text/html; charset=utf-8">
+    <meta http-equiv="Content-Security-Policy" content="script-src *;">
+    <link rel="stylesheet" href="tooltips.css">
+    <link rel="stylesheet" href="fontawesome/css/all.css">
+    <link rel="stylesheet" href="style.css">
+    <style>
+        header {
+            background: var(--neutral-contrast);
+            color: var(--neutral);
+            font-size: 1.25em;
+            font-family: 'Lobster Two', sans-serif;
+            font-style: italic;
+            display: grid;
+            grid-template-columns: 2em auto 2em;
+            align-items: center;
+        }
+
+        header h1 {
+            font-size: inherit;
+            text-align: center;
+            padding: 0 2em;
+            margin: 0;
+        }
+
+        header img {
+            height: 2em;
+        }
+
+        header a {
+            cursor: pointer;
+            height: 1.4em;
+            width: 1.4em;
+            text-align: center;
+            padding: 0.1em;
+            display: block;
+            position: relative;
+        }
+
+        header i {
+            position: relative;
+            top: 0.05em;
+        }
+
+        header a:hover {
+            color: var(--neutral-contrast);
+            background: var(--neutral);
+            border-top-right-radius: 0.25em;
+            border-bottom-right-radius: 0.25em;
+        }
+
+        header a:hover::before {
+            height: 2.8em;
+            padding: 0.2em 0.2em 0.2em 0.4em;
+            content: 'Data manager';
+            font-weight: bold;
+            font-family: 'Open Sans', sans-serif;
+            background: var(--neutral);
+            color: var(--neutral-contrast);
+            position: absolute;
+            font-size: 0.5em;
+            font-style: normal;
+            border-top-left-radius: 0.5em;
+            border-bottom-left-radius: 0.5em;
+            width: 5em;
+            left: -5em;
+            top: -0px;
+        }
+
+        article {
+            padding: 1em;
+        }
+
+        h2 {
+            font-size: inherit;
+            margin: 0;
+            padding: 0;
+        }
+
+        ol {
+            list-style: none;
+            text-align: center;
+            padding: 0;
+        }
+
+        ol li {
+            display: inline-block;
+            margin-right: 0.25em;
+            position: relative;
+        }
+
+        ol li:last-child {
+            margin: 0;
+        }
+
+        ol img {
+            height: 2em;
+            cursor: pointer !important;
+        }
+
+        .num-badge {
+            position: absolute;
+            background: var(--accent-alt);
+            color: var(--accent);
+            right: -0.3em;
+            top: -0.3em;
+            border-radius: 1em;
+            padding: 0.1em 0.4em;
+            font-size: 0.6em;
+
+        }
+
+        .num-badge[data-num='0'] {
+            display: none
+        }
+
+        .unit {
+            background: var(--accent);
+            border-radius: 1em;
+            padding: 0.5em 1em 0.5em 1em;
+            border: 2px solid var(--neutral-contrast);
+        }
+
+        #autoscroll {
+            margin: 0 auto 2em auto;
+        }
+
+        #autoscroll label {
+            display: grid;
+            align-items: center;
+            grid-template-columns: 8em auto;
+        }
+
+        #autoscroll h2 {
+            display: inline-block;
+            vertical-align: middle;
+            line-height: normal;
+        }
+
+        #autoscroll input {
+            width: 100%;
+        }
+
+        #autoscroll datalist {
+            display: grid;
+            grid-template-columns: 16.67% 33.33% 33.33% 16.67%;
+            justify-content: space-between;
+            font-weight: bold;
+            font-size: 0.8em;
+            color: var(--neutral-contrast)
+        }
+
+        #autoscroll datalist option:nth-child(2), #autoscroll datalist option:nth-child(3) {
+            text-align: center;
+        }
+
+        #autoscroll datalist option:nth-child(4) {
+            text-align: right;
+        }
+
+        #autoscroll option {
+        }
+    </style>
+</head>
+<body>
+<header>
+    <img src="/images/zeeschuimer-96.png" alt="">
+    <h1>Zeeschuimer</h1>
+    <a id="interface-opener"><i class="fa fa-sliders"></i> <span class="sr-only">Manage data</span></a>
+</header>
+<article>
+    <section id="platform-list">
+        <ol>
+        </ol>
+    </section>
+    <section id="autoscroll" class="unit">
+        <label>
+            <h2><i class="fa fa-angles-down"></i> Auto-scroll</h2>
+            <div>
+                <input type="range" list="scroll-ticks" value="0">
+
+                <datalist id="scroll-ticks">
+                    <option value="0">Off</option>
+                    <option value="33">Slow</option>
+                    <option value="66">Medium</option>
+                    <option value="100">Fast</option>
+                </datalist>
+            </div>
+        </label>
+    </section>
+</article>
+<script type="text/javascript" src="tooltips.js"></script>
+<script type="text/javascript" src="lib.js"></script>
+<script type="text/javascript" src="popup.js"></script>
+</body>

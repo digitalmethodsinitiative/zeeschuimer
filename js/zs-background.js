@@ -60,6 +60,17 @@ window.zeeschuimer = {
             let path = enabled.length > 0 ? 'images/zeeschuimer-icon-active.png' : 'images/zeeschuimer-icon-inactive.png';
             browser.browserAction.setIcon({path: path})
         }, 500);
+
+        setInterval(async function () {
+            let scroll_speed = await browser.storage.local.get(['scroll-speed'])
+            scroll_speed = scroll_speed.hasOwnProperty('scroll-speed') ? parseInt(scroll_speed['scroll-speed']) : 0;
+
+            if(!scroll_speed) {
+                return;
+            }
+
+            window.scrollBy(0, scroll_speed * 10);
+        }, 100);
     },
 
     /**
@@ -231,7 +242,7 @@ browser.webRequest.onBeforeRequest.addListener(
 browser.webNavigation.onCommitted.addListener(
     zeeschuimer.nav_handler
 );
-
+/*
 browser.browserAction.onClicked.addListener(async () => {
     let tab = await zeeschuimer.has_tab();
     if (!tab) {
@@ -240,3 +251,4 @@ browser.browserAction.onClicked.addListener(async () => {
         browser.tabs.update(tab.id, {active: true});
     }
 });
+*/
