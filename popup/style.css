@@ -1,0 +1,91 @@
+:root {
+    --neutral: #d9c398;
+    --neutral-contrast: #3C3C3B;
+    --neutral-contrast-alt: #5d6c4c;
+    --accent-alt: #b45d3d;
+    --accent: #e0ba5f;
+}
+
+*[aria-hidden=true] {
+    display: none;
+}
+
+*[aria-hidden=false] {
+    display: auto;
+}
+
+.sr-only {
+    position: absolute;
+    width: 1px;
+    height: 1px;
+    padding: 0;
+    margin: -1px;
+    overflow: hidden;
+    clip: rect(0, 0, 0, 0);
+    border: 0;
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    src: url("../fonts/OpenSans-Regular.ttf")
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-weight: bold;
+    src: url("../fonts/OpenSans-Bold.ttf")
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-style: italic;
+    src: url("../fonts/OpenSans-Italic.ttf")
+}
+
+@font-face {
+    font-family: 'Open Sans';
+    font-weight: bold;
+    font-style: italic;
+    src: url("../fonts/OpenSans-BoldItalic.ttf")
+}
+
+@font-face {
+    font-family: 'Lobster Two';
+    src: url("../fonts/LobsterTwo-Regular.ttf")
+}
+
+@font-face {
+    font-family: 'Lobster Two';
+    font-weight: bold;
+    src: url("../fonts/LobsterTwo-Bold.ttf")
+}
+
+@font-face {
+    font-family: 'Lobster Two';
+    font-style: italic;
+    src: url("../fonts/LobsterTwo-Italic.ttf")
+}
+
+@font-face {
+    font-family: 'Lobster Two';
+    font-weight: bold;
+    font-style: italic;
+    src: url("../fonts/LobsterTwo-BoldItalic.ttf")
+}
+
+body {
+    font-family: 'Open Sans', sans-serif;
+    color: var(--neutral-contrast);
+    margin: 0 auto;
+    background: var(--neutral);
+}
+
+.platform-icon img {
+    filter: grayscale(1) contrast(0.5);
+    transition: .2s;
+    border-radius: 0.2em;
+}
+
+*[data-enabled='1'] .platform-icon img, .platform-icon[data-enabled='1'] img {
+    filter: grayscale(0) contrast(1);
+}
