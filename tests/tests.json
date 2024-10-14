@@ -57,6 +57,32 @@
       }
     }
   },
+  "threads.net": {
+    "Front page": {
+      "https://www.threads.net/": {
+        "expected": 4,
+        "more-after-scroll": true
+      }
+    },
+    "User page": {
+      "https://www.threads.net/@toby_climbing": {
+        "expected": 8,
+        "more-after-scroll": true
+      }
+    },
+    "Individual post page": {
+      "https://www.threads.net/@mkbhd/post/C8XGGhhOLri": {
+        "expected": 34,
+        "more-after-scroll": true
+      }
+    },
+    "Search results": {
+      "https://www.threads.net/search?q=okboomer&serp_type=default": {
+        "expected": 20,
+        "more-after-scroll": true
+      }
+    }
+  },
   "tiktok.com": {
     "Front page": {
       "https://www.tiktok.com": {
