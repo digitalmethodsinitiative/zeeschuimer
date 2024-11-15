@@ -27,8 +27,12 @@ zeeschuimer.register_module(
             // console.log('ignoring ads from ' + source_url);
             return [];
         } else if (path[3] === "explore") {
-            // hashtag, location view
-            view = "search";
+            if(path[4] === "locations") {
+                view = "location";
+            } else {
+                // hashtag, location view
+                view = "search";
+            }
         } else {
             // user pages or similar
             view = "user";
@@ -40,6 +44,7 @@ zeeschuimer.register_module(
         if ((source_platform_url.indexOf('reels/audio') >= 0
                 || source_platform_url.indexOf('/explore/') >= 0
             )
+            && source_platform_url.indexOf('/locations/') < 0
             && (source_url.endsWith('graphql') || source_url.endsWith('graphql/query'))) {
             // reels audio page f.ex. loads personalised reels in the background (unrelated to the audio) but doesn't
             // seem to actually use them)
@@ -116,7 +121,7 @@ zeeschuimer.register_module(
             datas = [];
         }
 
-        let possible_item_lists = ["medias", "feed_items", "fill_items"];
+        let possible_item_lists = ["medias", "feed_items", "fill_items", "two_by_two_item"];
         let edges = [];
 
         // find edge lists in the extracted JSON data
@@ -150,6 +155,7 @@ zeeschuimer.register_module(
                     //   ✔️ confirmed working as of 2024-aug-21
                     // - posts when opened by clicking on them
                     //   ✔️ confirmed working as of 2024-aug-21
+
                     let items;
                     if (property === "medias" || property === "fill_items") {
                         items = obj[property].map(media => media["media"]);
@@ -158,7 +164,7 @@ zeeschuimer.register_module(
                     } else if (property === "items" && obj[property].length === obj[property].filter(i => Object.getOwnPropertyNames(i).join('') === 'media').length) {
                         // - posts on explore pages for sounds (e.g. https://www.instagram.com/reels/audio/290315579897542/)
                         //   ✔️ confirmed working as of 2024-aug-21
-                        if(property === 'items' && 'design' in obj) {
+                        if (property === 'items' && 'design' in obj) {
                             // this is loaded, but never actually displayed...
                             // seems to be a preview of reels for a given tag, but again, not
                             // actually visible in the interface afaics
@@ -167,6 +173,9 @@ zeeschuimer.register_module(
                         items = obj[property].filter(node => "media" in node).map(node => node["media"]).filter(node => {
                             return "id" in node
                         });
+                    } else if (property === "two_by_two_item") {
+                        // highlighted (4x size) items on e.g. tag overview page
+                        items = [obj[property]['channel']['media']]
                     } else {
                         items = obj[property];
                     }
@@ -189,7 +198,7 @@ zeeschuimer.register_module(
                             );
                         }));
                     }
-                } else if (view !== 'user' && ["xdt_api__v1__feed__timeline__connection"].includes(property)) {
+                } else if (!['user', 'location', 'search'].includes(view) && ["xdt_api__v1__feed__timeline__connection"].includes(property)) {
                     // - posts in personal feed *that are followed* (i.e. not suggested; e.g. https://instagram.com)
                     //   ✔️ confirmed working 2024-feb-20
                     edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).map(edge => {
@@ -206,7 +215,7 @@ zeeschuimer.register_module(
                             && "user" in node["media"]
                             && !!node["media"]["user"]
                     }).map(node => node["media"]));
-                } else if (["xdt_api__v1__feed__user_timeline_graphql_connection"].includes(property)) {
+                } else if (["xdt_api__v1__feed__user_timeline_graphql_connection", "xdt_location_get_web_info_tab"].includes(property)) {
                     // - posts on user pages (e.g. https://www.instagram.com/ogata.yoshiyuki/)
                     //   ✔️ confirmed working as of 2024-aug-21
                     edges.push(...obj[property]["edges"].filter(edge => "node" in edge).map(edge => edge["node"]).filter(node => {
