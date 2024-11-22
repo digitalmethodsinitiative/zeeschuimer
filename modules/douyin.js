@@ -180,7 +180,7 @@ zeeschuimer.register_module(
                     // Collection of videos
                     let mix_videos = search_result["aweme_mix_info"]["mix_items"];
                     let first_mix_vid = true;
-                    for(let j in mix_videos) {
+                    for (let j in mix_videos) {
                         // Each video has mix_info data
                         // item_data["mix_info"]["statis"]["current_episode"] is an int starting at 1 representing the video order
                         let item_data = mix_videos[j];
@@ -198,6 +198,16 @@ zeeschuimer.register_module(
                         mix_video_count++;
                     }
                     mix_count++;
+                } else if ("card_info" in search_result && "attached_info" in search_result["card_info"] && "aweme_list" in search_result["card_info"]["attached_info"]) {
+                    // Seen card_unique_name: douyin_playlet_v1
+                    let first = true;
+                    for (let i in search_result["card_info"]["attached_info"]["aweme_list"]) {
+                        let item_data = search_result["card_info"]["attached_info"]["aweme_list"][i];
+                        item_data["id"] = item_data["aweme_id"];
+                        usable_items.push(item_data);
+                    }
+                    // I have only seen these with 1 video, but... ?
+                    console.log(`Collected ${usable_items.length} Douyin videos for ${search_result["card_unique_name"]}`)
                 } else if (["baike_wiki_doc", "douyin_trending"].includes(search_result["card_unique_name"])) {
                     // baike_wiki_doc are cool chinese wiki cards; I have seen them explaining the search term used
                     // douyin_trending trending data
@@ -216,17 +226,17 @@ zeeschuimer.register_module(
         }
         if (!(usable_items.length === 0)) {
             // Return the usable items; logging to console to compare with what is displayed on the page
-            // let usable_count = 0;
-            // for (let i in usable_items) {
-            //     usable_count++;
-            //     let item = usable_items[i];
-            //     if ('desc' in item && item['desc']) {
-            //         // streams' desc are $undefined
-            //         console.log(` Item ${i}: ${item['desc']}`);
-            //     } else {
-            //         console.log(`Item ${i} has no description`);
-            //     }
-            // }
+            let usable_count = 0;
+            for (let i in usable_items) {
+                usable_count++;
+                let item = usable_items[i];
+                if ('desc' in item && item['desc']) {
+                    // streams' desc are $undefined
+                    console.log(` Item ${i}: ${item['desc']}`);
+                } else {
+                    console.log(`Item ${i} has no description`);
+                }
+            }
             console.log(`Found ${usable_items.length} Douyin videos on page ${source_platform_url}`)
             return usable_items;
         } else {
