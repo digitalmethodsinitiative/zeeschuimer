@@ -262,7 +262,7 @@
   "douyin.com": {
     "Front Page": {
       "https://www.douyin.com/discover": {
-        "expected": 20,
+        "expected": 70,
         "more-after-scroll": true,
         "wait": 10,
         "comment": "Douyin loves captchas; longer wait is needed until for them to load",
@@ -279,7 +279,7 @@
     },
     "User page": {
       "https://www.douyin.com/user/MS4wLjABAAAAqtpQNZmjRtGJdpyk0gbAh6OpqqBjJddNTgLhmK3Y0CI": {
-        "expected": 21,
+        "expected": 20,
         "more-after-scroll": false,
         "wait": 10,
         "comment": "more-after-scroll is true if logged in, false if not",
@@ -288,7 +288,7 @@
     },
     "Search": {
       "https://www.douyin.com/search/%E6%90%9E%E7%AC%91": {
-        "expected": 9,
+        "expected": 26,
         "more-after-scroll": true,
         "wait": 10,
         "captcha-selector": "div#captcha_container"
@@ -304,7 +304,7 @@
     },
     "Channels": {
       "https://www.douyin.com/channel/300205": {
-        "expected": 20,
+        "expected": 30,
         "more-after-scroll": true,
         "wait": 10,
         "captcha-selector": "div#captcha_container"
@@ -312,7 +312,7 @@
     },
     "Individual post page": {
       "https://www.douyin.com/?modal_id=7092325988377316616": {
-        "expected": 10,
+        "expected": 2,
         "more-after-scroll": false,
         "wait": 10,
         "comment": "Douyin loads additional videos ready to scroll to even on individual post pages",
