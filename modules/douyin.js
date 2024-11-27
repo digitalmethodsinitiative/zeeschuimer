@@ -52,7 +52,7 @@ zeeschuimer.register_module(
                                 return [];
                             }
                             try {
-                                // Extract second JSON and search for approporiate dictionary
+                                // Extract second JSON and search for appropriate dictionary
                                 let parsed_list = JSON.parse(temp_data[1].substring(temp_data[1].indexOf(":[") + 1))
                                 for (let j = 1; j < parsed_list.length; j++) {
                                     response = parsed_list[j];
@@ -90,28 +90,34 @@ zeeschuimer.register_module(
 
         let usable_items = [];
         if (from_embed) {
-            // Embedded data
-            if ("value" in data) {
-                // Two places where we can find videos (at least...)
+            if (source_url.includes("?modal_id=")) {
+                // This is an individual video page and the embedded data is NOT the video itself! Only visible when the individual video is closed.
+                console.log("Embedded videos on individual page do not contain displayed video")
+                console.log(data)
+            } else {
+                // Embedded data
                 let awemeList_count = 0;
-                if (("homeFetchData" in data["value"]) && !(data["value"]["homeFetchData"] === "$undefined") && ("awemeList" in data["value"]["homeFetchData"])) {
-                    for (let i in data["value"]["homeFetchData"]["awemeList"]) {
-                        let item = data["value"]["homeFetchData"]["awemeList"][i];
-                        item["id"] = item["awemeId"];
-                        item["ZS_collected_from_embed"] = from_embed;
-                        usable_items.push(item);
-                    }
-                    awemeList_count = data["value"]["homeFetchData"]["awemeList"].length;
-                }
                 let recommendAwemeList_count = 0;
-                if ("recommendAwemeList" in data["value"]) {
-                    for (let i in data["value"]["recommendAwemeList"]) {
-                        let item = data["value"]["recommendAwemeList"][i];
-                        item["id"] = item["awemeId"];
-                        item["ZS_collected_from_embed"] = from_embed;
-                        usable_items.push(item);
+                if ("value" in data) {
+                    // Two places where we can find videos (at least...)
+                    if (("homeFetchData" in data["value"]) && !(data["value"]["homeFetchData"] === "$undefined") && ("awemeList" in data["value"]["homeFetchData"])) {
+                        for (let i in data["value"]["homeFetchData"]["awemeList"]) {
+                            let item = data["value"]["homeFetchData"]["awemeList"][i];
+                            item["id"] = item["awemeId"];
+                            item["ZS_collected_from_embed"] = from_embed;
+                            usable_items.push(item);
+                        }
+                        awemeList_count = data["value"]["homeFetchData"]["awemeList"].length;
                     }
-                    recommendAwemeList_count = data["value"]["recommendAwemeList"].length;
+                    if ("recommendAwemeList" in data["value"]) {
+                        for (let i in data["value"]["recommendAwemeList"]) {
+                            let item = data["value"]["recommendAwemeList"][i];
+                            item["id"] = item["awemeId"];
+                            item["ZS_collected_from_embed"] = from_embed;
+                            usable_items.push(item);
+                        }
+                        recommendAwemeList_count = data["value"]["recommendAwemeList"].length;
+                    }
                 }
 
                 if (usable_items.length === 0) {
@@ -121,7 +127,12 @@ zeeschuimer.register_module(
                     console.log(`Collected ${usable_items.length} Douyin videos from embedded HTML (awemeList ${awemeList_count}, recommendAwemeList ${recommendAwemeList_count})`)
                 }
             }
-
+        } else if ("aweme_detail" in data) {
+            // Single video on page (e.g. www.douyin.com/video/7092325988377316616
+            let item = data["aweme_detail"];
+            item["id"] = item["aweme_id"];
+            usable_items.push(item);
+            console.log(`Collected single video from ${source_platform_url}`)
         } else if ("cards" in data) {
             // Front Page (首页) tab (i.e. douyin.com/discover)
             if (source_platform_url.includes("/discover")) {
@@ -147,8 +158,10 @@ zeeschuimer.register_module(
 
             // Recommend (e.g. home page douyin.com or douyin.com/?recommend=1 etc.) page tab loads multiple aweme_list objects, but only one is visible
             let url = new URL(source_platform_url);
-            if ((url.pathname === '/' || url.pathname === '') && (["locate_item_available", "chime_video_list"].some(function(e){ return e in data;}))) {
+            if ( source_platform_url.includes("?modal_id=") || source_platform_url.includes("/video/") || ((url.pathname === '/' || url.pathname === '') && (["locate_item_available", "chime_video_list"].some(function(e){ return e in data;}))) ) {
                 // These are not visible though they may appear when navigating to the Front Page and possibly elsewhere
+                // console.log(`Collected but not visible Douyin videos from ${source_platform_url}`)
+                // console.log(data)
             } else {
                 for (let i in data["aweme_list"]) {
                     let item_data = data["aweme_list"][i];
@@ -217,8 +230,8 @@ zeeschuimer.register_module(
                 }
             }
             console.log(`Collected ${videos_count} Douyin videos and ${mix_count} mixes (containing ${mix_video_count} videos)`)
-        } else if ((("e" in data) && ("sc" in data) && ("tc" in data) && (3 === Object.keys(data).length)) || ("StabilityStatistics" in data)) {
-            // These appear to be status pings of some kind
+        } else if ((("e" in data) && ("sc" in data) && ("tc" in data) && (3 === Object.keys(data).length)) || ("StabilityStatistics" in data) || "maigc" in data || ("e" in data && "sc" in data && Object.keys(data).length === 2)) {
+            // These appear to be status pings and other non-video data
             return [];
         } else {
             // console.log("MAYBE INTERESTING")
@@ -226,21 +239,21 @@ zeeschuimer.register_module(
         }
         if (!(usable_items.length === 0)) {
             // Return the usable items; logging to console to compare with what is displayed on the page
-            let usable_count = 0;
-            for (let i in usable_items) {
-                usable_count++;
-                let item = usable_items[i];
-                if ('desc' in item && item['desc']) {
-                    // streams' desc are $undefined
-                    console.log(` Item ${i}: ${item['desc']}`);
-                } else {
-                    console.log(`Item ${i} has no description`);
-                }
-            }
-            console.log(`Found ${usable_items.length} Douyin videos on page ${source_platform_url}`)
+            // let usable_count = 0;
+            // for (let i in usable_items) {
+            //     usable_count++;
+            //     let item = usable_items[i];
+            //     if ('desc' in item && item['desc']) {
+            //         // streams' desc are $undefined
+            //         console.log(` Item ${i}: ${item['id']} - ${item['desc']}`);
+            //     } else {
+            //         console.log(`Item ${i}: ${item['id']} - no description`);
+            //     }
+            // }
+            // console.log(`Found ${usable_items.length} Douyin videos on page ${source_platform_url}`)
             return usable_items;
         } else {
-            //console.log("Detected expected object by no usable items found")
+            // console.log("Detected expected object by no usable items found")
         }
 
         // if () {
