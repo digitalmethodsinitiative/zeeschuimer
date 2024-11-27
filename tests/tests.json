@@ -312,10 +312,19 @@
     },
     "Individual post page": {
       "https://www.douyin.com/?modal_id=7092325988377316616": {
-        "expected": 2,
+        "expected": 1,
         "more-after-scroll": false,
         "wait": 10,
-        "comment": "Douyin loads additional videos ready to scroll to even on individual post pages",
+        "comment": "Douyin loads full background page (i.e. www.douyin.com) and then individual post in popup",
+        "captcha-selector": "div#captcha_container"
+      }
+    },
+    "Individual post page v2": {
+      "https://www.douyin.com/video/7416052349312961819": {
+        "expected": 1,
+        "more-after-scroll": false,
+        "wait": 10,
+        "comment": "Douyin also loads additional videos in recommendation bar to side (but we do not currently collect)",
         "captcha-selector": "div#captcha_container"
       }
     }
