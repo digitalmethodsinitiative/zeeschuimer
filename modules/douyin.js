@@ -80,7 +80,7 @@ zeeschuimer.register_module(
                                                         if ("recommendAwemeList" in embedded_json) {
                                                             // Add value key to format as expected
                                                             response_jsons.push(JSON.stringify({"value": embedded_json}));
-                                                        } else if ("videoDetail" in embedded_json) {
+                                                        } else if ("videoDetail" in embedded_json && embedded_json["videoDetail"]) {
                                                             // Add value key to format as expected
                                                             response_jsons.push(JSON.stringify({"single_vid": embedded_json["videoDetail"], "value": []}));
                                                         }
@@ -91,7 +91,8 @@ zeeschuimer.register_module(
                                                 }
                                             }
                                         } catch (SyntaxError) {
-                                            console.log(`Embedded parse error ${SyntaxError}: ${item}`)
+                                            console.log(`Embedded parse error ${SyntaxError}:`)
+                                            console.log(item)
                                         }
                                     }
                                 }
@@ -128,21 +129,27 @@ zeeschuimer.register_module(
             }
 
             if (from_embed) {
+                let awemeList_count = 0;
+                let recommendAwemeList_count = 0;
                 if (source_platform_url.includes("?modal_id=") && "recommendAwemeList" in data["value"]) {
                     // This is an individual video page and the embedded data is NOT the video itself! Only visible when the individual video is closed.
                     console.log("Recommended videos on individual page are not visible")
                     // console.log(data)
                 } else {
                     // Embedded data
-                    let awemeList_count = 0;
-                    let recommendAwemeList_count = 0;
                     if ("single_vid" in data) {
                         // Single video extracted above
                         let item = data["single_vid"];
-                        item["id"] = item["awemeId"];
-                        item["ZS_collected_from_embed"] = from_embed;
-                        usable_items.push(item);
-                        console.log(`Collected single video from embedded HTML ${source_platform_url}`)
+                        if ("awemeId" in item) {
+                            // Known format
+                            item["id"] = item["awemeId"];
+                            item["ZS_collected_from_embed"] = from_embed;
+                            usable_items.push(item);
+                            console.log(`Collected single video from embedded HTML ${source_platform_url}`)
+                        } else {
+                            console.log("Unable to parse single video from embedded data:")
+                            console.log(data)
+                        }
                     } else if ("value" in data) {
                         // Two places where we can find videos (at least...)
                         if (("homeFetchData" in data["value"]) && !(data["value"]["homeFetchData"] === "$undefined") && ("awemeList" in data["value"]["homeFetchData"])) {
@@ -163,20 +170,20 @@ zeeschuimer.register_module(
                             }
                             recommendAwemeList_count = data["value"]["recommendAwemeList"].length;
                         }
-                        if (usable_items.length === 0) {
-                            console.log("Unable to parse embedded data:")
-                            console.log(data)
-                        } else {
-                            console.log(`Collected ${usable_items.length} Douyin videos from embedded HTML (awemeList ${awemeList_count}, recommendAwemeList ${recommendAwemeList_count})`)
-                        }
                     }
+                }
+                if (usable_items.length === 0) {
+                    console.log("Unable to parse embedded data:")
+                    console.log(data)
+                } else {
+                    console.log(`Collected ${usable_items.length} Douyin videos from embedded HTML (awemeList ${awemeList_count}, recommendAwemeList ${recommendAwemeList_count})`)
                 }
             } else if ("aweme_detail" in data) {
                 // Single video on page (e.g. www.douyin.com/video/7092325988377316616
                 let item = data["aweme_detail"];
                 item["id"] = item["aweme_id"];
                 usable_items.push(item);
-                console.log(`Collected single video from ${source_platform_url}`)
+                console.log(`Collected single video from aweme_detail ${source_platform_url}`)
             } else if ("cards" in data) {
                 // Front Page (首页) tab (i.e. douyin.com/discover)
                 if (source_platform_url.includes("/discover")) {
@@ -195,8 +202,9 @@ zeeschuimer.register_module(
                     // Douyin, may attempt to load these on other pages, but they are not visible.
                     // They will be displayed if we navigate to the Front Page though, HARD refresh on browser will be needed
                     console.log(`Collected but not visible Douyin videos from ${source_platform_url}`)
-                    console.log(data)
+                    // console.log(data)
                 }
+                console.log(`Collected ${usable_items.length} Douyin videos for cards`)
             } else if ("aweme_list" in data) {
                 // Recommend (推荐) tab, Hot (热点) tab, and Channels (e.g. game (游戏), entertainment (娱乐), music (音乐))
                 // Also collects extra videos from mixes/collections (e.g. from Search page)
@@ -221,7 +229,7 @@ zeeschuimer.register_module(
                         }
                         usable_items.push(item_data);
                     }
-                    console.log(`Collected ${usable_items.length} Douyin videos for aweme_list`)
+                console.log(`Collected ${usable_items.length} Douyin videos for aweme_list`)
                 }
             } else if (("data" in data) && Array.isArray(data["data"]) && ("global_doodle_config" in data)) {
                 // Search
@@ -237,7 +245,7 @@ zeeschuimer.register_module(
                         item_data["id"] = item_data["aweme_id"];
                         usable_items.push(item_data);
                         videos_count++;
-                        console.log(`Collected single video from ${source_platform_url}`)
+                        // console.log(`Collected single video from data/card_unique_name:video ${source_platform_url}`)
                     } else if (search_result["card_unique_name"] === "aweme_mix") {
                         // Collection of videos
                         let mix_videos = search_result["aweme_mix_info"]["mix_items"];
@@ -260,7 +268,7 @@ zeeschuimer.register_module(
                             mix_video_count++;
                         }
                         mix_count++;
-                        console.log(`Collected mix of ${mix_videos.length} videos from ${source_platform_url}`)
+                        // console.log(`Collected mix of ${mix_videos.length} videos from ${source_platform_url}`)
                     } else if ("card_info" in search_result && "attached_info" in search_result["card_info"] && "aweme_list" in search_result["card_info"]["attached_info"]) {
                         // Seen card_unique_name: douyin_playlet_v1
                         let first = true;
@@ -270,8 +278,24 @@ zeeschuimer.register_module(
                             usable_items.push(item_data);
                         }
                         // I have only seen these with 1 video, but... ?
-                        console.log(`Collected ${usable_items.length} Douyin videos for ${search_result["card_unique_name"]}`)
-                    } else if (["baike_wiki_doc", "douyin_trending"].includes(search_result["card_unique_name"])) {
+                        // console.log(`Collected ${usable_items.length} Douyin videos for ${search_result["card_unique_name"]}`)
+                    } else if ("sub_card_list" in search_result) {
+                        // Similar to above, but nested as sub cards
+                        // douyin_trending videos may be displayed this way
+                        for (let i in search_result["sub_card_list"]) {
+                            let sub_card = search_result["sub_card_list"][i];
+                            if ("card_info" in sub_card && "attached_info" in sub_card["card_info"] && "aweme_list" in sub_card["card_info"]["attached_info"]) {
+                                for (let j in sub_card["card_info"]["attached_info"]["aweme_list"]) {
+                                    let item_data = sub_card["card_info"]["attached_info"]["aweme_list"][j];
+                                    item_data["id"] = item_data["aweme_id"];
+                                    usable_items.push(item_data);
+                                }
+                            } else {
+                                console.log("Unknown sub_card:")
+                                console.log(sub_card)
+                            }
+                        }
+                    } else if (["baike_wiki_doc"].includes(search_result["card_unique_name"])) {
                         // baike_wiki_doc are cool chinese wiki cards; I have seen them explaining the search term used
                         // douyin_trending trending data
                     } else {
@@ -280,7 +304,12 @@ zeeschuimer.register_module(
                     }
                 }
                 console.log(`Collected ${videos_count} Douyin videos and ${mix_count} mixes (containing ${mix_video_count} videos)`)
-            } else if ((("e" in data) && ("sc" in data) && ("tc" in data) && (3 === Object.keys(data).length)) || ("StabilityStatistics" in data) || "maigc" in data || ("e" in data && "sc" in data && Object.keys(data).length === 2)) {
+            } else if (
+                (("e" in data) && ("sc" in data) && ("tc" in data) && (3 === Object.keys(data).length)) ||
+                ("StabilityStatistics" in data) || "maigc" in data ||
+                ("e" in data && "sc" in data && Object.keys(data).length === 2) ||
+                ((4 === Object.keys(data).length) && "description" in data && data["description"] === "" && "data" in data && ((1 === Object.keys(data["data"]).length)))
+            ) {
                 // These appear to be status pings and other non-video data
                 return [];
             } else {
