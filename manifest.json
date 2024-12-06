@@ -19,8 +19,20 @@
 
   "browser_action": {
     "default_icon": "images/zeeschuimer-64.png",
-    "default_title": "Zeeschuimer Status"
+    "default_title": "Zeeschuimer Status",
+    "default_popup": "popup/popup.html"
   },
+
+  "content_scripts": [
+    {
+      "matches": [
+        "<all_urls>"
+      ],
+      "js": [
+        "js/zs-scroller.js"
+      ]
+    }
+  ],
 
   "permissions": [
     "webRequest", "webRequestBlocking", "webNavigation", "<all_urls>", "storage", "downloads", "activeTab", "tabs",
