@@ -50,11 +50,17 @@ zeeschuimer.register_module(
             }
             let items = r.filter(x => x.hasOwnProperty('item') && x.hasOwnProperty('type')).map(x => x["item"]);
             let known_fields = ["id", "desc", "createTime", "music", "duetInfo"];
+            let bad_fields = ["liveRoomInfo"]; // if these are present, skip the post, e.g. for live streams
             for(let i in items) {
                 let item = items[i];
                 let item_ok = true;
                 for (let j in known_fields) {
                     if (!item.hasOwnProperty(known_fields[j])) {
+                        item_ok = false;
+                    }
+                }
+                for (let j in bad_fields) {
+                    if (item.hasOwnProperty(bad_fields[j])) {
                         item_ok = false;
                     }
                 }
