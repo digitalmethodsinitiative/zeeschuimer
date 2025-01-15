@@ -36,11 +36,11 @@ zeeschuimer.register_module(
 
         if("ItemModule" in data) {
             let r = Object.values(data["ItemModule"]);
-            return r;
+            return r.filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("itemList" in data) {
-            return data["itemList"];
+            return data["itemList"].filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("item_list" in data) {
-            return data["item_list"];
+            return data["item_list"].filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("data" in data) {
             // search results "top results" (i.e. not the video tab)
             let r = Object.values(data["data"]);
