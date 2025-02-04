@@ -328,5 +328,46 @@
         "captcha-selector": "div#captcha_container"
       }
     }
+  },
+  "pinterest.com": {
+    "Explore (main page)": {
+      "https://www.pinterest.com/ideas/": {
+        "expected": 25,
+        "wait": 10,
+        "more-after-scroll": true
+      }
+    },
+    "Explore (idea page)": {
+      "https://www.pinterest.com/ideas/2024-summer-olympics/920026959546/": {
+        "expected": 34,
+        "more-after-scroll": true,
+        "comment": "No posts are loaded first, but scrolling down shows recommendations"
+      }
+    },
+    "Board": {
+      "https://www.pinterest.com/nahidessa/spiritual-groups/": {
+        "expected": 15,
+        "more-after-scroll": true
+      }
+    },
+    "Post page": {
+      "https://www.pinterest.com/pin/507921664242278249/": {
+        "expected": 25,
+        "more-after-scroll": true,
+        "comment": "Individual post page also loads a number of related posts immediately"
+      }
+    },
+    "Account page": {
+      "https://www.pinterest.com/walmart/": {
+        "expected": 24,
+        "more-after-scroll": true
+      }
+    },
+    "Search results": {
+      "https://www.pinterest.com/search/pins/?q=Aesthetic%20vibes": {
+        "expected": 65,
+        "more-after-scroll": true
+      }
+    }
   }
 }

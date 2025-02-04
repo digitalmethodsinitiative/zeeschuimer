@@ -44,7 +44,8 @@
       "modules/douyin.js",
       "modules/gab.js",
       "modules/truth.js",
-      "modules/threads.js"
+      "modules/threads.js",
+      "modules/pinterest.js"
     ]
   }
 }
