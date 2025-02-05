@@ -27,7 +27,7 @@ zeeschuimer.register_module(
             data.push(json_data);
         } catch (e) {
             // data is not JSON, so it's probably HTML
-            // HTML has data embedded in <code> tags
+            // HTML has data embedded in <script> tags
             // store these for processing
             const code_regex = RegExp(/<script data-relay-response="true" type="application\/json">([^<]+)<\/script>/g);
 
@@ -40,6 +40,8 @@ zeeschuimer.register_module(
             }
 
             // now extract some stuff from the HTML by making a DOM tree and pulling from it
+            // this is far less complete than the json objects, but good enough that it might
+            // be useful for a researcher
             if(response.indexOf('<!DOCTYPE html>') >= 0) {
                 const dummyDocument = new DOMParser().parseFromString(response, 'text/html');
                 const embedded_pins = dummyDocument.querySelectorAll("article[data-test-id='bestPin']");
@@ -68,14 +70,24 @@ zeeschuimer.register_module(
                 }
 
                 if (
-                    // generally
+                    // post page recommendations: https://www.pinterest.com/pin/507921664242278249/
                     (obj[property].hasOwnProperty('__isNode') && obj[property]['__isNode'] === 'Pin')
+                    // ideas page: https://www.pinterest.com/ideas/2024-summer-olympics/920026959546/
+                    // board page: https://www.pinterest.com/nahidessa/spiritual-groups/
+                    // user page: https://www.pinterest.com/walmart/
+                    // search results: https://www.pinterest.com/search/pins/?q=Aesthetic%20vibes
                     || (obj[property].hasOwnProperty('type') && obj[property]['type'] === 'pin')
+                    // front page: https://www.pinterest.com/ideas/
                     // main explore page
                     || (obj[property].hasOwnProperty('__typename') && obj[property]['__typename'] === 'Pin' && property === 'node')
+                    // have also seen this one somewhere, but can't see where now...
                     || (obj.hasOwnProperty('__typename') && obj['__typename'] === 'V3GetPin' && property === 'data')
                 ) {
                     let post = obj[property];
+                    if(!post.hasOwnProperty('images') || !post.hasOwnProperty('pinner')) {
+                        // incomplete post... sometimes happens on 'find similar pins' page
+                        continue;
+                    }
                     if(post.hasOwnProperty('entityId')) {
                         post['id'] = post['entityId'];
                     }
