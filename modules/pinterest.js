@@ -84,7 +84,7 @@ zeeschuimer.register_module(
                     || (obj.hasOwnProperty('__typename') && obj['__typename'] === 'V3GetPin' && property === 'data')
                 ) {
                     let post = obj[property];
-                    if(!post.hasOwnProperty('images') || !post.hasOwnProperty('pinner')) {
+                    if((!post.hasOwnProperty('images') && !post.hasOwnProperty('imageSpec_orig')) || !post.hasOwnProperty('pinner')) {
                         // incomplete post... sometimes happens on 'find similar pins' page
                         continue;
                     }
