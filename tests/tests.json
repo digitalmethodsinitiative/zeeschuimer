@@ -369,5 +369,45 @@
         "more-after-scroll": true
       }
     }
+  },
+  "xiaohongshu.com": {
+    "Explore (main page, no scrolling)": {
+      "https://www.xiaohongshu.com/": {
+        "comment": "The first 35 items are mapped from the page HTML, hence the separate test",
+        "expected": 35,
+        "wait": 10
+      }
+    },
+    "Explore (main page, with scrolling)": {
+      "https://www.xiaohongshu.com/": {
+        "expected": 35,
+        "more-after-scroll": true,
+        "wait": 10
+      }
+    },
+    "Explore (category page)": {
+      "https://www.xiaohongshu.com/explore?channel_id=homefeed.fashion_v3": {
+        "expected": 26,
+        "more-after-scroll": true
+      }
+    },
+    "Post page": {
+      "https://www.xiaohongshu.com/explore/6795def7000000002900ab9c?xsec_token=ABSw57N487PyzALnkqX5WR_S2sN-yhmaiu5r4_7xUrXfw=&xsec_source=pc_feed": {
+        "expected": 1,
+        "more-after-scroll": false
+      }
+    },
+    "User page": {
+      "https://www.xiaohongshu.com/user/profile/5a40bf9e4eacab780009bdde": {
+        "expected": 32,
+        "comment": "Without logging in, no more than 12 items are displayed"
+      }
+    },
+    "Search results": {
+      "https://www.xiaohongshu.com/search_result?keyword=yakuza&source=web_user_page": {
+        "expected": 40,
+        "more-after-scroll": true
+      }
+    }
   }
 }
