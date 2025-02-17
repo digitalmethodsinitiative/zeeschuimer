@@ -62,46 +62,30 @@ zeeschuimer.register_module(
 
         }
 
-        const traverse = function (obj) {
-            for (const property in obj) {
-                if (!obj.hasOwnProperty(property) || !obj[property]) {
-                    // not actually a property
-                    continue;
-                }
+        return [...traverse_data(data, function (item, property) {
 
-                if (
-                    // post page recommendations: https://www.pinterest.com/pin/507921664242278249/
-                    (obj[property].hasOwnProperty('__isNode') && obj[property]['__isNode'] === 'Pin')
-                    // ideas page: https://www.pinterest.com/ideas/2024-summer-olympics/920026959546/
-                    // board page: https://www.pinterest.com/nahidessa/spiritual-groups/
-                    // user page: https://www.pinterest.com/walmart/
-                    // search results: https://www.pinterest.com/search/pins/?q=Aesthetic%20vibes
-                    || (obj[property].hasOwnProperty('type') && obj[property]['type'] === 'pin')
-                    // front page: https://www.pinterest.com/ideas/
-                    // main explore page
-                    || (obj[property].hasOwnProperty('__typename') && obj[property]['__typename'] === 'Pin' && property === 'node')
-                    // have also seen this one somewhere, but can't see where now...
-                    || (obj.hasOwnProperty('__typename') && obj['__typename'] === 'V3GetPin' && property === 'data')
-                ) {
-                    let post = obj[property];
-                    if((!post.hasOwnProperty('images') && !post.hasOwnProperty('imageSpec_orig')) || !post.hasOwnProperty('pinner')) {
-                        // incomplete post... sometimes happens on 'find similar pins' page
-                        continue;
-                    }
-                    if(post.hasOwnProperty('entityId')) {
-                        post['id'] = post['entityId'];
-                    }
-                    post['_zs-origin'] = 'json';
-                    pins.push(post);
-                } else if (typeof (obj[property]) === "object") {
-                    traverse(obj[property]);
+            if (
+                // post page recommendations: https://www.pinterest.com/pin/507921664242278249/
+                (item.hasOwnProperty('__isNode') && item['__isNode'] === 'Pin')
+                // ideas page: https://www.pinterest.com/ideas/2024-summer-olympics/920026959546/
+                // board page: https://www.pinterest.com/nahidessa/spiritual-groups/
+                // user page: https://www.pinterest.com/walmart/
+                // search results: https://www.pinterest.com/search/pins/?q=Aesthetic%20vibes
+                || (item.hasOwnProperty('type') && item['type'] === 'pin')
+                // front page: https://www.pinterest.com/ideas/
+                // main explore page
+                || (item.hasOwnProperty('__typename') && item['__typename'] === 'Pin' && property === 'node')
+            ) {
+                if ((!item.hasOwnProperty('images') && !item.hasOwnProperty('imageSpec_orig')) || !item.hasOwnProperty('pinner')) {
+                    // incomplete post... sometimes happens on 'find similar pins' page
+                    return;
                 }
+                if (item.hasOwnProperty('entityId')) {
+                    item['id'] = item['entityId'];
+                }
+                item['_zs-origin'] = 'json';
+                return item;
             }
-        }
-
-        for(const data_bit of data) {
-            traverse(data_bit);
-        }
-        return pins;
+        })]
     }
 )

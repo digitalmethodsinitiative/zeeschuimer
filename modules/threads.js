@@ -63,28 +63,10 @@ zeeschuimer.register_module(
             }
         }
 
-        const traverse = function (obj) {
-            for (const property in obj) {
-                if (!obj.hasOwnProperty(property)) {
-                    // not actually a property
-                    continue;
-                }
-
-                if (property === 'post' && obj[property]['pk'] && obj[property]['code']) {
-                    edges.push(obj[property]);
-                } else if (typeof (obj[property]) === "object") {
-                    traverse(obj[property]);
-                }
+        return [...traverse_data(datas, function (item, property) {
+            if (property === 'post' && item['pk'] && item['code']) {
+                return item;
             }
-        }
-
-
-        for (const data of datas) {
-            if (data) {
-                traverse(data);
-            }
-        }
-
-        return edges;
+        })]
     }
 );
