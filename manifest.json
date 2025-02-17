@@ -33,6 +33,7 @@
     "scripts": [
       "inc/dexie.js",
       "inc/he.js",
+      "js/lib.js",
       "js/zs-background.js",
       "modules/tiktok.js",
       "modules/tiktok-comments.js",
@@ -45,7 +46,8 @@
       "modules/gab.js",
       "modules/truth.js",
       "modules/threads.js",
-      "modules/pinterest.js"
+      "modules/pinterest.js",
+      "modules/rednote.js"
     ]
   }
 }
