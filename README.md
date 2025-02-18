@@ -24,6 +24,9 @@ Currently, it supports the following platforms:
 * [Imgur](https://imgur.com)
 * [Douyin](https://douyin.com)
 * [Gab](https://gab.com)
+* [Truth Social](https://truth.social)
+* [Pinterest](https://pinterest.com)
+* [RedNote/Xiaohongshu](https://xiaohongshu.com)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests. See 'Limitations' below for some known limitations to data capture.
@@ -76,6 +79,13 @@ platform. The following limitations are known:
   * 'Suggested for you' and 'Sponsored' posts on the front page feed
 * *TikTok* items that cannot be captured:
   * Live streams
+
+For some platforms, the level of detail of the data that can be collected depends on the page it is captured from:
+
+* *Pinterest* items may lack some metadata unless captured from the individual post's page, most notably the timestamp 
+  of the post.
+* *RedNote/Xiaohongshu* items will often lack the item's post description, timestamp, and video URL, unless captured by 
+  opening the post's own page/clicking it in an overview.
 
 Note that these are *known* limitations; data capture may break or change based on platform changes. Always 
 cross-reference captured data with what you are seeing in your browser.
