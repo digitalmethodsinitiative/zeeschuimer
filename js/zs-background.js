@@ -84,7 +84,7 @@ window.zeeschuimer = {
 
         // the document can be parsed by all modules listening on either the origin or document's URL's domain
         let eligible_modules = Object.fromEntries(Object.entries(window.zeeschuimer.modules).filter(entry => {
-            return possible_source_domains.includes(entry[1]["domain"].toLowerCase());
+            return possible_source_domains.some((domain) => domain.endsWith(entry[1]["domain"].toLowerCase()));
         }));
 
         filter.ondata = event => {
