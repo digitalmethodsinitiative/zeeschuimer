@@ -18,7 +18,7 @@ zeeschuimer.register_module(
             // this is identical to Instagram (see instagram.js)
 
             let js_prefixes = [
-                "{\"require\":[[\"ScheduledServerJS\",\"handle\",null,[{\"__bbox\":{\"require\":[[\"RelayPrefetchedStreamCache\",\"next\",[],["
+                new RegExp(/\{"require":\[\["ScheduledServerJS","handle",null,\[\{"__bbox":\{"require":\[\["RelayPrefetchedStreamCache[^"]*","next",\[],/)
             ];
 
             let prefix;
@@ -29,20 +29,17 @@ zeeschuimer.register_module(
                 // we go through the response line by line, because prefixes may
                 // occur multiple times but always on a single line
                 for (const line of response.split("\n")) {
-                    if (line.indexOf(prefix) === -1) {
+                    if (!prefix.test(line)) {
                         // prefix not found
                         continue;
                     }
 
-                    let json_bit = line.split(prefix.slice(0, -1))[1].split('</script>')[0].trim();
+                    let json_bit = line.split(prefix)[1].split('</script>')[0].trim();
                     if (json_bit.endsWith(';')) {
                         json_bit = json_bit.substring(0, -1);
                     }
 
-                    if (prefix.indexOf("additionalDataLoaded") !== -1) {
-                        // remove trailing )
-                        json_bit = json_bit.slice(0, -1);
-                    } else if (js_prefixes.length === 0) {
+                    if (js_prefixes.length === 0) {
                         // last prefix has some special handling
                         // remove trailing stuff...
                         json_bit = json_bit.split(']]}}')[0];
