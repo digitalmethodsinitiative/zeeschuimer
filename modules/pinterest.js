@@ -62,7 +62,7 @@ zeeschuimer.register_module(
 
         }
 
-        return [...traverse_data(data, function (item, property) {
+        for(const pin of traverse_data(data, function (item, property) {
 
             if (
                 // post page recommendations: https://www.pinterest.com/pin/507921664242278249/
@@ -86,6 +86,10 @@ zeeschuimer.register_module(
                 item['_zs-origin'] = 'json';
                 return item;
             }
-        })]
+        })) {
+            pins.push(pin);
+        }
+
+        return pins;
     }
 )
