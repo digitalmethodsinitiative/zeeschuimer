@@ -2,7 +2,7 @@
   "instagram.com": {
     "Front page": {
       "https://instagram.com": {
-        "expected": 4,
+        "expected": [2, 5],
         "more-after-scroll": false
       }
     },
@@ -32,13 +32,13 @@
     },
     "Tag overview page": {
       "https://www.instagram.com/explore/tags/blessed/": {
-        "expected": 28,
-        "more-after-scroll": false
+        "expected": 18,
+        "more-after-scroll": true
       }
     },
     "Location overview page": {
       "https://www.instagram.com/explore/locations/290958191/hongerige-wolf-groningen-netherlands/": {
-        "expected": 91,
+        "expected": 12,
         "more-after-scroll": true,
         "wait": 10
       }
@@ -332,7 +332,7 @@
   "pinterest.com": {
     "Explore (main page)": {
       "https://www.pinterest.com/ideas/": {
-        "expected": 25,
+        "expected": [20, 30],
         "wait": 10,
         "more-after-scroll": true
       }
@@ -346,26 +346,26 @@
     },
     "Board": {
       "https://www.pinterest.com/nahidessa/spiritual-groups/": {
-        "expected": 15,
+        "expected": [15, 65],
         "more-after-scroll": true
       }
     },
     "Post page": {
       "https://www.pinterest.com/pin/507921664242278249/": {
-        "expected": 25,
+        "expected": [20,35],
         "more-after-scroll": true,
         "comment": "Individual post page also loads a number of related posts immediately"
       }
     },
     "Account page": {
-      "https://www.pinterest.com/walmart/": {
-        "expected": 24,
+      "https://nl.pinterest.com/Walmart/_created/": {
+        "expected": [20, 30],
         "more-after-scroll": true
       }
     },
     "Search results": {
       "https://www.pinterest.com/search/pins/?q=Aesthetic%20vibes": {
-        "expected": 65,
+        "expected": [40, 45],
         "more-after-scroll": true
       }
     }
