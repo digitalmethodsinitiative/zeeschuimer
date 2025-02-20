@@ -37,7 +37,7 @@ zeeschuimer.register_module(
             }
         }
 
-        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed", "searchDashClustersByAll"]
+        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed", "searchDashClustersByAll", "feedDashUpdatesByPostSlug"]
         const uninteresting_list_types = ["*dashMySettings", "messagingDashMessagingSettings", "*searchDashSearchHome", "searchDashTypeaheadByGlobalTypeahead", "messagingDashAffiliatedMailboxesAll", "legoDashPageContentsByPageKeyAndSlotId", "searchDashFilterClustersByFilters"]
         for (const data_bit of data) {
             // now we have the data, try to parse it
