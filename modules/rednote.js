@@ -82,6 +82,9 @@ zeeschuimer.register_module(
 
             // this is a post when opened individually
             for (const embedded_post of dummyDocument.querySelectorAll('.note-container')) {
+                const date_and_location = embedded_post.querySelector('.date') ? embedded_post.querySelector('.title').innerText : '';
+                const { date_time, location } = parseDateAndLocation(date_and_location);
+
                 embedded_posts.push({
                     'id': embedded_post.querySelector('a').getAttribute('href').replace(/\/$/, '').split('/').pop().split('-').pop(),
                     'url': embedded_post.querySelector('a.cover').getAttribute('href'),
@@ -91,6 +94,8 @@ zeeschuimer.register_module(
                     'likes': embedded_post.querySelector('span.count').innerText,
                     'thumbnail_url': embedded_post.querySelector('.cover img').getAttribute('src'),
                     'title': embedded_post.querySelector('.title') ? embedded_post.querySelector('.title').innerText : '',
+                    'date_time': date_time,
+                    'location': location,
                     '_zs-origin': 'html'
                 });
             }
@@ -100,6 +105,42 @@ zeeschuimer.register_module(
             // if we found any posts this way, return them
             return embedded_posts;
         }
+
+        function parseDateAndLocation(str) {
+            const parts = str.split(' ');
+            const now = new Date();
+            const currentYear = now.getFullYear();
+            
+            let normalizedDateTime;
+            const location = parts[parts.length - 1];
+            
+            if (parts[0] === '今天') {
+              const timeStr = parts[1];
+              const [hours, minutes] = timeStr.split(':');
+              const date = new Date();
+              date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+              normalizedDateTime = date.toISOString();
+            } 
+            else if (parts[0] === '昨天') {
+              const timeStr = parts[1];
+              const [hours, minutes] = timeStr.split(':');
+              const date = new Date();
+              date.setDate(date.getDate() - 1);
+              date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+              normalizedDateTime = date.toISOString();
+            }
+            else {
+              const dateStr = parts[0];
+              const [month, day] = dateStr.split('-').map(num => parseInt(num, 10));
+              const date = new Date(currentYear, month - 1, day, 0, 0, 0, 0);
+              normalizedDateTime = date.toISOString();
+            }
+            
+            return {
+              date_time: normalizedDateTime,
+              location: location
+            };
+          }
 
         // no posts, no data
         return [];
