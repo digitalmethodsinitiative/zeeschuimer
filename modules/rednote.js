@@ -106,34 +106,62 @@ zeeschuimer.register_module(
             return embedded_posts;
         }
 
-        function parseDateAndLocation(str) {
+        function parseString(str) {
             const parts = str.split(' ');
             const now = new Date();
             const currentYear = now.getFullYear();
             
             let normalizedDateTime;
-            const location = parts[parts.length - 1];
+            let location = null;
             
-            if (parts[0] === '今天') {
-              const timeStr = parts[1];
-              const [hours, minutes] = timeStr.split(':');
-              const date = new Date();
-              date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-              normalizedDateTime = date.toISOString();
-            } 
-            else if (parts[0] === '昨天') {
-              const timeStr = parts[1];
-              const [hours, minutes] = timeStr.split(':');
-              const date = new Date();
-              date.setDate(date.getDate() - 1);
-              date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
-              normalizedDateTime = date.toISOString();
-            }
-            else {
+            if (parts.length === 1) {
               const dateStr = parts[0];
               const [month, day] = dateStr.split('-').map(num => parseInt(num, 10));
               const date = new Date(currentYear, month - 1, day, 0, 0, 0, 0);
               normalizedDateTime = date.toISOString();
+            } 
+            else if (parts.length === 2) {
+              if (parts[0] === '今天') {
+                const timeStr = parts[1];
+                const [hours, minutes] = timeStr.split(':');
+                const date = new Date();
+                date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                normalizedDateTime = date.toISOString();
+              } 
+              else if (parts[0] === '昨天') {
+                const timeStr = parts[1];
+                const [hours, minutes] = timeStr.split(':');
+                const date = new Date();
+                date.setDate(date.getDate() - 1);
+                date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                normalizedDateTime = date.toISOString();
+              }
+              else {
+                const dateStr = parts[0];
+                const [month, day] = dateStr.split('-').map(num => parseInt(num, 10));
+                const date = new Date(currentYear, month - 1, day, 0, 0, 0, 0);
+                normalizedDateTime = date.toISOString();
+                location = parts[1];
+              }
+            }
+            else if (parts.length === 3) {
+              location = parts[2];
+              
+              if (parts[0] === '今天') {
+                const timeStr = parts[1];
+                const [hours, minutes] = timeStr.split(':');
+                const date = new Date();
+                date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                normalizedDateTime = date.toISOString();
+              } 
+              else if (parts[0] === '昨天') {
+                const timeStr = parts[1];
+                const [hours, minutes] = timeStr.split(':');
+                const date = new Date();
+                date.setDate(date.getDate() - 1);
+                date.setHours(parseInt(hours, 10), parseInt(minutes, 10), 0, 0);
+                normalizedDateTime = date.toISOString();
+              }
             }
             
             return {
