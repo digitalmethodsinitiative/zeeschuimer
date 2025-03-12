@@ -3,7 +3,7 @@
   "description": "Collect data while browsing social media platforms and upload it for analysis later",
   "manifest_version": 2,
   "name": "Zeeschuimer",
-  "version": "1.12.2",
+  "version": "1.12.3",
   "homepage_url": "https://github.com/digitalmethodsinitiative/zeeschuimer",
 
   "browser_specific_settings": {
