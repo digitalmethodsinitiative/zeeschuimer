@@ -95,15 +95,17 @@ window.zeeschuimer = {
 
         filter.onstop = async (event) => {
             // pass the document to all eligible modules that are also enabled
+            let enabled_modules = [];
             for(const module_id in eligible_modules) {
                 const module_enabled_key = 'zs-enabled-' + module_id;
                 let module_enabled = await browser.storage.local.get(module_enabled_key);
                 module_enabled = module_enabled.hasOwnProperty(module_enabled_key) && !!parseInt(module_enabled[module_enabled_key]);
 
                 if(module_enabled) {
-                    await zeeschuimer.parse_request(full_response, origin_url, document_url, details.tabId);
+                    enabled_modules.push(module_id);
                 }
             }
+            await zeeschuimer.parse_request(full_response, origin_url, document_url, details.tabId, enabled_modules);
             filter.disconnect();
             full_response = '';
         }
@@ -117,8 +119,9 @@ window.zeeschuimer = {
      * @param origin_url  URL of the *page* the data was requested from
      * @param document_url  URL of the content that was captured
      * @param tabId  ID of the tab in which the request was captured
+     * @param enabled_modules  List of IDs of enabled modules
      */
-    parse_request: async function (response, origin_url, document_url, tabId) {
+    parse_request: async function (response, origin_url, document_url, tabId, enabled_modules) {
         if (!origin_url) {
             origin_url = document_url;
         }
@@ -160,6 +163,10 @@ window.zeeschuimer = {
 
         let item_list = [];
         for (let module_id in this.modules) {
+            if(!enabled_modules.includes(module_id)) {
+                continue
+            }
+
             item_list = this.modules[module_id].callback(response, origin_url, document_url);
             if (item_list && item_list.length > 0) {
                 await Promise.all(item_list.map(async (item) => {
