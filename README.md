@@ -46,8 +46,12 @@ debugging console](https://www.youtube.com/watch?v=J7el77F1ckg) after cloning th
 A [guide to using Zeeschuimer and 4CAT](https://tinyurl.com/nmrw-zeeschuimer-tiktok) is available. Basic instructions 
 are as follows: 
 
-Install the browser extension in a Firefox browser. A button with the Zeeschuimer logo (a 'Z') will appear in the 
-browser toolbar. Click it to open the Zeeschuimer interface. Enable capturing for the sites you want to capture from.
+Install the browser extension in a Firefox browser. A button with the Zeeschuimer logo (<img alt="Zeeschuimer's browser icon, a yellow 'Z' on a green background" src="images/zeeschuimer-16.png">) will appear in the browser toolbar. Click it 
+to open the Zeeschuimer interface. Enable capturing for the sites you want to capture from.
+
+Note that after installation in Firefox, the extension icon may not be immediately visible in the toolbar. If you can't 
+find Zeeschuimer's icon, look for the 'Extensions' icon (a puzzle piece); clicking it will show all available extensions 
+that are not shown in the main browser toolbar.
 
 Next, simply browse a supported platform's site. You will see the amount of items detected per platform increase as you 
 browse. When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload it
