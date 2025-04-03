@@ -2,7 +2,7 @@
   "instagram.com": {
     "Front page": {
       "https://instagram.com": {
-        "expected": 4,
+        "expected": [2, 5],
         "more-after-scroll": false
       }
     },
@@ -32,13 +32,13 @@
     },
     "Tag overview page": {
       "https://www.instagram.com/explore/tags/blessed/": {
-        "expected": 28,
-        "more-after-scroll": false
+        "expected": 18,
+        "more-after-scroll": true
       }
     },
     "Location overview page": {
       "https://www.instagram.com/explore/locations/290958191/hongerige-wolf-groningen-netherlands/": {
-        "expected": 91,
+        "expected": 12,
         "more-after-scroll": true,
         "wait": 10
       }
@@ -54,6 +54,32 @@
         "expected": 1,
         "more-after-scroll": false,
         "wait": 10
+      }
+    }
+  },
+  "threads.net": {
+    "Front page": {
+      "https://www.threads.net/": {
+        "expected": 4,
+        "more-after-scroll": true
+      }
+    },
+    "User page": {
+      "https://www.threads.net/@toby_climbing": {
+        "expected": 8,
+        "more-after-scroll": true
+      }
+    },
+    "Individual post page": {
+      "https://www.threads.net/@mkbhd/post/C8XGGhhOLri": {
+        "expected": 34,
+        "more-after-scroll": true
+      }
+    },
+    "Search results": {
+      "https://www.threads.net/search?q=okboomer&serp_type=default": {
+        "expected": 20,
+        "more-after-scroll": true
       }
     }
   },
@@ -236,7 +262,7 @@
   "douyin.com": {
     "Front Page": {
       "https://www.douyin.com/discover": {
-        "expected": 20,
+        "expected": 70,
         "more-after-scroll": true,
         "wait": 10,
         "comment": "Douyin loves captchas; longer wait is needed until for them to load",
@@ -253,7 +279,7 @@
     },
     "User page": {
       "https://www.douyin.com/user/MS4wLjABAAAAqtpQNZmjRtGJdpyk0gbAh6OpqqBjJddNTgLhmK3Y0CI": {
-        "expected": 21,
+        "expected": 20,
         "more-after-scroll": false,
         "wait": 10,
         "comment": "more-after-scroll is true if logged in, false if not",
@@ -262,7 +288,7 @@
     },
     "Search": {
       "https://www.douyin.com/search/%E6%90%9E%E7%AC%91": {
-        "expected": 9,
+        "expected": 26,
         "more-after-scroll": true,
         "wait": 10,
         "captcha-selector": "div#captcha_container"
@@ -278,7 +304,7 @@
     },
     "Channels": {
       "https://www.douyin.com/channel/300205": {
-        "expected": 20,
+        "expected": 30,
         "more-after-scroll": true,
         "wait": 10,
         "captcha-selector": "div#captcha_container"
@@ -286,11 +312,101 @@
     },
     "Individual post page": {
       "https://www.douyin.com/?modal_id=7092325988377316616": {
-        "expected": 10,
+        "expected": 1,
         "more-after-scroll": false,
         "wait": 10,
-        "comment": "Douyin loads additional videos ready to scroll to even on individual post pages",
+        "comment": "Douyin loads full background page (i.e. www.douyin.com) and then individual post in popup",
         "captcha-selector": "div#captcha_container"
+      }
+    },
+    "Individual post page v2": {
+      "https://www.douyin.com/video/7416052349312961819": {
+        "expected": 1,
+        "more-after-scroll": false,
+        "wait": 10,
+        "comment": "Douyin also loads additional videos in recommendation bar to side (but we do not currently collect)",
+        "captcha-selector": "div#captcha_container"
+      }
+    }
+  },
+  "pinterest.com": {
+    "Explore (main page)": {
+      "https://www.pinterest.com/ideas/": {
+        "expected": [20, 30],
+        "wait": 10,
+        "more-after-scroll": true
+      }
+    },
+    "Explore (idea page)": {
+      "https://www.pinterest.com/ideas/2024-summer-olympics/920026959546/": {
+        "expected": 34,
+        "more-after-scroll": true,
+        "comment": "No posts are loaded first, but scrolling down shows recommendations"
+      }
+    },
+    "Board": {
+      "https://www.pinterest.com/nahidessa/spiritual-groups/": {
+        "expected": [15, 65],
+        "more-after-scroll": true
+      }
+    },
+    "Post page": {
+      "https://www.pinterest.com/pin/507921664242278249/": {
+        "expected": [20,35],
+        "more-after-scroll": true,
+        "comment": "Individual post page also loads a number of related posts immediately"
+      }
+    },
+    "Account page": {
+      "https://nl.pinterest.com/Walmart/_created/": {
+        "expected": [20, 30],
+        "more-after-scroll": true
+      }
+    },
+    "Search results": {
+      "https://www.pinterest.com/search/pins/?q=Aesthetic%20vibes": {
+        "expected": [40, 45],
+        "more-after-scroll": true
+      }
+    }
+  },
+  "xiaohongshu.com": {
+    "Explore (main page, no scrolling)": {
+      "https://www.xiaohongshu.com/": {
+        "comment": "The first 35 items are mapped from the page HTML, hence the separate test",
+        "expected": 35,
+        "wait": 10
+      }
+    },
+    "Explore (main page, with scrolling)": {
+      "https://www.xiaohongshu.com/": {
+        "expected": 35,
+        "more-after-scroll": true,
+        "wait": 10
+      }
+    },
+    "Explore (category page)": {
+      "https://www.xiaohongshu.com/explore?channel_id=homefeed.fashion_v3": {
+        "expected": 26,
+        "more-after-scroll": true
+      }
+    },
+    "Post page": {
+      "https://www.xiaohongshu.com/explore/6795def7000000002900ab9c?xsec_token=ABSw57N487PyzALnkqX5WR_S2sN-yhmaiu5r4_7xUrXfw=&xsec_source=pc_feed": {
+        "expected": 1,
+        "more-after-scroll": false
+      }
+    },
+    "User page": {
+      "https://www.xiaohongshu.com/user/profile/5a40bf9e4eacab780009bdde": {
+        "expected": 32,
+        "comment": "Without logging in, no more than 12 items are displayed"
+      }
+    },
+    "Search results": {
+      "https://www.xiaohongshu.com/search_result?keyword=yakuza&source=web_user_page": {
+        "expected": 40,
+        "more-after-scroll": true
       }
     }
   }

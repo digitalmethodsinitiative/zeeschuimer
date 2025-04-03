@@ -37,7 +37,7 @@ zeeschuimer.register_module(
             }
         }
 
-        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed", "searchDashClustersByAll"]
+        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed", "searchDashClustersByAll", "feedDashUpdatesByPostSlug"]
         const uninteresting_list_types = ["*dashMySettings", "messagingDashMessagingSettings", "*searchDashSearchHome", "searchDashTypeaheadByGlobalTypeahead", "messagingDashAffiliatedMailboxesAll", "legoDashPageContentsByPageKeyAndSlotId", "searchDashFilterClustersByFilters"]
         for (const data_bit of data) {
             // now we have the data, try to parse it
@@ -56,13 +56,13 @@ zeeschuimer.register_module(
                 } else if ("data" in data_bit["data"] && Object.keys(data_bit["data"]["data"]).filter(k => eligible_list_types.includes(k))) {
                     for(const k of eligible_list_types) {
                         if(k in data_bit["data"]["data"]) {
-                            const elements_key = (data_bit["data"]["data"]['*elements'] !== undefined) ? '*elements' : 'elements';
+                            const elements_key = (data_bit["data"]["data"][k]['*elements'] !== undefined) ? '*elements' : 'elements';
                             item_index = data_bit["data"]["data"][k][elements_key];
                             location = `data.data.${k}.${elements_key}`;
 
-                            if (typeof (item_index) !== 'string' && item_index.length > 0 && item_index[0]['items'] !== undefined) {
+                            if (item_index && item_index[0]['items'] !== undefined) {
                                 // embedded results on search page
-                                item_index = item_index[0]['items'].map(item => {
+                                item_index = item_index[0]['items'].filter(i => i['item']['searchFeedUpdate']).map(item => {
                                     return item['item']['searchFeedUpdate']['*update'];
                                 });
                             }
