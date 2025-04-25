@@ -1,10 +1,10 @@
 zeeschuimer.register_module(
     'Threads',
-    'threads.net',
+    'threads.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
 
-        if (!["threads.net"].includes(domain)) {
+        if (!["threads.net", "threads.com"].includes(domain)) {
             return [];
         }
 
@@ -60,10 +60,13 @@ zeeschuimer.register_module(
             }
         }
 
+        console.log('have ' + datas.length + ' datas from ' + source_platform_url)
+
         return [...traverse_data(datas, function (item, property) {
             if (property === 'post' && item['pk'] && item['code']) {
                 return item;
             }
         })]
-    }
+    },
+    'threads.net'
 );
