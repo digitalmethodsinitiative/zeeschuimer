@@ -43,7 +43,7 @@ in any Firefox-based browser. If you want to run the latest development version 
 debugging console](https://www.youtube.com/watch?v=J7el77F1ckg) after cloning the repository locally.
 
 ## How to use
-A [guide to using Zeeschuimer and 4CAT](https://tinyurl.com/nmrw-zeeschuimer-tiktok) is available. Basic instructions 
+A [guide to using Zeeschuimer and 4CAT](https://zeeschuimer.4cat.nl/) is available. Basic instructions 
 are as follows: 
 
 Install the browser extension in a Firefox browser. A button with the Zeeschuimer logo (<img alt="Zeeschuimer's browser icon, a yellow 'Z' on a green background" src="images/zeeschuimer-16.png">) will appear in the browser toolbar. Click it 
