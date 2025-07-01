@@ -11,7 +11,11 @@ zeeschuimer.register_module(
                 "actor_provider",
                 "trackingdata",
                 "viewability_config",
-                "client_view_config"
+                "client_view_config",
+                "accessibility_caption",
+                "accent_color",
+                "focus",
+                "comment_composer_placeholder"
             ]);
 
             function shouldRemoveKey(key) {
