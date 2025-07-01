@@ -2,17 +2,7 @@ zeeschuimer.register_module(
     'Facebook (posts)',
     'facebook.com',
     function (response, source_platform_url, source_url) {
-        let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
-
-        if (!["facebook.com"].includes(domain) || !source_url.endsWith('api/graphql/')) {
-            return [];
-        }
-
-        let datas = [];
-        let edges = [];
-        const type_list = ['SOCIAL_POSTS', 'POSTS_SET_FEATURED', 'PUBLIC_POSTS'];
-
-        const parse_ = function (obj){
+        function parse_story(obj) {
             const exactKeysToRemove = new Set([
                 "encrypted_tracking",
                 "click_tracking_linkshim_cb",
@@ -21,13 +11,9 @@ zeeschuimer.register_module(
                 "actor_provider",
                 "trackingdata",
                 "viewability_config",
-                "client_view_config",
-                "accessibility_caption",
-                "reaction_display_config",
-                "accent_color",
-                "focus"
+                "client_view_config"
             ]);
-        
+
             function shouldRemoveKey(key) {
                 return (
                     exactKeysToRemove.has(key) ||
@@ -36,7 +22,7 @@ zeeschuimer.register_module(
                     key.startsWith("viewer_")
                 );
             }
-        
+
             function deepClean(target) {
                 if (Array.isArray(target)) {
                     for (let i = target.length - 1; i >= 0; i--) {
@@ -44,7 +30,7 @@ zeeschuimer.register_module(
                         if (typeof item === "object" && item !== null) {
                             deepClean(item);
                             if (isEmpty(item)) {
-                                target.splice(i, 1); // Delete empty items
+                                target.splice(i, 1);
                             }
                         } else if (item === null || item === undefined) {
                             target.splice(i, 1);
@@ -66,7 +52,7 @@ zeeschuimer.register_module(
                     }
                 }
             }
-        
+
             function isEmpty(value) {
                 if (Array.isArray(value)) {
                     return value.length === 0;
@@ -75,23 +61,33 @@ zeeschuimer.register_module(
                 }
                 return false;
             }
-        
+
             const cloned = structuredClone(obj);
             deepClean(cloned);
             return cloned;
-            
         }
+
+        let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
+
+        if (!["facebook.com"].includes(domain) || !source_url.endsWith('api/graphql/')) {
+            return [];
+        }
+
+        let datas = [];
+        let edges = [];
+        const type_list = ['SOCIAL_POSTS', 'POSTS_SET_FEATURED', 'PUBLIC_POSTS'];
 
         try {
             datas.push(JSON.parse(response));
         } catch (e) {
             if (response.substring(0, 1) === '{') {
-                //ndjson
                 const lines = response.split('\n');
                 for (const line of lines) {
                     try {
-                        datas.push(parse_(JSON.parse(line)));
+                        datas.push(JSON.parse(line));
                     } catch (e) {
+                        // silently ignore bad lines
+                        console.log(e);
                     }
                 }
             }
@@ -99,20 +95,16 @@ zeeschuimer.register_module(
 
         const traverse = function (obj) {
             for (const property in obj) {
-                if (!obj.hasOwnProperty(property)) {
-                    // not actually a property
-                    continue;
-                }
+                if (!obj.hasOwnProperty(property)) continue;
 
-                if(obj['id'] && obj['__typename'] === 'Story' && obj['comet_sections']) {
+                if (obj['id'] && obj['__typename'] === 'Story' && obj['comet_sections']) {
+                    edges.push(parse_story(obj));
                     console.log(obj);
-                    edges.push(obj);
-                } else if (typeof (obj[property]) === "object") {
+                } else if (typeof obj[property] === "object") {
                     traverse(obj[property]);
                 }
             }
-        }
-
+        };
 
         for (const data of datas) {
             if (data) {
@@ -120,14 +112,15 @@ zeeschuimer.register_module(
             }
         }
 
-        for(const index in edges) {
+        for (const index in edges) {
             try {
                 const better_id = atob(edges[index]['id']);
                 edges[index]['id'] = better_id;
             } catch (e) {
-                // pass
+                // fail quietly
             }
         }
+
         return edges;
     }
 );
