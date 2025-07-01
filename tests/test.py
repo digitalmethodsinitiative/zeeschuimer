@@ -186,6 +186,11 @@ for platform, testcases in tests.items():
                 except selenium_exceptions.NoSuchElementException:
                     pass
 
+            # ranges are expressed as tuples/lists (inclusive)
+            # if it's not a range, make it one anyway
+            expected = [settings["expected"], settings["expected"]] if type(settings["expected"]) is not list else settings["expected"]
+            nice_expected = f"between {expected[0]:,} and {expected[1]:,}" if expected[0] != expected[1] else str(expected[0])
+
             # look in Zeeschuimer how many items have been captured
             safename = platform.replace(".", "").replace("-", "")
             driver.switch_to.window(handles[0])
@@ -211,13 +216,16 @@ for platform, testcases in tests.items():
             msg = f"{indent} {str.rjust(str(num_items), 4, ' ')} items :: "
             if try_scrolling:
                 msg += f" {str.rjust(str(num_after_scroll), 4, ' ')} after scroll :: "
-                if num_items >= settings["expected"] and num_after_scroll > num_items:
+                if num_items >= expected[0] and num_items <= expected[1] and num_after_scroll > num_items:
                     msg += colored("[✓]", "green", attrs=["bold"]) + " as expected"
                     passed += 1
-                elif num_items < settings["expected"] and num_after_scroll > num_items:
-                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {settings['expected']:,}, get fewer, but more after scrolling"
+                elif expected[0] > num_items and num_after_scroll > num_items:
+                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {nice_expected}, get fewer, but more after scrolling"
                     warnings += 1
-                elif num_items >= settings["expected"] and num_after_scroll == num_items:
+                elif num_items > expected[1] and num_after_scroll > num_items:
+                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {nice_expected}, get more, but more after scrolling"
+                    warnings += 1
+                elif num_items >= expected[0] and num_items <= expected[1] and num_after_scroll == num_items:
                     msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" as expected, but no increase after scrolling"
                     warnings += 1
                 else:
@@ -225,14 +233,14 @@ for platform, testcases in tests.items():
                     failed += 1
             else:
                 msg += f"      no scrolling :: "
-                if num_items == settings["expected"]:
+                if num_items >= expected[0] and num_items <= expected[1]:
                     msg += colored("[✓]", "green", attrs=["bold"]) + " as expected"
                     passed += 1
-                elif num_items > settings["expected"]:
-                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {settings['expected']:,}, but got more"
+                elif num_items > expected[1]:
+                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" expected {nice_expected}, but got more"
                     warnings += 1
                 else:
-                    msg += colored("[⨯]", "red", attrs=["bold"]) + f" expected {settings['expected']:,}, but got fewer"
+                    msg += colored("[⨯]", "red", attrs=["bold"]) + f" expected {nice_expected}, but got fewer"
                     failed += 1
 
             print(msg)

@@ -36,11 +36,11 @@ zeeschuimer.register_module(
 
         if("ItemModule" in data) {
             let r = Object.values(data["ItemModule"]);
-            return r;
+            return r.filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("itemList" in data) {
-            return data["itemList"];
+            return data["itemList"].filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("item_list" in data) {
-            return data["item_list"];
+            return data["item_list"].filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("data" in data) {
             // search results "top results" (i.e. not the video tab)
             let r = Object.values(data["data"]);
@@ -50,11 +50,17 @@ zeeschuimer.register_module(
             }
             let items = r.filter(x => x.hasOwnProperty('item') && x.hasOwnProperty('type')).map(x => x["item"]);
             let known_fields = ["id", "desc", "createTime", "music", "duetInfo"];
+            let bad_fields = ["liveRoomInfo"]; // if these are present, skip the post, e.g. for live streams
             for(let i in items) {
                 let item = items[i];
                 let item_ok = true;
                 for (let j in known_fields) {
                     if (!item.hasOwnProperty(known_fields[j])) {
+                        item_ok = false;
+                    }
+                }
+                for (let j in bad_fields) {
+                    if (item.hasOwnProperty(bad_fields[j])) {
                         item_ok = false;
                     }
                 }

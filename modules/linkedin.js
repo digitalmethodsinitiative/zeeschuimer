@@ -37,7 +37,7 @@ zeeschuimer.register_module(
             }
         }
 
-        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed", "searchDashClustersByAll"]
+        const eligible_list_types = ["feedDashMainFeedByMainFeed", "feedDashInterestUpdatesByInterestFeedByKeywords", "feedDashProfileUpdatesByMemberShareFeed", "searchDashClustersByAll", "feedDashUpdatesByPostSlug"]
         const uninteresting_list_types = ["*dashMySettings", "messagingDashMessagingSettings", "*searchDashSearchHome", "searchDashTypeaheadByGlobalTypeahead", "messagingDashAffiliatedMailboxesAll", "legoDashPageContentsByPageKeyAndSlotId", "searchDashFilterClustersByFilters"]
         for (const data_bit of data) {
             // now we have the data, try to parse it
@@ -60,9 +60,9 @@ zeeschuimer.register_module(
                             item_index = data_bit["data"]["data"][k][elements_key];
                             location = `data.data.${k}.${elements_key}`;
 
-                            if (typeof (item_index) !== 'string' && item_index && item_index[0]['items'] !== undefined) {
+                            if (item_index && item_index[0]['items'] !== undefined) {
                                 // embedded results on search page
-                                item_index = item_index[0]['items'].map(item => {
+                                item_index = item_index[0]['items'].filter(i => i['item']['searchFeedUpdate']).map(item => {
                                     return item['item']['searchFeedUpdate']['*update'];
                                 });
                             }
