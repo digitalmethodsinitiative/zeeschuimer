@@ -2,6 +2,8 @@ zeeschuimer.register_module(
     'Facebook (posts)',
     'facebook.com',
     function (response, source_platform_url, source_url) {
+        // 用於追蹤已處理的貼文 ID，避免重複
+        const processedIds = new Set();
         function parse_story(obj) {
             const exactKeysToRemove = new Set([
                 "encrypted_tracking",
@@ -102,8 +104,12 @@ zeeschuimer.register_module(
                 if (!obj.hasOwnProperty(property)) continue;
 
                 if (obj['id'] && obj['__typename'] === 'Story' && obj['comet_sections']) {
-                    edges.push(parse_story(obj));
-                    console.log(obj);
+                    // 檢查是否已經處理過這個 ID
+                    if (!processedIds.has(obj['id'])) {
+                        processedIds.add(obj['id']);
+                        edges.push(parse_story(obj));
+                        console.log(obj);
+                    }
                 } else if (typeof obj[property] === "object") {
                     traverse(obj[property]);
                 }
