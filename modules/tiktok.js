@@ -49,7 +49,7 @@ zeeschuimer.register_module(
                 return [];
             }
             let items = r.filter(x => x.hasOwnProperty('item') && x.hasOwnProperty('type')).map(x => x["item"]);
-            let known_fields = ["id", "desc", "createTime", "music", "duetInfo"];
+            let known_fields = ["id", "desc", "createTime", "music"];
             let bad_fields = ["liveRoomInfo"]; // if these are present, skip the post, e.g. for live streams
             for(let i in items) {
                 let item = items[i];
