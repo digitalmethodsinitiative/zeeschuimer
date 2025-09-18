@@ -24,6 +24,24 @@ zeeschuimer.register_module(
             from_embed = true;
         }
 
+        // NEW: detect JSON embedded in HTML via <script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">
+        if (!from_embed && typeof response === 'string' && response.indexOf('<script') >= 0) {
+            const udrMatch = response.match(/<script[^>]+id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/i);
+            if (udrMatch && udrMatch[1]) {
+                try {
+                    const ud = JSON.parse(udrMatch[1]);
+                    const scope = ud && ud.__DEFAULT_SCOPE__;
+                    const updatedItems = scope && scope["webapp.updated-items"];
+                    if (Array.isArray(updatedItems)) {
+                        // Return items from the new payload, excluding live items
+                        return updatedItems.filter(x => !x?.liveRoomInfo);
+                    }
+                } catch (e) {
+                    // fall through to other strategies
+                }
+            }
+        }
+
         if(!response) {
             return [];
         }
@@ -31,6 +49,15 @@ zeeschuimer.register_module(
         try {
             data = JSON.parse(response);
         } catch (SyntaxError) {
+            return [];
+        }
+
+        // TikTok preloads some data (for example on hover over a link)
+        // https://www.tiktok.com/api/preload/item_list/ returns itemList array with full items that may not be reloaded if the user visits the link
+        const from_preload = (typeof source_url === 'string') && (source_url.indexOf('/api/preload/') >= 0);
+        if (from_preload) {
+            // We could updated add an attribute to the items to indicate they are from preload, but we should encourage a full reload anyway
+            // So we just ignore these items for now
             return [];
         }
 
