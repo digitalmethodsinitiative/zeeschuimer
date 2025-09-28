@@ -68,8 +68,6 @@ zeeschuimer.register_module(
             ];
 
             let prefix;
-            const dummyDocument = document.implementation.createDocument(null, '', null);
-
             while (js_prefixes.length > 0) {
                 prefix = js_prefixes.shift();
 
@@ -100,10 +98,14 @@ zeeschuimer.register_module(
                         json_bit = json_bit.split(']]}}')[0];
                     }
 
+                    json_bit = json_bit.split('],["CometResourceScheduler"')[0];
+
 
                     try {
                         datas.push(JSON.parse(json_bit));
                     } catch {
+                        console.log('bad json');
+                        console.log(json_bit);
                         // fine, not JSON after all
                     }
                 }
