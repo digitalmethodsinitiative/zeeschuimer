@@ -8,7 +8,6 @@ zeeschuimer.register_module(
             return [];
         }
 
-        let edges = [];
         let datas = [];
         try {
             // if it's JSON already, just parse it
@@ -44,6 +43,8 @@ zeeschuimer.register_module(
                         // remove trailing stuff...
                         json_bit = json_bit.split(']]}}')[0];
                     }
+
+                    json_bit = json_bit.split('],["CometResourceScheduler"')[0];
 
 
                     try {
