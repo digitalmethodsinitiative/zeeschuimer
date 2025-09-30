@@ -186,7 +186,7 @@ zeeschuimer.register_module(
                 console.log(`Collected single video from aweme_detail ${source_platform_url}`)
             } else if ("cards" in data) {
                 // Front Page (首页) tab (i.e. douyin.com/discover)
-                if (source_platform_url.includes("/discover")) {
+                if (source_platform_url.includes("/discover") || source_platform_url.includes("/jingxuan")) {
                     for (let i in data["cards"]) {
                         let item = data["cards"][i]["aweme"];
                         try {
