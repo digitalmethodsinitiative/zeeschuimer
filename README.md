@@ -58,8 +58,8 @@ browse. When you have the items you need, you can export the data as an [ndjson]
 to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
 processors on the data.
 
-To upload to 4CAT, copy the URL of the website of the 4CAT instance to the "4CAT instance" field at the top of 
-Zeeschuimer's interface. You can then use the "to 4CAT" button to create a new 4CAT dataset from the captured data. 
+**To upload to 4CAT, copy the URL of the website of the 4CAT instance to the "4CAT instance" field at the bottom of 
+Zeeschuimer's interface**. You can then use the "to 4CAT" button to create a new 4CAT dataset from the captured data. 
 After uploading, Zeeschuimer will show you a link and the ten most recently uploaded datasets are shown at the bottom of
 the interface.
 
