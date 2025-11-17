@@ -53,9 +53,15 @@ Note that after installation in Firefox, the extension icon may not be immediate
 find Zeeschuimer's icon, look for the 'Extensions' icon (a puzzle piece); clicking it will show all available extensions 
 that are not shown in the main browser toolbar.
 
-Next, simply browse a supported platform's site. You will see the amount of items detected per platform increase as you 
-browse. When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload it
-to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
+### Collecting data
+Next, simply browse a supported platform's site. **Zeeschuimer collects data as your browser receives it**.  It is
+always best practices to refresh a page after you toggle collection on for a supported platform's site in the control 
+panel (any data loaded previously will not be collected until refreshed). You can force a refresh with Ctl + F5 on Windows 
+or Shift + Command + R on Mac. You will see the amount of items detected per platform increase as you browse. Toggle 
+collection off when done to avoid inadvertantly gathering undesired data.
+
+When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload 
+it to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
 processors on the data.
 
 **To upload to 4CAT, copy the URL of the website of the 4CAT instance to the "4CAT instance" field at the bottom of 
