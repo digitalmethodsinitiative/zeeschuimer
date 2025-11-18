@@ -11,6 +11,8 @@ zeeschuimer.register_module(
             return [];
         }
 
+        // TODO parse initial HTML? No embedded JSON, but first few items are in the HTML and a really gross script tag with JS variables
+
         let data;
         try {
             data = JSON.parse(response);
