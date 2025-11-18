@@ -38,6 +38,7 @@
       "inc/he.js",
       "js/lib.js",
       "js/zs-background.js",
+      "modules/bilibili.js",
       "modules/tiktok.js",
       "modules/tiktok-comments.js",
       "modules/instagram.js",
