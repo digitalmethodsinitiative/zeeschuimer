@@ -11,17 +11,45 @@ zeeschuimer.register_module(
             return [];
         }
 
-        // TODO parse initial HTML? No embedded JSON, but first few items are in the HTML and a really gross script tag with JS variables
+        let found_items;
+        let type_of_item;
 
+        // Try to parse as JSON first (API responses)
         let data;
         try {
             data = JSON.parse(response);
         } catch (SyntaxError) {
+            // Not JSON - might be HTML with embedded __pinia data
+            if (typeof response === 'string' && response.includes('window.__pinia')) {
+                console.log('Bilibili module: Detected HTML with __pinia, attempting to parse');
+                
+                // Extract the script tag or line containing window.__pinia
+                // Look for the line - it should be in a <script> tag
+                const lines = response.split('\n');
+                let piniaLine = '';
+                for (let line of lines) {
+                    if (line.includes('window.__pinia')) {
+                        piniaLine = line;
+                        break;
+                    }
+                }
+                
+                if (piniaLine) {
+                    // Parse the pinia data using the embedded parser
+                    const videos = parsePiniaData(piniaLine);
+                    
+                    if (videos && videos.length > 0) {
+                        console.log(`Bilibili module found ${videos.length} videos from __pinia HTML`);
+                        for (let i = 0; i < videos.length; i++) {
+                            console.log(`${i + 1}: ${videos[i].title || 'No title'}`);
+                        }
+                        return videos;
+                    }
+                }
+            }
             return [];
         }
 
-        let found_items;
-        let type_of_item;
         if (typeof data !== 'object' || !("data" in data) || typeof data["data"] !== 'object' ) {
             return [];
         // some Bilibili API responses use "item", some "archives"

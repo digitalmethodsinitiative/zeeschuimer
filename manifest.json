@@ -38,6 +38,7 @@
       "inc/he.js",
       "js/lib.js",
       "js/zs-background.js",
+      "modules/bilibili_pinia_parser.js",
       "modules/bilibili.js",
       "modules/tiktok.js",
       "modules/tiktok-comments.js",
