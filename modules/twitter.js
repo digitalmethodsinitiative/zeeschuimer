@@ -58,6 +58,10 @@ zeeschuimer.register_module(
                             if(entry['content']['itemContent']['itemType'].indexOf('Cursor') >= 0) {
                                 continue;
                             }
+                            // Skip items without tweet_results (like TimelineLabel e.g., with "Probable spam")
+                            if(!entry['content']['itemContent']['tweet_results']) {
+                                continue;
+                            }
                             let tweet = entry['content']['itemContent']['tweet_results']['result']
                             if(!tweet || tweet['__typename'] === 'TweetUnavailable') {
                                 // this sometimes happens
