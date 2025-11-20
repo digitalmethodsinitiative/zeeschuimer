@@ -2,6 +2,14 @@ zeeschuimer.register_module(
     'Bilibili',
     'bilibili.com',
     function (response, source_platform_url, source_url) {
+        // Ensure each item has an "id" field using the bvid
+        function ensureItemId(item) {
+            if (item.bvid) {
+                item.id = item.bvid;
+            }
+            return item;
+        }
+
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
         if (!["bilibili.com"].includes(domain)) {
             return [];
@@ -43,7 +51,7 @@ zeeschuimer.register_module(
                         for (let i = 0; i < videos.length; i++) {
                             console.log(`${i + 1}: ${videos[i].title || 'No title'}`);
                         }
-                        return videos;
+                        return videos.map(ensureItemId);
                     }
                 }
             }
@@ -91,6 +99,6 @@ zeeschuimer.register_module(
                 console.log(item);
             }
         }
-        return found_items;
+        return found_items.map(ensureItemId);
     }
 );
