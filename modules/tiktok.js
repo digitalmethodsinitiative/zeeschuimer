@@ -24,6 +24,24 @@ zeeschuimer.register_module(
             from_embed = true;
         }
 
+        // NEW: detect JSON embedded in HTML via <script id="__UNIVERSAL_DATA_FOR_REHYDRATION__" type="application/json">
+        if (!from_embed && typeof response === 'string' && response.indexOf('<script') >= 0) {
+            const udrMatch = response.match(/<script[^>]+id="__UNIVERSAL_DATA_FOR_REHYDRATION__"[^>]*type=["']application\/json["'][^>]*>([\s\S]*?)<\/script>/i);
+            if (udrMatch && udrMatch[1]) {
+                try {
+                    const ud = JSON.parse(udrMatch[1]);
+                    const scope = ud && ud.__DEFAULT_SCOPE__;
+                    const updatedItems = scope && scope["webapp.updated-items"];
+                    if (Array.isArray(updatedItems)) {
+                        // Return items from the new payload, excluding live items
+                        return updatedItems.filter(x => !x?.liveRoomInfo);
+                    }
+                } catch (e) {
+                    // fall through to other strategies
+                }
+            }
+        }
+
         if(!response) {
             return [];
         }
@@ -34,13 +52,22 @@ zeeschuimer.register_module(
             return [];
         }
 
+        // TikTok preloads some data (for example on hover over a link)
+        // https://www.tiktok.com/api/preload/item_list/ returns itemList array with full items that may not be reloaded if the user visits the link
+        const from_preload = (typeof source_url === 'string') && (source_url.indexOf('/api/preload/') >= 0);
+        if (from_preload) {
+            // We could updated add an attribute to the items to indicate they are from preload, but we should encourage a full reload anyway
+            // So we just ignore these items for now
+            return [];
+        }
+
         if("ItemModule" in data) {
             let r = Object.values(data["ItemModule"]);
-            return r;
+            return r.filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("itemList" in data) {
-            return data["itemList"];
+            return data["itemList"].filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("item_list" in data) {
-            return data["item_list"];
+            return data["item_list"].filter(x => !x.hasOwnProperty('liveRoomInfo'));
         } else if ("data" in data) {
             // search results "top results" (i.e. not the video tab)
             let r = Object.values(data["data"]);
@@ -49,12 +76,18 @@ zeeschuimer.register_module(
                 return [];
             }
             let items = r.filter(x => x.hasOwnProperty('item') && x.hasOwnProperty('type')).map(x => x["item"]);
-            let known_fields = ["id", "desc", "createTime", "music", "duetInfo"];
+            let known_fields = ["id", "desc", "createTime", "music"];
+            let bad_fields = ["liveRoomInfo"]; // if these are present, skip the post, e.g. for live streams
             for(let i in items) {
                 let item = items[i];
                 let item_ok = true;
                 for (let j in known_fields) {
                     if (!item.hasOwnProperty(known_fields[j])) {
+                        item_ok = false;
+                    }
+                }
+                for (let j in bad_fields) {
+                    if (item.hasOwnProperty(bad_fields[j])) {
                         item_ok = false;
                     }
                 }
