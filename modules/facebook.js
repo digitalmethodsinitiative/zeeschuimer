@@ -10,7 +10,6 @@ zeeschuimer.register_module(
 
         let datas = [];
         let edges = [];
-        const type_list = ['SOCIAL_POSTS', 'POSTS_SET_FEATURED', 'PUBLIC_POSTS'];
 
         try {
             datas.push(JSON.parse(response));
@@ -35,8 +34,11 @@ zeeschuimer.register_module(
                 }
 
                 if(obj['id'] && obj['__typename'] === 'Story' && obj['comet_sections']) {
-                    console.log(obj);
-                    edges.push(obj);
+                    // deduplicate
+                    const exists = edges.some(edge => edge.id === obj.id);
+                    if (!exists) {
+                        edges.push(obj);
+                    }
                 } else if (typeof (obj[property]) === "object") {
                     traverse(obj[property]);
                 }
@@ -52,7 +54,7 @@ zeeschuimer.register_module(
 
         for(const index in edges) {
             try {
-                const better_id = atob(edges[index]['id']);
+                const better_id = atob(edges[index]['id']);  // decode base64
                 edges[index]['id'] = better_id;
             } catch (e) {
                 // pass
