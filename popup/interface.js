@@ -315,7 +315,7 @@ async function button_handler(event) {
         xhr.aborted = false;
         let upload_url = await get_4cat_url();
 
-        xhr.open("POST", upload_url + "/api/import-dataset/", true);
+        xhr.open("POST", upload_url.trim() + "/api/import-dataset/", true);
         xhr.setRequestHeader("X-Zeeschuimer-Platform", platform)
         xhr.onloadstart = function () {
             status.innerText = 'Starting upload...';
@@ -464,7 +464,7 @@ const upload_poll = {
      */
     init: async function(response) {
         let upload_url = await get_4cat_url();
-        let poll_url = upload_url + '/api/check-query/?key=' + response["key"];
+        let poll_url = upload_url.trim() + '/api/check-query/?key=' + response["key"];
         let status = document.getElementById('upload-status');
         let xhr = new XMLHttpRequest();
         xhr.open("GET", poll_url, true);
