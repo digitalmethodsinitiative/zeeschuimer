@@ -26,7 +26,6 @@ zeeschuimer.register_module(
             }
         }
 
-        // need to save feedback id on post and comment side and story id on the comment side
 
         const traverse = function (obj) {
             for (const property in obj) {
@@ -54,7 +53,7 @@ zeeschuimer.register_module(
             }
         }
 
-        // this runs at the very end
+        
         for(const index in edges) {
             try {
                 const better_id = atob(edges[index]['id']);  // decode base64
