@@ -52,7 +52,8 @@
       "modules/pinterest.js",
       "modules/rednote.js",
       "modules/rednote-comments.js",
-      "modules/facebook.js"
+      "modules/facebook.js",
+      "modules/facebook-comments.js"
     ]
   }
 }
