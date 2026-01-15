@@ -36,6 +36,10 @@ zeeschuimer.register_module(
                         // Return items from the new payload, excluding live items
                         return updatedItems.filter(x => !x?.liveRoomInfo);
                     }
+                    const singleItem = scope && scope["webapp.video-detail"] && scope["webapp.video-detail"].itemInfo && scope["webapp.video-detail"].itemInfo.itemStruct;
+                    if (singleItem) {
+                        return [singleItem];
+                    }
                 } catch (e) {
                     // fall through to other strategies
                 }
