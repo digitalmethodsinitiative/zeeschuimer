@@ -92,7 +92,7 @@ zeeschuimer.register_module(
             return [];
         }
         
-        const debug_logs = true;
+        const debug_logs = false;
 
         // determine what part of instagram we're working in
         const path = new URL(source_platform_url).pathname.split('/').filter(Boolean);
@@ -442,14 +442,12 @@ zeeschuimer.register_module(
         let partial_count = 0;
         // Add custom fields 
         const enriched = edges.map(edge => {
-            // update `id` field if partial object (to allow full object if looked up later)
             // mark partial objects (missing caption or video_versions)
             if (debug_logs) console.log('processing post/reel id ' + edge.code);
 
             // These are partial reel objects from user/audio/and other pages
             if (!('caption' in edge) || !('video_versions' in edge)) {
                 edge = Object.assign({}, edge, { 
-                    id: 'partial_' + edge.id.toString(),
                     _zs_partial: true
                 });
                 partial_count++;
@@ -469,5 +467,16 @@ zeeschuimer.register_module(
         if (debug_logs) console.log(view + ' got ' + edges.length + ' (partial: ' + partial_count + ') via ' + source_url)
         // generic ad filter...
         return enriched.filter(edge => edge["product_type"] !== "ad");
+    },
+    null,
+    function (item, existing_item, nav_index) {
+        // If the existing item is partial, create a new item instead of updating it.
+        if (existing_item && existing_item.data && existing_item.data._zs_partial === true) {
+            console.log('Existing item is partial, inserting new item instead of updating');
+            return 'insert';
+        }
+
+        // Default behavior (item_id + nav_index) for all other cases.
+        return null;
     }
 );

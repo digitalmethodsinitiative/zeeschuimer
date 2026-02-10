@@ -18,16 +18,35 @@ window.zeeschuimer = {
      * @param callback  Function to parse request content with, returning an Array of extracted items
      * @param module_id  Module ID; if not given, use domain name as module ID. Use this if multiple modules read from
      *                   the same domain.
+    * @param decide_action  Optional function to decide whether to insert/update/merge/skip items.
      */
-    register_module: function (name, domain, callback, module_id=null) {
+    register_module: function (name, domain, callback, module_id=null, decide_action=null) {
         if(!module_id) {
             module_id = domain;
         }
         this.modules[module_id] = {
             name: name,
             domain: domain,
-            callback: callback
+            callback: callback,
+            decide_action: decide_action
         };
+    },
+
+    /**
+     * Default decision logic for whether to store an item.
+     * 
+     * Modules can override via `decide_action` on registration.
+     * Decisions:
+     * - 'insert': add a new row (even if another row already exists).
+     * - 'skip': do not write anything.
+     * - 'update': replace an existing row's data (keeps the original timestamp_collected).
+     * - 'merge': shallow-merge incoming item into existing row's data.
+     */
+    default_decide_action: function (item, existing_item) {
+        if (existing_item) {
+            return 'skip';
+        }
+        return 'insert';
     },
 
     /**
@@ -175,20 +194,95 @@ window.zeeschuimer = {
                     }
 
                     let item_id = item["id"];
-                    let exists = await db.items.where({"item_id": item_id, "nav_index": nav_index}).first();
-
-                    if (!exists) {
-                        await db.items.add({
-                            "nav_index": nav_index,
-                            "item_id": item_id,
-                            "timestamp_collected": Date.now(),
-                            "source_platform": module_id,
-                            "source_platform_url": origin_url,
-                            "source_url": document_url,
-                            "user_agent": navigator.userAgent,
-                            "data": item
-                        });
+                    if (item_id === undefined || item_id === null) {
+                        console.warn('Item contained null item_id; skipping', item);
+                        return;
                     }
+
+                    await db.transaction('rw', db.items, async () => {
+                        const module = this.modules[module_id];
+                        let existing_item = await db.items.where({
+                            "item_id": item_id,
+                            "nav_index": nav_index,
+                            "source_platform": module_id
+                        }).first();
+
+                        let decision = null;
+                        if (module && typeof module.decide_action === "function") {
+                            decision = await module.decide_action(item, existing_item, nav_index);
+                        }
+
+                        if (!decision) {
+                            decision = this.default_decide_action(item, existing_item);
+                        }
+
+                        let action = decision;
+
+                        if (typeof action === 'string') {
+                            action = action.toLowerCase();
+                        }
+
+                        if (!['insert', 'skip', 'update', 'merge'].includes(action)) {
+                            console.warn('Invalid decide_action result for module', module_id, action);
+                            action = this.default_decide_action(item, existing_item).toLowerCase();
+                        }
+
+                        let target_item = existing_item;
+
+                        if (action === "skip") {
+                            return;
+                        }
+
+                        if (action === "insert" || !target_item) {
+                            // Insert new item with incoming data
+                            await db.items.add({
+                                "nav_index": nav_index,
+                                "item_id": item_id,
+                                "timestamp_collected": Date.now(),
+                                "last_updated": Date.now(),
+                                "source_platform": module_id,
+                                "source_platform_url": origin_url,
+                                "source_url": document_url,
+                                "user_agent": navigator.userAgent,
+                                "data": item
+                            });
+                            return;
+                        }
+
+                        if (action === "update") {
+                            // Replace the stored data with the incoming item, keeping the original timestamp_collected.
+                            await db.items.update(target_item.id, {
+                                "nav_index": target_item.nav_index,
+                                "item_id": item_id,
+                                "timestamp_collected": target_item.timestamp_collected || Date.now(),
+                                "last_updated": Date.now(),
+                                "source_platform": module_id,
+                                "source_platform_url": origin_url,
+                                "source_url": document_url,
+                                "user_agent": navigator.userAgent,
+                                "data": item
+                            });
+                            return;
+                        }
+
+                        if (action === "merge") {
+                            // Merge stored data with the incoming item (shallow merge).
+                            const merged_data = Object.assign({}, target_item.data || {}, item);
+
+                            await db.items.update(target_item.id, {
+                                "nav_index": target_item.nav_index,
+                                "item_id": item_id,
+                                "timestamp_collected": target_item.timestamp_collected || Date.now(),
+                                "last_updated": Date.now(),
+                                "source_platform": module_id,
+                                "source_platform_url": origin_url,
+                                "source_url": document_url,
+                                "user_agent": navigator.userAgent,
+                                "data": merged_data
+                            });
+                            return;
+                        }
+                    });
                 }));
 
                 return;
