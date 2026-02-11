@@ -276,7 +276,6 @@ window.zeeschuimer = {
 
                         if (action === "insert") {
                             // Insert new item with incoming data
-                            console.log('Inserting new item for module', module_id, 'with item_id', item_id);
                             await db.items.add({
                                 "nav_index": nav_index,
                                 "item_id": item_id,
@@ -292,7 +291,6 @@ window.zeeschuimer = {
                         }
 
                         if (action === "update") {
-                            console.log('Updating existing item for module', module_id, 'with item_id', item_id);
                             // Replace the stored data with the incoming item, keeping the original timestamp_collected.
                             await db.items.update(target_item.id, {
                                 "nav_index": target_item.nav_index,
