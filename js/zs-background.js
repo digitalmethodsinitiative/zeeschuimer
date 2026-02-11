@@ -18,9 +18,11 @@ window.zeeschuimer = {
      * @param callback  Function to parse request content with, returning an Array of extracted items
      * @param module_id  Module ID; if not given, use domain name as module ID. Use this if multiple modules read from
      *                   the same domain.
-    * @param decide_action  Optional function to decide whether to insert/update/merge/skip items.
+     * @param overwrite_partial  Optional function to determine if incoming item should replace existing item.
+     *                       Signature: (incoming_item, existing_item) => boolean. Returns true if incoming should
+     *                       replace existing, false otherwise. Backend routes to same-nav or any-nav based on availability.
      */
-    register_module: function (name, domain, callback, module_id=null, decide_action=null) {
+    register_module: function (name, domain, callback, module_id=null, overwrite_partial=null) {
         if(!module_id) {
             module_id = domain;
         }
@@ -28,25 +30,8 @@ window.zeeschuimer = {
             name: name,
             domain: domain,
             callback: callback,
-            decide_action: decide_action
+            overwrite_partial: overwrite_partial
         };
-    },
-
-    /**
-     * Default decision logic for whether to store an item.
-     * 
-     * Modules can override via `decide_action` on registration.
-     * Decisions:
-     * - 'insert': add a new row (even if another row already exists).
-     * - 'skip': do not write anything.
-     * - 'update': replace an existing row's data (keeps the original timestamp_collected).
-     * - 'merge': shallow-merge incoming item into existing row's data.
-     */
-    default_decide_action: function (item, existing_item) {
-        if (existing_item) {
-            return 'skip';
-        }
-        return 'insert';
     },
 
     /**
@@ -180,6 +165,18 @@ window.zeeschuimer = {
         }
         nav_index = nav_index.session + ":" + nav_index.tab_id + ":" + nav_index.index;
 
+        const duplicate_behavior_key = 'zs-duplicate-behavior';
+        const duplicate_behavior = await browser.storage.local.get(duplicate_behavior_key);
+        let action_on_duplicate = duplicate_behavior[duplicate_behavior_key] || 'insert';
+        if (typeof action_on_duplicate === 'string') {
+            action_on_duplicate = action_on_duplicate.toLowerCase();
+        }
+        // 'merge' not yet supported via UI (and is untested)
+        if (!['insert', 'skip', 'update', 'merge'].includes(action_on_duplicate)) {
+            console.warn('Invalid global duplicate behavior setting', action_on_duplicate, '; using default "insert" behavior');
+            action_on_duplicate = 'insert';
+        }
+
         let item_list = [];
         for (let module_id in this.modules) {
             if(!enabled_modules.includes(module_id)) {
@@ -201,40 +198,85 @@ window.zeeschuimer = {
 
                     await db.transaction('rw', db.items, async () => {
                         const module = this.modules[module_id];
-                        let existing_item = await db.items.where({
+                        const existing_item_current_nav = await db.items.where({
                             "item_id": item_id,
                             "nav_index": nav_index,
                             "source_platform": module_id
                         }).first();
+                        // Cross-nav lookup: same item_id and platform across all time.
+                        const existing_item_any_nav = await db.items.where({
+                            "item_id": item_id,
+                            "source_platform": module_id
+                        }).first();
 
-                        let decision = null;
-                        if (module && typeof module.decide_action === "function") {
-                            decision = await module.decide_action(item, existing_item, nav_index);
+                        let action = null;
+                        let target_item = null;
+
+                        if (existing_item_current_nav) {
+                            // Item appears again on the same navigation index
+                            // Check module overwrite_partial to determine whether to update or skip. 
+                            // This allows modules to update incomplete items that are captured multiple times during the same navigation
+                            // And ensure complete items are not overwritten with partial data
+                            if (module && typeof module.overwrite_partial === "function" && await module.overwrite_partial(item, existing_item_current_nav)) {
+                                // Update existing item with more complete data
+                                action = 'update';
+                                target_item = existing_item_current_nav;
+                            } else {
+                                // Default for same-nav duplicate is to skip, as it's most likely a true duplicate.
+                                action = 'skip';
+                                target_item = existing_item_current_nav;
+                            }
+                        } else if (existing_item_any_nav) {
+                            // Item appears again but on a different navigation index. 
+                            // Check global fallback behavior to determine action
+                            target_item = existing_item_any_nav;
+                            if (action_on_duplicate === 'insert') {
+                                action = 'insert';
+                            } else if (action_on_duplicate === 'skip') {
+                                // Only update if module overwrite_partial explicitly returns true for cross-nav duplicates
+                                // This implies we have only capture a partial object at this point
+                                if (module && typeof module.overwrite_partial === "function" && await module.overwrite_partial(item, existing_item_any_nav)) {
+                                    action = 'update';
+                                } else {
+                                    action = 'skip';
+                                }
+                            } else if (["update", "merge"].includes(action_on_duplicate)) {
+                                // Do not update/merge if module overwrite_partial explicitly returns false for cross-nav duplicates
+                                // This prevents us from overwriting complete items with partial data if we have only captured a partial object at this point
+                                if (module && typeof module.overwrite_partial === "function" && await module.overwrite_partial(item, existing_item_any_nav) === false) {
+                                    action = 'skip';
+                                } else {
+                                    action = action_on_duplicate;
+                                }
+                            } else {
+                                // Invalid fallback action, default to insert
+                                console.warn('Invalid global duplicate behavior setting', action_on_duplicate, '; using default "insert" behavior');
+                                action = 'insert';
+                            }
+                        } else {
+                            // No duplicates, insert new item
+                            action = 'insert';
                         }
 
-                        if (!decision) {
-                            decision = this.default_decide_action(item, existing_item);
-                        }
-
-                        let action = decision;
-
+                        // Normalize action string.
                         if (typeof action === 'string') {
                             action = action.toLowerCase();
                         }
 
+                        // Validate action; fall back to insert if invalid.
                         if (!['insert', 'skip', 'update', 'merge'].includes(action)) {
-                            console.warn('Invalid decide_action result for module', module_id, action);
-                            action = this.default_decide_action(item, existing_item).toLowerCase();
+                            console.warn('Invalid action for module', module_id, action, '; using insert');
+                            action = 'insert';
+                            target_item = null;
                         }
-
-                        let target_item = existing_item;
 
                         if (action === "skip") {
                             return;
                         }
 
-                        if (action === "insert" || !target_item) {
+                        if (action === "insert") {
                             // Insert new item with incoming data
+                            console.log('Inserting new item for module', module_id, 'with item_id', item_id);
                             await db.items.add({
                                 "nav_index": nav_index,
                                 "item_id": item_id,
@@ -250,6 +292,7 @@ window.zeeschuimer = {
                         }
 
                         if (action === "update") {
+                            console.log('Updating existing item for module', module_id, 'with item_id', item_id);
                             // Replace the stored data with the incoming item, keeping the original timestamp_collected.
                             await db.items.update(target_item.id, {
                                 "nav_index": target_item.nav_index,

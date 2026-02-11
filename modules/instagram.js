@@ -469,14 +469,27 @@ zeeschuimer.register_module(
         return enriched.filter(edge => edge["product_type"] !== "ad");
     },
     null,
-    function (item, existing_item, nav_index) {
-        // If the existing item is partial, create a new item instead of updating it.
-        if (existing_item && existing_item.data && existing_item.data._zs_partial === true) {
-            console.log('Existing item is partial, inserting new item instead of updating');
-            return 'insert';
+    function (incoming_item, existing_item) {
+        // Return true if incoming item should replace existing; false otherwise.
+        // Compare partial vs full: upgrade partial to full; don't downgrade full to partial.
+        if (!existing_item || !existing_item.data) {
+            return false;
         }
 
-        // Default behavior (item_id + nav_index) for all other cases.
-        return null;
+        const existing_partial = existing_item.data._zs_partial === true;
+        const incoming_partial = incoming_item && incoming_item._zs_partial === true;
+
+        // Upgrade: partial → full
+        if (existing_partial && !incoming_partial) {
+            return true;
+        }
+
+        // Downgrade protection: full → partial
+        if (!existing_partial && incoming_partial) {
+            return false;
+        }
+
+        // No opinion on same completeness level
+        return false;
     }
 );

@@ -3,6 +3,7 @@ var have_4cat = false;
 var xhr;
 var is_uploading = false;
 const downloadUrls = new Map();
+const duplicateBehaviorKey = 'zs-duplicate-behavior';
 
 /**
  * StreamSaver init
@@ -186,6 +187,11 @@ async function get_stats() {
         response[module] = await background.db.items.where("source_platform").equals(module).count();
     }
 
+    let total_items = 0;
+    for (let platform in response) {
+        total_items += parseInt(response[platform]);
+    }
+
     for (let platform in response) {
         let row_id = "stats-" + platform.replace(/[^a-zA-Z0-9]/g, "");
         let new_num_items = parseInt(response[platform]);
@@ -263,6 +269,17 @@ async function get_stats() {
     activate_buttons();
     update_icon();
     init_tooltips();
+
+    const duplicate_select = document.querySelector('#duplicate-behavior');
+    const duplicate_tooltip = document.querySelector('#duplicate-behavior-tooltip');
+    if (duplicate_select) {
+        const locked = total_items > 0;
+        duplicate_select.disabled = locked;
+        if (duplicate_tooltip) {
+            const base_title = 'Keep duplicates stores every item. Skip duplicates ignores items already stored (keep first seen). Update replaces the stored record (keep latest).';
+            duplicate_tooltip.setAttribute('title', locked ? base_title + ' This setting is locked after items are collected.' : base_title);
+        }
+    }
 }
 
 /**
@@ -672,6 +689,17 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
+    const duplicate_behavior = await background.browser.storage.local.get(duplicateBehaviorKey);
+    const duplicate_select = document.querySelector('#duplicate-behavior');
+    if (duplicate_select) {
+        const stored_value = duplicate_behavior[duplicateBehaviorKey];
+        const allowed = ['insert', 'skip', 'update'];
+        duplicate_select.value = allowed.includes(stored_value) ? stored_value : 'insert';
+        duplicate_select.addEventListener('change', async function (event) {
+            await background.browser.storage.local.set({[duplicateBehaviorKey]: event.target.value});
+        });
+    }
 
     browser.downloads.onChanged.addListener(downloadListener);
 });
