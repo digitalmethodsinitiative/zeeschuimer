@@ -244,6 +244,7 @@ window.zeeschuimer = {
                                 // Do not update/merge if module overwrite_partial explicitly returns false for cross-nav duplicates
                                 // This prevents us from overwriting complete items with partial data if we have only captured a partial object at this point
                                 if (module && typeof module.overwrite_partial === "function" && await module.overwrite_partial(item, existing_item_any_nav) === false) {
+                                    // Could merge here, but we want to avoid shallow (e.g. partial "user": {"id": 123} vs complete "user": {"id": 123, "name": "Alice"}) or otherwise destructive merges by default, so skip instead.
                                     action = 'skip';
                                 } else {
                                     action = action_on_duplicate;
