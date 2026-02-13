@@ -449,6 +449,7 @@ async function button_handler(event) {
         });
 
     } else if (event.target.matches('#toggle-advanced-mode')) {
+        event.preventDefault();
         let section = document.querySelector('#advanced-mode');
         let is_hidden = section.getAttribute('aria-hidden') == 'true';
         if(is_hidden) {
