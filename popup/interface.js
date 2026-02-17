@@ -210,7 +210,26 @@ async function get_stats() {
 
             row.appendChild(createElement("td", {'class': 'platform-icon'}, createElement('img', {'src': '/images/platform-icons/' + platform.split('.')[0].split('-')[0] + '.png', 'alt': ''})));
             row.appendChild(createElement("td", {}, createElement('div', {'class': 'toggle-switch'}, checker)));
-            row.appendChild(createElement("td", {}, createElement('a', {'href': 'https://' + background.zeeschuimer.modules[platform]['domain']}, platform_map[platform])));
+            
+            // Create module name cell with optional override tooltip
+            const module_cell = createElement("td", {});
+            const module_link = createElement('a', {'href': 'https://' + background.zeeschuimer.modules[platform]['domain']}, platform_map[platform]);
+            module_cell.appendChild(module_link);
+            
+            // Add override message tooltip if module has overwrite_partial logic
+            const module = background.zeeschuimer.modules[platform];
+            if (module.overwrite_partial) {
+                // Add space before tooltip
+                module_cell.appendChild(document.createTextNode(' '));
+                
+                // Use custom message or provide default explanation
+                const override_tooltip = module.override_message || 
+                    "This module may collect partial records that can be updated by navigating to individual item pages.";
+                const tooltip_span = createElement('span', {'class': 'tooltippable', 'title': override_tooltip}, '?');
+                module_cell.appendChild(tooltip_span);
+            }
+            
+            row.appendChild(module_cell);
             row.appendChild(createElement("td", {"class": "num-items"}, new Intl.NumberFormat().format(response[platform])));
 
             let actions = createElement("td");

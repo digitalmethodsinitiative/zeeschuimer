@@ -34,8 +34,9 @@ window.zeeschuimer = {
      * @param overwrite_partial  Optional function to determine if incoming item should replace existing item.
      *                       Signature: (incoming_item, existing_item) => boolean. Returns true if incoming should
      *                       replace existing, false otherwise. Backend routes to same-nav or any-nav based on availability.
+     * @param override_message  Optional string describing when/how this module uses overwrite_partial. Shown in UI tooltip.
      */
-    register_module: function (name, domain, callback, module_id=null, overwrite_partial=null) {
+    register_module: function (name, domain, callback, module_id=null, overwrite_partial=null, override_message=null) {
         if(!module_id) {
             module_id = domain;
         }
@@ -43,7 +44,8 @@ window.zeeschuimer = {
             name: name,
             domain: domain,
             callback: callback,
-            overwrite_partial: overwrite_partial
+            overwrite_partial: overwrite_partial,
+            override_message: override_message
         };
     },
 

@@ -491,5 +491,6 @@ zeeschuimer.register_module(
 
         // No opinion on same completeness level
         return false;
-    }
+    },
+    "For Instagram, some reel collection pages do not include video links or captions; these are updated when you navigate to the individual reel page to add the missing data."
 );
