@@ -1,0 +1,16 @@
+FROM node:18-alpine
+
+WORKDIR /app/tests
+
+# Enable dynamic ESM import support for Jest
+ENV NODE_OPTIONS=--experimental-vm-modules
+
+# Copy test files
+COPY package.json jest.config.js ./
+COPY duplicate-behavior.test.js ./
+
+# Install dependencies
+RUN npm install
+
+# Run tests
+CMD ["npm", "test"]

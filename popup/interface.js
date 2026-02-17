@@ -3,6 +3,7 @@ var have_4cat = false;
 var xhr;
 var is_uploading = false;
 const downloadUrls = new Map();
+const duplicateBehaviorKey = 'zs-duplicate-behavior';
 
 /**
  * StreamSaver init
@@ -186,6 +187,11 @@ async function get_stats() {
         response[module] = await background.db.items.where("source_platform").equals(module).count();
     }
 
+    let total_items = 0;
+    for (let platform in response) {
+        total_items += parseInt(response[platform]);
+    }
+
     for (let platform in response) {
         let row_id = "stats-" + platform.replace(/[^a-zA-Z0-9]/g, "");
         let new_num_items = parseInt(response[platform]);
@@ -204,7 +210,26 @@ async function get_stats() {
 
             row.appendChild(createElement("td", {'class': 'platform-icon'}, createElement('img', {'src': '/images/platform-icons/' + platform.split('.')[0].split('-')[0] + '.png', 'alt': ''})));
             row.appendChild(createElement("td", {}, createElement('div', {'class': 'toggle-switch'}, checker)));
-            row.appendChild(createElement("td", {}, createElement('a', {'href': 'https://' + background.zeeschuimer.modules[platform]['domain']}, platform_map[platform])));
+            
+            // Create module name cell with optional override tooltip
+            const module_cell = createElement("td", {});
+            const module_link = createElement('a', {'href': 'https://' + background.zeeschuimer.modules[platform]['domain']}, platform_map[platform]);
+            module_cell.appendChild(module_link);
+            
+            // Add override message tooltip if module has overwrite_partial logic
+            const module = background.zeeschuimer.modules[platform];
+            if (module.overwrite_partial) {
+                // Add space before tooltip
+                module_cell.appendChild(document.createTextNode(' '));
+                
+                // Use custom message or provide default explanation
+                const override_tooltip = module.override_message || 
+                    "This module may collect partial records that can be updated by navigating to individual item pages.";
+                const tooltip_span = createElement('span', {'class': 'tooltippable', 'title': override_tooltip}, '?');
+                module_cell.appendChild(tooltip_span);
+            }
+            
+            row.appendChild(module_cell);
             row.appendChild(createElement("td", {"class": "num-items"}, new Intl.NumberFormat().format(response[platform])));
 
             let actions = createElement("td");
@@ -263,6 +288,16 @@ async function get_stats() {
     activate_buttons();
     update_icon();
     init_tooltips();
+
+    const duplicate_select = document.querySelector('#duplicate-behavior');
+    const duplicate_tooltip = document.querySelector('#duplicate-behavior-tooltip');
+    if (duplicate_select) {
+        if (duplicate_tooltip) {
+            const base_title = 'Keep duplicates stores every item. Skip duplicates ignores items already stored (keep first seen). Update replaces the stored record (keep latest).';
+            const tooltip_text = base_title + ' Changing this setting only affects behavior for future captures and is not retroactive.';
+            duplicate_tooltip.setAttribute('title', tooltip_text);
+        }
+    }
 }
 
 /**
@@ -432,6 +467,7 @@ async function button_handler(event) {
         });
 
     } else if (event.target.matches('#toggle-advanced-mode')) {
+        event.preventDefault();
         let section = document.querySelector('#advanced-mode');
         let is_hidden = section.getAttribute('aria-hidden') == 'true';
         if(is_hidden) {
@@ -672,6 +708,17 @@ document.addEventListener('DOMContentLoaded', async function () {
 
     const fourcat_url = await background.browser.storage.local.get('4cat-url');
     document.querySelector('#fourcat-url').value = fourcat_url['4cat-url'] ? fourcat_url['4cat-url'] : '';
+
+    const duplicate_behavior = await background.browser.storage.local.get(duplicateBehaviorKey);
+    const duplicate_select = document.querySelector('#duplicate-behavior');
+    if (duplicate_select) {
+        const stored_value = duplicate_behavior[duplicateBehaviorKey];
+        const allowed = ['insert', 'skip', 'update'];
+        duplicate_select.value = allowed.includes(stored_value) ? stored_value : 'insert';
+        duplicate_select.addEventListener('change', async function (event) {
+            await background.browser.storage.local.set({[duplicateBehaviorKey]: event.target.value});
+        });
+    }
 
     browser.downloads.onChanged.addListener(downloadListener);
 });

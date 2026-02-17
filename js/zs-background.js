@@ -6,6 +6,19 @@ window.db.version(1).stores({
     settings: "key"
 });
 
+window.db.version(2).stores({
+    items: "++id, item_id, nav_index, source_platform, last_updated, [item_id+source_platform+last_updated]",
+    uploads: "++id",
+    nav: "++id, tab_id, session",
+    settings: "key"
+}).upgrade(async (tx) => {
+    await tx.table('items').toCollection().modify((item) => {
+        if (!item.last_updated) {
+            item.last_updated = item.timestamp_collected || Date.now();
+        }
+    });
+});
+
 window.zeeschuimer = {
     modules: {},
     session: null,
@@ -18,15 +31,21 @@ window.zeeschuimer = {
      * @param callback  Function to parse request content with, returning an Array of extracted items
      * @param module_id  Module ID; if not given, use domain name as module ID. Use this if multiple modules read from
      *                   the same domain.
+     * @param overwrite_partial  Optional function to determine if incoming item should replace existing item.
+     *                       Signature: (incoming_item, existing_item) => boolean. Returns true if incoming should
+     *                       replace existing, false otherwise. Backend routes to same-nav or any-nav based on availability.
+     * @param override_message  Optional string describing when/how this module uses overwrite_partial. Shown in UI tooltip.
      */
-    register_module: function (name, domain, callback, module_id=null) {
+    register_module: function (name, domain, callback, module_id=null, overwrite_partial=null, override_message=null) {
         if(!module_id) {
             module_id = domain;
         }
         this.modules[module_id] = {
             name: name,
             domain: domain,
-            callback: callback
+            callback: callback,
+            overwrite_partial: overwrite_partial,
+            override_message: override_message
         };
     },
 
@@ -161,6 +180,18 @@ window.zeeschuimer = {
         }
         nav_index = nav_index.session + ":" + nav_index.tab_id + ":" + nav_index.index;
 
+        const duplicate_behavior_key = 'zs-duplicate-behavior';
+        const duplicate_behavior = await browser.storage.local.get(duplicate_behavior_key);
+        let action_on_duplicate = duplicate_behavior[duplicate_behavior_key] || 'insert';
+        if (typeof action_on_duplicate === 'string') {
+            action_on_duplicate = action_on_duplicate.toLowerCase();
+        }
+        // 'merge' not yet supported via UI (and is untested)
+        if (!['insert', 'skip', 'update', 'merge'].includes(action_on_duplicate)) {
+            console.warn('Invalid global duplicate behavior setting', action_on_duplicate, '; using default "insert" behavior');
+            action_on_duplicate = 'insert';
+        }
+
         let item_list = [];
         for (let module_id in this.modules) {
             if(!enabled_modules.includes(module_id)) {
@@ -175,20 +206,143 @@ window.zeeschuimer = {
                     }
 
                     let item_id = item["id"];
-                    let exists = await db.items.where({"item_id": item_id, "nav_index": nav_index}).first();
-
-                    if (!exists) {
-                        await db.items.add({
-                            "nav_index": nav_index,
-                            "item_id": item_id,
-                            "timestamp_collected": Date.now(),
-                            "source_platform": module_id,
-                            "source_platform_url": origin_url,
-                            "source_url": document_url,
-                            "user_agent": navigator.userAgent,
-                            "data": item
-                        });
+                    if (item_id === undefined || item_id === null) {
+                        console.warn('Item contained null item_id; skipping', item);
+                        return;
                     }
+
+                    await db.transaction('rw', db.items, async () => {
+                        const module = this.modules[module_id];
+                        const existing_item_current_nav = await db.items.where({
+                            "item_id": item_id,
+                            "nav_index": nav_index,
+                            "source_platform": module_id
+                        }).first();
+                        // Cross-nav lookup: same item_id and platform across all time, newest last_updated first.
+                        const existing_item_any_nav = await db.items
+                            .where('[item_id+source_platform+last_updated]')
+                            .between(
+                                [item_id, module_id, Dexie.minKey],
+                                [item_id, module_id, Dexie.maxKey]
+                            )
+                            .last();
+
+                        let action = null;
+                        let target_item = null;
+
+                        if (existing_item_current_nav) {
+                            // Item appears again on the same navigation index
+                            // Check module overwrite_partial to determine whether to update or skip. 
+                            // This allows modules to update incomplete items that are captured multiple times during the same navigation
+                            // And ensure complete items are not overwritten with partial data
+                            if (module && typeof module.overwrite_partial === "function" && await module.overwrite_partial(item, existing_item_current_nav)) {
+                                // Update existing item with more complete data
+                                action = 'update';
+                                target_item = existing_item_current_nav;
+                            } else {
+                                // Default for same-nav duplicate is to skip, as it's most likely a true duplicate.
+                                action = 'skip';
+                                target_item = existing_item_current_nav;
+                            }
+                        } else if (existing_item_any_nav) {
+                            // Item appears again but on a different navigation index. 
+                            // Check global fallback behavior to determine action
+                            target_item = existing_item_any_nav;
+                            if (action_on_duplicate === 'insert') {
+                                action = 'insert';
+                            } else if (action_on_duplicate === 'skip') {
+                                // Only update if module overwrite_partial explicitly returns true for cross-nav duplicates
+                                // This implies we have only capture a partial object at this point
+                                if (module && typeof module.overwrite_partial === "function" && await module.overwrite_partial(item, existing_item_any_nav)) {
+                                    action = 'update';
+                                } else {
+                                    action = 'skip';
+                                }
+                            } else if (["update", "merge"].includes(action_on_duplicate)) {
+                                // Do not update/merge if module overwrite_partial explicitly returns false for cross-nav duplicates
+                                // This prevents us from overwriting complete items with partial data if we have only captured a partial object at this point
+                                if (module && typeof module.overwrite_partial === "function" && await module.overwrite_partial(item, existing_item_any_nav) === false) {
+                                    // Could merge here, but we want to avoid shallow (e.g. partial "user": {"id": 123} vs complete "user": {"id": 123, "name": "Alice"}) or otherwise destructive merges by default, so skip instead.
+                                    action = 'skip';
+                                } else {
+                                    action = action_on_duplicate;
+                                }
+                            } else {
+                                // Invalid fallback action, default to insert
+                                console.warn('Invalid global duplicate behavior setting', action_on_duplicate, '; using default "insert" behavior');
+                                action = 'insert';
+                            }
+                        } else {
+                            // No duplicates, insert new item
+                            action = 'insert';
+                        }
+
+                        // Normalize action string.
+                        if (typeof action === 'string') {
+                            action = action.toLowerCase();
+                        }
+
+                        // Validate action; fall back to insert if invalid.
+                        if (!['insert', 'skip', 'update', 'merge'].includes(action)) {
+                            console.warn('Invalid action for module', module_id, action, '; using insert');
+                            action = 'insert';
+                            target_item = null;
+                        }
+
+                        if (action === "skip") {
+                            return;
+                        }
+
+                        if (action === "insert") {
+                            // Insert new item with incoming data
+                            await db.items.add({
+                                "nav_index": nav_index,
+                                "item_id": item_id,
+                                "timestamp_collected": Date.now(),
+                                "last_updated": Date.now(),
+                                "source_platform": module_id,
+                                "source_platform_url": origin_url,
+                                "source_url": document_url,
+                                "user_agent": navigator.userAgent,
+                                "data": item
+                            });
+                            return;
+                        }
+
+                        if (action === "update") {
+                            // Replace the stored data with the incoming item, keeping the original timestamp_collected.
+                            await db.items.update(target_item.id, {
+                                "nav_index": target_item.nav_index,
+                                "item_id": item_id,
+                                "timestamp_collected": target_item.timestamp_collected || Date.now(),
+                                "last_updated": Date.now(),
+                                "source_platform": module_id,
+                                "source_platform_url": origin_url,
+                                "source_url": document_url,
+                                "user_agent": navigator.userAgent,
+                                "data": item
+                            });
+                            return;
+                        }
+
+                        if (action === "merge") {
+                            // Merge stored data with the incoming item (shallow merge).
+                            const merged_data = Object.assign({}, target_item.data || {}, item);
+
+                            await db.items.update(target_item.id, {
+                                "nav_index": target_item.nav_index,
+                                "item_id": item_id,
+                                "timestamp_collected": target_item.timestamp_collected || Date.now(),
+                                "last_updated": Date.now(),
+                                "source_platform": module_id,
+                                "source_platform_url": origin_url,
+                                "source_url": document_url,
+                                "user_agent": navigator.userAgent,
+                                "data": merged_data
+                            });
+                            return;
+                        }
+                    });
                 }));
 
                 return;

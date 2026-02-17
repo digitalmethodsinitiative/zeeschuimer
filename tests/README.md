@@ -2,7 +2,9 @@
 
 This folder contains **testing** code for Zeeschuimer.
 
-It uses Python with Selenium to visit a number of pages on supported platforms
+### Integration Tests (Selenium)
+
+The Python + Selenium tests visit pages on supported platforms
 and see how many items are captured. If the amount of items captured is 
 unexpectedly low or high, this is flagged and may indicate that Zeeschuimer no
 longer properly captures data from the platform.
@@ -41,3 +43,41 @@ Tests are defined in `tests.json` with the following structure:
   }
 }
 ```
+
+### Unit Tests (Jest)
+
+The JavaScript unit tests verify duplicate-handling logic in isolation using 
+a mocked Dexie database. These tests ensure that when the duplicate behavior 
+setting is changed, the correct existing record is selected for updates.
+
+**Prerequisites**
+- Node.js (v18 or later) and npm must be installed
+
+**Setup**
+
+1. Install Node.js dependencies:
+   ```bash
+   cd tests
+   npm install
+   ```
+
+**Running tests**
+
+```bash
+npm test
+```
+
+For watch mode during development:
+```bash
+npm run test:watch
+```
+
+**Test coverage**
+- Schema upgrade backfills `last_updated` from `timestamp_collected`
+- Compound index correctly selects most recent item by `last_updated`
+- Forward-looking behavior: switching from "keep" to "update" targets newest record
+- Forward-looking behavior: switching from "update" to "keep" creates new records
+- Merge behavior: shallow merge preserves fields from both records
+- Skip behavior: no modifications occur when duplicate found
+- Platform isolation: same `item_id` on different platforms are independent
+- Tie-breaker: when `last_updated` is equal, prefer higher `id`
