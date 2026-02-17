@@ -6,6 +6,19 @@ window.db.version(1).stores({
     settings: "key"
 });
 
+window.db.version(2).stores({
+    items: "++id, item_id, nav_index, source_platform, last_updated, [item_id+source_platform+last_updated]",
+    uploads: "++id",
+    nav: "++id, tab_id, session",
+    settings: "key"
+}).upgrade(async (tx) => {
+    await tx.table('items').toCollection().modify((item) => {
+        if (!item.last_updated) {
+            item.last_updated = item.timestamp_collected || Date.now();
+        }
+    });
+});
+
 window.zeeschuimer = {
     modules: {},
     session: null,
@@ -203,11 +216,14 @@ window.zeeschuimer = {
                             "nav_index": nav_index,
                             "source_platform": module_id
                         }).first();
-                        // Cross-nav lookup: same item_id and platform across all time.
-                        const existing_item_any_nav = await db.items.where({
-                            "item_id": item_id,
-                            "source_platform": module_id
-                        }).first();
+                        // Cross-nav lookup: same item_id and platform across all time, newest last_updated first.
+                        const existing_item_any_nav = await db.items
+                            .where('[item_id+source_platform+last_updated]')
+                            .between(
+                                [item_id, module_id, Dexie.minKey],
+                                [item_id, module_id, Dexie.maxKey]
+                            )
+                            .last();
 
                         let action = null;
                         let target_item = null;

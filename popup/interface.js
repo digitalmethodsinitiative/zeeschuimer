@@ -273,11 +273,10 @@ async function get_stats() {
     const duplicate_select = document.querySelector('#duplicate-behavior');
     const duplicate_tooltip = document.querySelector('#duplicate-behavior-tooltip');
     if (duplicate_select) {
-        const locked = total_items > 0;
-        duplicate_select.disabled = locked;
         if (duplicate_tooltip) {
             const base_title = 'Keep duplicates stores every item. Skip duplicates ignores items already stored (keep first seen). Update replaces the stored record (keep latest).';
-            duplicate_tooltip.setAttribute('title', locked ? base_title + ' This setting is locked after items are collected.' : base_title);
+            const tooltip_text = base_title + ' Changing this setting only affects behavior for future captures and is not retroactive.';
+            duplicate_tooltip.setAttribute('title', tooltip_text);
         }
     }
 }
