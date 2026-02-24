@@ -128,6 +128,9 @@ zeeschuimer.register_module(
                 // hashtag, location view
                 view = "search";
             }
+        } else if (path[0] === "popular") {
+            // "popular" page 2026-2-24 adds tags or locations after i.e. /popular/TAG
+            view = "popular";
         } else if (path[0] === "reels") {
             // reels explore page
             view = "reels";
@@ -215,6 +218,7 @@ zeeschuimer.register_module(
         }
 
         let datas = [];
+        let response_is_json = false;
         try {
             // some responses have this prefix that needs to be removed before parsing
             // e.g. /api/vi1/clips/music/...
@@ -223,6 +227,7 @@ zeeschuimer.register_module(
                 }
             // if it's JSON already, just parse it
             datas.push(JSON.parse(response));
+            response_is_json = true;
         } catch {
             // data can be embedded in the HTML in these JavaScript statements
             // - single post pages (e.g. https://www.instagram.com/p/C1hWCZLPQ9T/)
@@ -324,12 +329,15 @@ zeeschuimer.register_module(
                             items = medias;
                         } else {
                             // If nodes themselves look like media objects (have id & media_type), use them
-                            const nodeMediaLike = nodes.filter(n => n && 'id' in n && 'media_type' in n);
+                            // Partial reels may use __typename: "XIGPolarisVideoMedia" e.g. on /popular/ taged view
+                            const nodeMediaLike = nodes.filter(n => n && 'id' in n && ('media_type' in n || ('__typename' in n && ["XIGPolarisVideoMedia", "XIGPolarisImageMedia"].includes(n.__typename))));
                             if (nodeMediaLike.length > 0) {
                                 if (debug_logs) console.log('processing edges list (w/o media) from ' + source_url);
                                 items = nodeMediaLike;
                                 // Tagged posts page e.g. https://www.instagram.com/steveo/tagged/
                                 // ✔️ confirmed working 2026-feb-5
+                                // Popular page e.g. https://www.instagram.com/popular/tag_name/
+                                // ✔️ confirmed working 2026-feb-24
                             } else {
                                 // fallback to original property 
                                 items = obj[property];
@@ -390,7 +398,7 @@ zeeschuimer.register_module(
                             return (
                                 item
                                 && "id" in item
-                                && "media_type" in item
+                                && ("media_type" in item || ("__typename" in item && ["XIGPolarisVideoMedia", "XIGPolarisImageMedia"].includes(item.__typename)))
                                 && "user" in item
                                 // && "caption" in item (partial reels may not have captions)
                                 // ensure post/reel is "seen" (if that info is available)
@@ -446,7 +454,7 @@ zeeschuimer.register_module(
             if (debug_logs) console.log('processing post/reel id ' + edge.code);
 
             // These are partial reel objects from user/audio/and other pages
-            if (!('caption' in edge) || !('video_versions' in edge)) {
+            if (!('caption' in edge) || !('video_versions' in edge) || !('media_type' in edge)) {
                 edge = Object.assign({}, edge, { 
                     _zs_partial: true
                 });
@@ -459,6 +467,7 @@ zeeschuimer.register_module(
 
             edge = Object.assign({}, edge, {
                 _zs_instagram_view: view,
+                _zs_html_embedded_json: !response_is_json
             });
 
             return edge;
