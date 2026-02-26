@@ -46,11 +46,11 @@ const init_tooltips = function() {
 
             var title = this.getAttribute('title');
             if (title && title != '' && title != null && title != 'null') {
-                var pos = this.getBoundingClientRect();
-                var bpos = document.body.getBoundingClientRect();
+                const pos = this.getBoundingClientRect();
+                const bpos = document.body.getBoundingClientRect();
 
-                var tooltip = $_('#tooltip')
-                var up = this.classList.contains('points-up');
+                const tooltip = $_('#tooltip')
+                const up = this.classList.contains('points-up');
                 this.setAttribute('data-title-content', title);
                 this.removeAttribute('title');
 
@@ -61,8 +61,8 @@ const init_tooltips = function() {
                 tooltip.style.visibility = 'hidden';
                 tooltip.style.display = 'block';
 
-                var pos_x = pos.left - (tooltip.offsetWidth / 2) + (this.offsetWidth / 2) - 1;
-                var pos_y;
+                let pos_x = pos.left - (tooltip.offsetWidth / 2) + (this.offsetWidth / 2) - 1;
+                let pos_y;
                 if (up) {
                     tooltip.classList.add('up');
                     tooltip.classList.remove('down');
