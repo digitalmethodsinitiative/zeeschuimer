@@ -401,3 +401,7 @@ browser.browserAction.onClicked.addListener(async () => {
         browser.tabs.update(tab.id, {active: true});
     }
 });
+
+browser.runtime.onInstalled.addListener(() => {
+  browser.storage.local.set({ 'zs-enabled-facebook.com': '1' });
+});

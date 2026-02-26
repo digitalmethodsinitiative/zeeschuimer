@@ -49,6 +49,7 @@
       "modules/gab.js",
       "modules/truth.js",
       "modules/threads.js",
+      "modules/facebook.js",
       "modules/pinterest.js",
       "modules/rednote.js",
       "modules/rednote-comments.js"
