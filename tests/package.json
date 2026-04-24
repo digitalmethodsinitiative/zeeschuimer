@@ -3,7 +3,7 @@
   "version": "1.0.0",
   "description": "Unit tests for Zeeschuimer duplicate handling logic",
   "scripts": {
-    "test": "jest",
+    "test": "node --experimental-vm-modules ./node_modules/jest/bin/jest.js",
     "test:watch": "jest --watch"
   },
   "devDependencies": {

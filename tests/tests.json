@@ -57,6 +57,15 @@
       }
     }
   },
+  "instagram-comments": {
+    "Individual post comments": {
+      "https://www.instagram.com/p/C1hWCZLPQ9T/": {
+        "expected": [1, 30],
+        "more-after-scroll": true,
+        "wait": 10
+      }
+    }
+  },
   "threads.net": {
     "Front page": {
       "https://www.threads.net/": {
@@ -252,6 +261,14 @@
         "more-after-scroll": true
       }
     },
+    "Single tweet with replies": {
+      "https://x.com/dril/status/247222360309121024": {
+        "expected": 10,
+        "more-after-scroll": true
+      }
+    }
+  },
+  "twitter-comments": {
     "Single tweet with replies": {
       "https://x.com/dril/status/247222360309121024": {
         "expected": 10,
