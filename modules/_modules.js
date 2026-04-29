@@ -22,6 +22,8 @@ async function load() {
             module.DOMAIN,
             module.capture,
             module.MODULE_ID ? module.MODULE_ID : module.MODULE_DOMAIN,
+            module.overwrite_partial,
+            module.TOOLTIP ? module.TOOLTIP : null,
         )
     }
 }

@@ -382,7 +382,7 @@
 <article>
     <header>
         <h1>Zeeschuimer</h1>
-        <span class="version"><a href="https://github.com/digitalmethodsinitiative/zeeschuimer/releases/tag/v1.13.4">v1.13.4</a></span>
+        <span class="version"><a href="https://github.com/digitalmethodsinitiative/zeeschuimer/releases/tag/v1.13.6">v1.13.6</a></span>
     </header>
     <section id="status">
         <h2><span>Captured data objects</span></h2>
@@ -428,6 +428,22 @@
         </table>
     </section>
     <section id="advanced-mode" aria-hidden="true">
+        <h2><span>Duplicate handling</span></h2>
+        <p class="import-container">
+            <label>
+                Duplicate handling:
+                <select id="duplicate-behavior">
+                    <option value="insert">Keep duplicates</option>
+                    <option value="skip">Skip duplicates</option>
+                    <option value="update">Update existing</option>
+                </select>
+                    <span class="tooltippable" id="duplicate-behavior-tooltip"
+                        title="Keep duplicates stores every item seen on new page. Skip duplicates ignores items already stored (keeps first seen). Update replaces the stored record (keeps latest).">?</span>
+            </label>
+        </p>
+        <p class="import-container">
+            <em>Warning: Update can replace any existing records for existing items.</em>
+        </p>
         <h2><span>Import from NDJSON</span></h2>
         <p class="import-container">
             <label>
