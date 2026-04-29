@@ -42,3 +42,19 @@ class MappedItem {
         Object.assign(this, data);
     }
 }
+
+/**
+ * A value that could not be parsed from the source item
+ *
+ * Intended to be included in CSV exports when a field could not be mapped.
+ * Included for compatibility with 4CAT.
+ */
+class MissingMappedField {
+    constructor(value) {
+        this.value = value
+    }
+
+    toString() {
+        return `${this.value}`;
+    }
+}
