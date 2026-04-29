@@ -16,6 +16,7 @@ zeeschuimer.register_module(
                 && source_url.indexOf('Likes') < 0
                 && source_url.indexOf('SearchTimeline') < 0
                 && source_url.indexOf('TweetDetail') < 0
+                && source_url.indexOf('TweetResultByRestId') < 0
                 // this one is not enabled because it is always loaded when viewing a user profile
                 // even when not viewing the media tab
                 // && source_url.indexOf('UserMedia') < 0
@@ -120,6 +121,12 @@ zeeschuimer.register_module(
                         }
                     }
 
+                } else if (child.hasOwnProperty('__typename') &&  child['__typename'] === "Tweet") {
+                    // this only fires when we hit the TweetResultByRestId endpoint, and that only happens
+                    // when the user views a post without being logged in, in which case it doesn't
+                    // load all the replies so the normal endpoints aren't used.
+                    child["id"] = child['legacy']['id_str'];
+                    tweets.push(child);
                 } else if (typeof (child) === "object") {
                     traverse(child);
                 }
