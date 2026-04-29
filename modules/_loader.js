@@ -21,6 +21,7 @@ async function load() {
             module.MODULE_NAME,
             module.DOMAIN,
             module.capture,
+            module.map_item,
             module.MODULE_ID ? module.MODULE_ID : module.MODULE_DOMAIN,
             module.overwrite_partial,
             module.TOOLTIP ? module.TOOLTIP : null,

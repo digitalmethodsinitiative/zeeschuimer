@@ -1,3 +1,12 @@
+/**
+ * Traverse an object, checking each item via a callback
+ *
+ * @param obj  Object to traverse
+ * @param callback  Callback. If the callback returns a value that does not
+ *   evaluate to `false`, add it to the result Array. If not, traverse the
+ *   value itself, recursively.
+ * @returns {*[]}  An array of collected values.
+ */
 function traverse_data(obj, callback) {
     let results = [];
 
@@ -20,4 +29,16 @@ function traverse_data(obj, callback) {
 
     _traverse_data(obj, callback);
     return results;
+}
+
+/**
+ * A mapped, collected item
+ *
+ * Behaves like a standard object. Included for compatibility with 4CAT.
+ * `map_item()` functions should return MappedItem()s.
+ */
+class MappedItem {
+    constructor(data) {
+        Object.assign(this, data);
+    }
 }

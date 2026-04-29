@@ -132,7 +132,7 @@ function activate_buttons() {
                 button.setAttribute('title', '');
             }
 
-        } else if(button.classList.contains('download-ndjson') || button.classList.contains('reset')) {
+        } else if(button.classList.contains('download-ndjson') || button.classList.contains('reset') || button.classList.contains('download-csv')) {
             new_status = !(items > 0);
         }
 
@@ -233,17 +233,21 @@ async function get_stats() {
             row.appendChild(createElement("td", {"class": "num-items"}, new Intl.NumberFormat().format(response[platform])));
 
             let actions = createElement("td");
-            let clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Delete");
-            let download_button = createElement("button", {
+            const clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Delete");
+            const csv_button = createElement("button", {"data-platform": platform, 'class': 'download-csv'}, '.csv');
+            const download_button = createElement("button", {
                 "data-platform": platform,
                 "class": "download-ndjson"
             }, ".ndjson");
-            let fourcat_button = createElement("button", {
+            const fourcat_button = createElement("button", {
                 "data-platform": platform,
                 "class": "upload-to-4cat",
             }, "to 4CAT");
 
             actions.appendChild(clear_button);
+            if(module.mapper) {
+                actions.appendChild(csv_button);
+            }
             actions.appendChild(download_button);
             actions.appendChild(fourcat_button);
 
@@ -320,14 +324,17 @@ async function button_handler(event) {
     } else if (event.target.matches('.reset-all')) {
         await background.db.items.clear();
 
-    } else if (event.target.matches('.download-ndjson')) {
+    } else if (event.target.matches('.download-ndjson') || event.target.matches('.download-csv')) {
+        const blobber = event.target.matches('.download-ndjson') ? get_ndjson_blob : get_csv_blob;
+        const extension = event.target.matches('.download-ndjson') ? 'ndjson' : 'csv';
+
         let platform = event.target.getAttribute('data-platform');
         let date = new Date();
         event.target.classList.add('loading');
 
         //let blob = await download_blob(platform, 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson');
-        let blob = await get_blob(platform);
-        let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson';
+        let blob = await blobber(platform);
+        let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.' + extension;
         const downloadUrl = window.URL.createObjectURL(blob);
         const downloadId = await browser.downloads.download({
             url: window.URL.createObjectURL(blob),
@@ -342,7 +349,7 @@ async function button_handler(event) {
         let platform = event.target.getAttribute('data-platform');
         status.innerText = 'Creating data file for uploading...';
         is_uploading = true;
-        let blob = await get_blob(platform);
+        let blob = await get_ndjson_blob(platform);
 
         document.querySelectorAll('.upload-to-4cat').forEach(x => x.setAttribute('disabled', true));
 
@@ -564,7 +571,7 @@ const upload_poll = {
  * @param platform
  * @returns {Promise<Blob>}
  */
-async function get_blob(platform) {
+async function get_ndjson_blob(platform) {
     let ndjson = [];
 
     await iterate_items(platform, function(item) {
@@ -572,6 +579,54 @@ async function get_blob(platform) {
     });
 
     return new Blob(ndjson, {type: 'application/x-ndjson'});
+}
+
+
+const CSV_SEPARATOR = ';';
+const CSV_ESCAPED = `"${CSV_SEPARATOR}\n`;
+/**
+ * CSV helper function
+ *
+ * Escapes a value so it can safely be contained in a CSV file
+ *
+ * @param value
+ * @returns {String}
+ */
+function csv_escape(value) {
+    value = String(value);
+    let needs_escape = false;
+    for(const character in CSV_ESCAPED) {
+        if(value.indexOf(character) >= 0) {
+            needs_escape = true;
+        }
+    }
+    if(needs_escape) {
+        value = '"' + value.replace(/"/g, '""') + '"';
+    }
+    return value;
+}
+
+/**
+ * Get a CSV dump of items
+ *
+ * Returns a Blob with all items in it as CSV rows, mapped via the module's
+ * registered mapper function. A header row is included.
+ *
+ * @param platform
+ * @returns {Promise<Blob>}
+ */
+async function get_csv_blob(platform) {
+    let csv = [];
+    const module = background.zeeschuimer.modules[platform];
+    await iterate_items(platform, function(item) {
+        item = module.mapper(item.data);
+        if(csv.length === 0) {
+            csv.push(Object.keys(item).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
+        }
+        csv.push(Object.values(item).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
+    })
+
+    return new Blob([csv], {type: 'text/csv'});
 }
 
 /**
