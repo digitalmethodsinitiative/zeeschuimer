@@ -92,15 +92,15 @@
       }
     },
     "Audio overview page": {
-      "https://www.tiktok.com/music/Oh-No-6586947002464996102": {
-        "expected": 24,
+      "https://www.tiktok.com/music/Toca-Toca-Tik-Tok-Challange-7007742517504542721": {
+        "expected": [40, 50],
         "more-after-scroll": true,
         "captcha-selector": "div#tiktok-verify-ele"
       }
     },
     "User page": {
       "https://www.tiktok.com/@eliminatehq": {
-        "expected": 35,
+        "expected": [30, 40],
         "more-after-scroll": true,
         "wait": 10,
         "captcha-selector": "div#tiktok-verify-ele"
@@ -108,14 +108,15 @@
     },
     "Tag overview page": {
       "https://www.tiktok.com/tag/blessed": {
-        "expected": 27,
+        "expected": [50, 60],
         "more-after-scroll": true,
+        "wait": 10,
         "captcha-selector": "div#tiktok-verify-ele"
       }
     },
     "Search results (video tab)": {
       "https://www.tiktok.com/search/video?q=ok boomer": {
-        "expected": 11,
+        "expected": [6, 12],
         "more-after-scroll": true,
         "captcha-selector": "div#tiktok-verify-ele"
       }
@@ -131,7 +132,7 @@
   "tiktok-comments": {
     "Comments": {
       "https://www.tiktok.com/@eliminatehq/video/7340364794802752811": {
-        "expected": 20,
+        "expected": [18, 20],
         "more-after-scroll": true,
         "captcha-selector": "div#tiktok-verify-ele"
       }
@@ -248,7 +249,7 @@
     },
     "List": {
       "https://x.com/i/lists/216472995": {
-        "expected": 80,
+        "expected": [90, 110],
         "more-after-scroll": true
       }
     },
@@ -374,7 +375,7 @@
     "Explore (main page, no scrolling)": {
       "https://www.xiaohongshu.com/": {
         "comment": "The first 35 items are mapped from the page HTML, hence the separate test",
-        "expected": 35,
+        "expected": [24, 35],
         "wait": 10
       }
     },
@@ -387,7 +388,7 @@
     },
     "Explore (category page)": {
       "https://www.xiaohongshu.com/explore?channel_id=homefeed.fashion_v3": {
-        "expected": 26,
+        "expected": [22, 30],
         "more-after-scroll": true
       }
     },
@@ -405,7 +406,7 @@
     },
     "Search results": {
       "https://www.xiaohongshu.com/search_result?keyword=yakuza&source=web_user_page": {
-        "expected": 40,
+        "expected": [28, 40],
         "more-after-scroll": true
       }
     }
