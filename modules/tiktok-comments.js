@@ -1,33 +1,32 @@
-zeeschuimer.register_module(
-    'TikTok (comments)',
-    "tiktok.com",
-    function (response, source_platform_url, source_url) {
-        let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
+export const MODULE_NAME = 'TikTok (comments)';
+export const DOMAIN = 'tiktok.com';
+export const MODULE_ID = 'tiktok-comments';
 
-        if (!["tiktok.com"].includes(domain)) {
-            return [];
-        }
+export function capture(response, source_platform_url, source_url) {
+    let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
 
-        let data;
-        try {
-            data = JSON.parse(response);
-        } catch (SyntaxError) {
-            return [];
-        }
-
-
-
-        if ('comments' in data) {
-            return data['comments'].filter(function (item) {
-                // simple heuristic to identify comment objects
-                return typeof item === 'object' && 'cid' in item && 'aweme_id' in item;
-            }).map(item => {
-                item["id"] = item["cid"]; // no 'id' field by default
-                return item;
-            });
-        }
-
+    if (!["tiktok.com"].includes(domain)) {
         return [];
-    },
-    'tiktok-comments'
-);
+    }
+
+    let data;
+    try {
+        data = JSON.parse(response);
+    } catch (SyntaxError) {
+        return [];
+    }
+
+
+
+    if ('comments' in data) {
+        return data['comments'].filter(function (item) {
+            // simple heuristic to identify comment objects
+            return typeof item === 'object' && 'cid' in item && 'aweme_id' in item;
+        }).map(item => {
+            item["id"] = item["cid"]; // no 'id' field by default
+            return item;
+        });
+    }
+
+    return [];
+}

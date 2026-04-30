@@ -1,5 +1,4 @@
 {
-
   "description": "Collect data while browsing social media platforms and upload it for analysis later",
   "manifest_version": 2,
   "name": "Zeeschuimer",
@@ -38,20 +37,7 @@
       "inc/he.js",
       "js/lib.js",
       "js/zs-background.js",
-      "modules/tiktok.js",
-      "modules/tiktok-comments.js",
-      "modules/instagram.js",
-      "modules/linkedin.js",
-      "modules/9gag.js",
-      "modules/imgur.js",
-      "modules/twitter.js",
-      "modules/douyin.js",
-      "modules/gab.js",
-      "modules/truth.js",
-      "modules/threads.js",
-      "modules/pinterest.js",
-      "modules/rednote.js",
-      "modules/rednote-comments.js"
+      "modules/_loader.js"
     ]
   }
 }
