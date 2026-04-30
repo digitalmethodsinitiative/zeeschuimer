@@ -410,5 +410,41 @@
         "more-after-scroll": true
       }
     }
+  },
+  "truthsocial.com": {
+    "Main": {
+      "https://truthsocial.com/": {
+        "comment": "Main page will load \"For You\", \"Following\", or \"Groups\" depending on cookies (last visited) with variable amounts",
+        "expected": [13, 40],
+        "more-after-scroll": true,
+        "wait": 10
+      }
+    },
+    "Discover": {
+      "https://truthsocial.com/discover": {
+        "expected": [20, 30],
+        "more-after-scroll": true,
+        "wait": 10
+      }
+    },
+    "User": {
+      "https://truthsocial.com/@realDonaldTrump": {
+        "expected": [60, 80],
+        "more-after-scroll": true
+      }
+    },
+    "Post page": {
+      "https://truthsocial.com/@realDonaldTrump/posts/116491559257751897": {
+        "comment": "Replies are recorded in addition to the original post.",
+        "expected": [1, 40],
+        "more-after-scroll": false
+      }
+    },
+    "Search results": {
+      "https://truthsocial.com/search?q=iran": {
+        "expected": [20, 30],
+        "more-after-scroll": true
+      }
+    }
   }
 }
