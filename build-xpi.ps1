@@ -2,51 +2,72 @@ $manifest = Get-Content "manifest.json" | ConvertFrom-Json
 $name = ($manifest.name -replace '[^a-zA-Z0-9_-]+', '-').ToLower().Trim('-')
 $version = $manifest.version
 $output = "$name-v$version.xpi"
-$zipOutput = "$name-v$version.zip"
-$staging = Join-Path $PWD ".build-xpi"
 
-if (Test-Path $staging) {
-    Remove-Item -LiteralPath $staging -Recurse -Force
-}
+Add-Type -AssemblyName System.IO.Compression
+Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-New-Item -ItemType Directory -Path $staging | Out-Null
+$root = (Get-Location).Path
 
-$exclude = @(
+$excludeNames = @(
     ".git",
+    ".github",
     ".build-xpi",
     "tests",
-    "*.zip",
-    "*.xpi",
-    "*.DS_Store",
-    "__MACOSX",
     "create-zip.sh",
     "create-zip-bash.sh",
     "build-xpi.ps1"
 )
 
-Get-ChildItem -Force | Where-Object {
-    $item = $_
-    -not ($exclude | Where-Object {
-        if ($_ -like "*`**" -or $_ -like "*?*") {
-            $item.Name -like $_
-        } else {
-            $item.Name -eq $_
+$excludePatterns = @(
+    "*.zip",
+    "*.xpi",
+    "*.DS_Store",
+    "*.ndjson"
+)
+
+function Should-Skip($item) {
+    foreach ($name in $excludeNames) {
+        if ($item.Name -eq $name) {
+            return $true
         }
-    })
-} | ForEach-Object {
-    Copy-Item -LiteralPath $_.FullName -Destination $staging -Recurse -Force
+    }
+
+    foreach ($pattern in $excludePatterns) {
+        if ($item.Name -like $pattern) {
+            return $true
+        }
+    }
+
+    return $false
 }
 
 if (Test-Path $output) {
     Remove-Item -LiteralPath $output -Force
 }
 
-if (Test-Path $zipOutput) {
-    Remove-Item -LiteralPath $zipOutput -Force
-}
+$zip = [System.IO.Compression.ZipFile]::Open($output, [System.IO.Compression.ZipArchiveMode]::Create)
 
-Compress-Archive -Path (Join-Path $staging "*") -DestinationPath $zipOutput -Force
-Move-Item -LiteralPath $zipOutput -Destination $output -Force
-Remove-Item -LiteralPath $staging -Recurse -Force
+try {
+    Get-ChildItem -LiteralPath $root -Recurse -File | ForEach-Object {
+        $file = $_
+
+        $segments = $file.FullName.Substring($root.Length).TrimStart('\').Split('\')
+        foreach ($segment in $segments) {
+            if ($excludeNames -contains $segment) {
+                return
+            }
+        }
+
+        if (Should-Skip $file) {
+            return
+        }
+
+        $entryName = ($file.FullName.Substring($root.Length).TrimStart('\')) -replace '\\', '/'
+        [System.IO.Compression.ZipFileExtensions]::CreateEntryFromFile($zip, $file.FullName, $entryName, [System.IO.Compression.CompressionLevel]::Optimal) | Out-Null
+    }
+}
+finally {
+    $zip.Dispose()
+}
 
 Write-Output "Created $output"

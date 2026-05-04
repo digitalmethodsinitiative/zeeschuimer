@@ -8,3 +8,10 @@
 
 # logs
 geckodriver.log
+
+# Local build outputs
+*.xpi
+*.zip
+
+# Local captured exports
+*.ndjson
