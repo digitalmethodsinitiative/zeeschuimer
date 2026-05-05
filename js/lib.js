@@ -58,3 +58,17 @@ class MissingMappedField {
         return `${this.value}`;
     }
 }
+
+/**
+ * Wrap a Zeeschuimer stored item to match the shape a 4CAT map_item expects.
+ *
+ * 4CAT's importer constructs:
+ *   { ...item.data, __import_meta: { ...everything in item except data } }
+ *
+ * Mirroring that here means map_item functions auto-generated from 4CAT
+ * data sources can run against Zeeschuimer-stored items without translation.
+ */
+function wrap_for_map_item(stored_item) {
+    const { data, ...meta } = stored_item;
+    return { ...data, __import_meta: meta };
+}

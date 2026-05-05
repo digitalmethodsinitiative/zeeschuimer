@@ -619,7 +619,7 @@ async function get_csv_blob(platform) {
     let csv = [];
     const module = background.zeeschuimer.modules[platform];
     await iterate_items(platform, function(item) {
-        item = module.mapper(item.data);
+        item = module.mapper(item);
         if(csv.length === 0) {
             csv.push(Object.keys(item).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
         }
