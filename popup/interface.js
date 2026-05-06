@@ -626,7 +626,7 @@ async function get_csv_blob(platform) {
         csv.push(Object.values(item).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
     })
 
-    return new Blob([csv], {type: 'text/csv'});
+    return new Blob(csv, {type: 'text/csv'});
 }
 
 /**
