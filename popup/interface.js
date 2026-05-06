@@ -119,7 +119,7 @@ async function set_4cat_url(e) {
 function activate_buttons() {
     document.querySelectorAll("td button").forEach(button => {
         let current = button.disabled;
-        let items = parseInt(button.parentNode.parentNode.querySelector('.num-items').innerText);
+        let items = parseInt(button.closest('tr').querySelector('.num-items').innerText);
         let new_status = current;
 
         if(button.classList.contains('upload-to-4cat') && !is_uploading) {
@@ -132,7 +132,7 @@ function activate_buttons() {
                 button.setAttribute('title', '');
             }
 
-        } else if(button.classList.contains('download-ndjson') || button.classList.contains('reset') || button.classList.contains('download-csv')) {
+        } else if(button.classList.contains('download-format') || button.classList.contains('download-menu-trigger') || button.classList.contains('reset')) {
             new_status = !(items > 0);
         }
 
@@ -234,21 +234,32 @@ async function get_stats() {
 
             let actions = createElement("td");
             const clear_button = createElement("button", {"data-platform": platform, "class": "reset"}, "Delete");
-            const csv_button = createElement("button", {"data-platform": platform, 'class': 'download-csv'}, '.csv');
-            const download_button = createElement("button", {
-                "data-platform": platform,
-                "class": "download-ndjson"
-            }, ".ndjson");
+
+            // Render the download chooser as a button + popover panel,
+            // (even when only NDJSON is available as visual consistent)
+            const download_widget = createElement("span", {"class": "download-menu"});
+            const trigger = createElement("button", {
+                "data-platform": platform, "class": "download-menu-trigger"
+            }, "Download");
+            const options = createElement("div", {"class": "download-options", "hidden": ""});
+            options.appendChild(createElement("button", {
+                "data-platform": platform, "data-format": "ndjson", "class": "download-format"
+            }, ".ndjson (original)"));
+            if(module.mapper) {
+                options.appendChild(createElement("button", {
+                    "data-platform": platform, "data-format": "csv", "class": "download-format"
+                }, ".csv"));
+            }
+            download_widget.appendChild(trigger);
+            download_widget.appendChild(options);
+
             const fourcat_button = createElement("button", {
                 "data-platform": platform,
                 "class": "upload-to-4cat",
             }, "to 4CAT");
 
             actions.appendChild(clear_button);
-            if(module.mapper) {
-                actions.appendChild(csv_button);
-            }
-            actions.appendChild(download_button);
+            actions.appendChild(download_widget);
             actions.appendChild(fourcat_button);
 
             row.appendChild(actions);
@@ -317,22 +328,38 @@ async function get_stats() {
 async function button_handler(event) {
     let status = document.getElementById('upload-status');
 
-    if (event.target.matches('.reset')) {
+    // Close any open download-format popovers when clicking outside their host.
+    // Skip if the click is on a trigger or inside an options panel 
+    if(!event.target.matches('.download-menu-trigger') && !event.target.closest('.download-options')) {
+        document.querySelectorAll('.download-options:not([hidden])').forEach(el => el.hidden = true);
+    }
+
+    if (event.target.matches('.download-menu-trigger')) {
+        const widget = event.target.closest('.download-menu');
+        const options = widget.querySelector('.download-options');
+        const opening = options.hidden;
+        // close any other menus before opening this one
+        document.querySelectorAll('.download-options:not([hidden])').forEach(el => {
+            if(el !== options) el.hidden = true;
+        });
+        options.hidden = !opening;
+
+    } else if (event.target.matches('.reset')) {
         let platform = event.target.getAttribute('data-platform');
         await background.db.items.where("source_platform").equals(platform).delete();
 
     } else if (event.target.matches('.reset-all')) {
         await background.db.items.clear();
 
-    } else if (event.target.matches('.download-ndjson') || event.target.matches('.download-csv')) {
-        const blobber = event.target.matches('.download-ndjson') ? get_ndjson_blob : get_csv_blob;
-        const extension = event.target.matches('.download-ndjson') ? 'ndjson' : 'csv';
+    } else if (event.target.matches('.download-format')) {
+        const format = event.target.getAttribute('data-format');
+        const blobber = format === 'csv' ? get_csv_blob : get_ndjson_blob;
+        const extension = format;
 
         let platform = event.target.getAttribute('data-platform');
         let date = new Date();
         event.target.classList.add('loading');
 
-        //let blob = await download_blob(platform, 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.ndjson');
         let blob = await blobber(platform);
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.' + extension;
         const downloadUrl = window.URL.createObjectURL(blob);
@@ -344,6 +371,10 @@ async function button_handler(event) {
         downloadUrls.set(downloadId, downloadUrl);
 
         event.target.classList.remove('loading');
+
+        // collapse the popover menu after the download fires
+        const widget = event.target.closest('.download-menu');
+        if(widget) widget.querySelector('.download-options').hidden = true;
 
     } else if (event.target.matches('.upload-to-4cat')) {
         let platform = event.target.getAttribute('data-platform');
