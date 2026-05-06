@@ -3,6 +3,7 @@ module.exports = {
   testMatch: ['**/*.test.js'],
   transform: {},
   moduleFileExtensions: ['js', 'json'],
-  collectCoverageFrom: ['duplicate-behavior.test.js'],
+  collectCoverageFrom: ['*.test.js'],
+  setupFiles: ['<rootDir>/setup-globals.cjs'],
   verbose: true
 };

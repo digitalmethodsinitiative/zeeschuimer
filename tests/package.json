@@ -2,9 +2,10 @@
   "name": "zeeschuimer-db-tests",
   "version": "1.0.0",
   "description": "Unit tests for Zeeschuimer duplicate handling logic",
+  "type": "module",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
   },
   "devDependencies": {
     "dexie": "^3.2.4",
