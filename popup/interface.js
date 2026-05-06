@@ -595,7 +595,7 @@ const CSV_ESCAPED = `"${CSV_SEPARATOR}\n`;
 function csv_escape(value) {
     value = String(value);
     let needs_escape = false;
-    for(const character in CSV_ESCAPED) {
+    for(const character of CSV_ESCAPED) {
         if(value.indexOf(character) >= 0) {
             needs_escape = true;
         }
