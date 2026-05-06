@@ -72,3 +72,57 @@ function wrap_for_map_item(stored_item) {
     const { data, ...meta } = stored_item;
     return { ...data, __import_meta: meta };
 }
+
+/**
+ * Ports of 4CAT functions commonly used by `map_item` below
+ */
+
+/**
+ * Strip HTML tags from a string.
+ * @param {string} html
+ * @param {boolean} convertNewlines  Convert <br> and </p> tags to \n before stripping.
+ * @returns {string}
+ */
+function strip_tags(html, convertNewlines = true) {
+    if (!html) return "";
+    if (convertNewlines) {
+        html = html.replace(/<br\s*\/?>/gi, "\n").replace(/<\/p>/gi, "</p>\n");
+        html = html.replace(/\n+/g, "\n");
+    }
+    const doc = new DOMParser().parseFromString(html, "text/html");
+    return doc.body.textContent || "";
+}
+
+/**
+ * Normalize URL encoding for display and linking.
+ * Decodes percent-encoded URLs and re-encodes the query string canonically.
+ * Returns the original URL on parse failure.
+ * @param {string} url
+ * @returns {string}
+ */
+function normalize_url_encoding(url) {
+    if (!url) return "";
+    try {
+        // Iterative decode handles double-encoded inputs.
+        let decoded = url;
+        let prev;
+        do {
+            prev = decoded;
+            try {
+                decoded = decodeURIComponent(prev);
+            } catch {
+                decoded = prev;
+                break;
+            }
+        } while (decoded !== prev);
+        const parsed = new URL(decoded);
+        // URL.toString() re-encodes the query/fragment correctly.
+        return parsed.toString();
+    } catch {
+        return url;
+    }
+}
+
+function formatUtcTimestamp(unixSeconds) {
+    return new Date(unixSeconds * 1000).toISOString().replace('T', ' ').slice(0, 19);
+}
