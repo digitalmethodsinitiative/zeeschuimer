@@ -17,11 +17,15 @@ async function load() {
     ];
 
     for(const module of imported_modules) {
+        const mapper = module.map_item
+            ? (stored_item) => module.map_item(wrap_for_map_item(stored_item))
+            : null;
+
         zeeschuimer.register_module(
             module.MODULE_NAME,
             module.DOMAIN,
             module.capture,
-            module.map_item,
+            mapper,
             module.MODULE_ID ? module.MODULE_ID : module.MODULE_DOMAIN,
             module.overwrite_partial,
             module.TOOLTIP ? module.TOOLTIP : null,
