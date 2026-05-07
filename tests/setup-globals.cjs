@@ -22,6 +22,7 @@ const EXPOSED_NAMES = [
     'traverse_data',
     'MappedItem',
     'MissingMappedField',
+    'MapItemException',
     'wrap_for_map_item',
     'strip_tags',
     'normalize_url_encoding',
