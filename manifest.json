@@ -3,7 +3,7 @@
   "description": "Capture social media data while browsing and export it for later analysis",
   "manifest_version": 2,
   "name": "Pesquisa Social",
-  "version": "1.13.6",
+  "version": "1.13.7",
   "homepage_url": "mailto:danilo-f.marinho@hotmail.com",
 
   "browser_specific_settings": {
@@ -42,18 +42,8 @@
       "modules/tiktok-comments.js",
       "modules/instagram.js",
       "modules/instagram-comments.js",
-      "modules/linkedin.js",
-      "modules/9gag.js",
-      "modules/imgur.js",
       "modules/twitter.js",
-      "modules/twitter-comments.js",
-      "modules/douyin.js",
-      "modules/gab.js",
-      "modules/truth.js",
-      "modules/threads.js",
-      "modules/pinterest.js",
-      "modules/rednote.js",
-      "modules/rednote-comments.js"
+      "modules/twitter-comments.js"
     ]
   }
 }

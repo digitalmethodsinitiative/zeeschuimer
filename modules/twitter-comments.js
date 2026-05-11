@@ -3,8 +3,21 @@ zeeschuimer.register_module(
     'x.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
+        const root_tweet_id_match = source_platform_url.match(/\/status\/(\d+)/);
+        const root_tweet_id = root_tweet_id_match ? root_tweet_id_match[1] : null;
+        const looks_like_tweet_request = source_url.indexOf('TweetDetail') >= 0
+            || source_url.indexOf('tweetdetail') >= 0
+            || source_url.indexOf('/graphql/') >= 0
+            || source_url.indexOf('/i/api/') >= 0;
 
-        if (!["x.com"].includes(domain) || source_url.indexOf('TweetDetail') < 0) {
+        if (!["x.com"].includes(domain)) {
+            return [];
+        }
+
+        // X frequently changes the exact GraphQL operation name used to load
+        // replies. When the user is on a /status/... page, be permissive about
+        // which request may contain the thread payload.
+        if (!root_tweet_id && !looks_like_tweet_request) {
             return [];
         }
 
@@ -15,9 +28,8 @@ zeeschuimer.register_module(
             return [];
         }
 
-        const root_tweet_id_match = source_platform_url.match(/\/status\/(\d+)/);
-        const root_tweet_id = root_tweet_id_match ? root_tweet_id_match[1] : null;
         let comments = [];
+        let seen = new Set();
 
         const normalise_tweet = function (tweet) {
             if (!tweet || tweet['__typename'] === 'TweetUnavailable') {
@@ -43,24 +55,38 @@ zeeschuimer.register_module(
 
         const normalise_user = function (tweet) {
             const user = tweet['core'] && tweet['core']['user_results'] && tweet['core']['user_results']['result'];
-            if (!user) {
+            if (user) {
+                const core = user['core'] || {};
+                const legacy = user['legacy'] || {};
+                const avatar = user['avatar'] || {};
+
+                return {
+                    id: user['rest_id'] || user['id'],
+                    unique_id: core['screen_name'],
+                    nickname: core['name'],
+                    signature: legacy['description'],
+                    avatar_thumb: avatar['image_url'] || legacy['profile_image_url_https'],
+                    verified: !!(user['verification'] && user['verification']['verified']),
+                    verified_type: user['verification'] ? user['verification']['verified_type'] : undefined,
+                    follower_count: legacy['followers_count'],
+                    following_count: legacy['friends_count']
+                };
+            }
+
+            const fallback_user = tweet['user'] || null;
+            if (!fallback_user) {
                 return null;
             }
 
-            const core = user['core'] || {};
-            const legacy = user['legacy'] || {};
-            const avatar = user['avatar'] || {};
-
             return {
-                id: user['rest_id'] || user['id'],
-                unique_id: core['screen_name'],
-                nickname: core['name'],
-                signature: legacy['description'],
-                avatar_thumb: avatar['image_url'] || legacy['profile_image_url_https'],
-                verified: !!(user['verification'] && user['verification']['verified']),
-                verified_type: user['verification'] ? user['verification']['verified_type'] : undefined,
-                follower_count: legacy['followers_count'],
-                following_count: legacy['friends_count']
+                id: fallback_user['id_str'] || fallback_user['id'],
+                unique_id: fallback_user['screen_name'],
+                nickname: fallback_user['name'],
+                signature: fallback_user['description'],
+                avatar_thumb: fallback_user['profile_image_url_https'],
+                verified: !!fallback_user['verified'],
+                follower_count: fallback_user['followers_count'],
+                following_count: fallback_user['friends_count']
             };
         };
 
@@ -85,6 +111,11 @@ zeeschuimer.register_module(
             }
 
             const tweet_id = String(tweet['id']);
+            if (seen.has(tweet_id)) {
+                return;
+            }
+            seen.add(tweet_id);
+
             const parent_id = tweet['legacy']['in_reply_to_status_id_str'] || null;
             const post_id = root_tweet_id || tweet['legacy']['conversation_id_str'] || parent_id;
             const author = normalise_user(tweet);
@@ -102,6 +133,14 @@ zeeschuimer.register_module(
             tweet['_zs_comment_thread_id'] = post_id;
             tweet['_zs_comment_post_id'] = post_id;
             comments.push(tweet);
+        };
+
+        const add_from_item_content = function (item_content) {
+            if (!item_content || !item_content['tweet_results']) {
+                return;
+            }
+
+            add_tweet(item_content['tweet_results']['result']);
         };
 
         const traverse = function (obj) {
@@ -125,24 +164,34 @@ zeeschuimer.register_module(
                         }
 
                         if ('itemContent' in entry['content']) {
-                            const item_content = entry['content']['itemContent'];
-                            if (!item_content['tweet_results']) {
-                                continue;
-                            }
-
-                            add_tweet(item_content['tweet_results']['result']);
+                            add_from_item_content(entry['content']['itemContent']);
+                        } else if (entry['content']['content'] && entry['content']['content']['itemContent']) {
+                            add_from_item_content(entry['content']['content']['itemContent']);
                         } else if ('__typename' in entry['content'] && entry['content']['__typename'] === 'TimelineTimelineModule') {
                             for (const item of entry['content']['items']) {
                                 const item_content = item['item'] && item['item']['itemContent'];
-                                if (
-                                    !item_content
-                                    || !['Tweet', 'TimelineTweet'].includes(item_content['__typename'])
-                                    || !item_content['tweet_results']
-                                ) {
+                                if (!item_content || !['Tweet', 'TimelineTweet'].includes(item_content['__typename'])) {
                                     continue;
                                 }
 
-                                add_tweet(item_content['tweet_results']['result']);
+                                add_from_item_content(item_content);
+                            }
+                        } else if (entry['entryId'] && data['globalObjects'] && data['globalObjects']['tweets']) {
+                            let tweet_id = null;
+                            if (entry['entryId'].indexOf('tweet-') === 0) {
+                                tweet_id = entry['entryId'].split('-')[1];
+                            } else if (entry['entryId'].indexOf('sq-I-t-') === 0) {
+                                tweet_id = entry['entryId'].split('-')[3];
+                            }
+
+                            if (tweet_id && data['globalObjects']['tweets'][tweet_id]) {
+                                add_tweet({
+                                    id: tweet_id,
+                                    legacy: data['globalObjects']['tweets'][tweet_id],
+                                    user: data['globalObjects']['users']
+                                        ? data['globalObjects']['users'][data['globalObjects']['tweets'][tweet_id]['user_id_str']]
+                                        : null
+                                });
                             }
                         }
                     }

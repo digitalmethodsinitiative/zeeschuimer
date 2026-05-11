@@ -15,18 +15,10 @@ be exported as a JSON file or exported to a [4CAT](https://github.com/digitalmet
 analysis and storage. Zeeschuimer is primarily intended as a companion to 4CAT, but you can also integrate its output
 into your own analysis pipeline.
 
-Currently, it supports the following platforms:
+This fork currently supports the following platforms:
 * [TikTok](https://www.tiktok.com) (posts and comments)
 * [Instagram](https://www.instagram.com) (posts, reels, and comments)
 * [X/Twitter](https://www.x.com) (posts and comments)
-* [LinkedIn](https://www.linkedin.com)
-* [9gag](https://9gag.com)
-* [Imgur](https://imgur.com)
-* [Douyin](https://douyin.com)
-* [Gab](https://gab.com)
-* [Truth Social](https://truth.social)
-* [Pinterest](https://pinterest.com)
-* [RedNote/Xiaohongshu](https://xiaohongshu.com)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests. See 'Limitations' below for some known limitations to data capture.

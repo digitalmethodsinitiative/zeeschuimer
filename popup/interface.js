@@ -172,7 +172,7 @@ function update_icon() {
 }
 
 /**
- * Get Zeeschuimer stats
+ * Get extension stats
  *
  * Loads the amount of items collected, etc. This function is called
  * periodically to keep the numbers in the interface updated as items are
@@ -573,7 +573,7 @@ const upload_poll = {
     },
 
     /**
-     * Add dataset to Zeeschuimer history
+     * Add dataset to upload history
      *
      * @param progress
      * @returns {Promise<void>}
@@ -611,7 +611,7 @@ async function get_blob(platform) {
  * Get a ZIP with all downloadable media for a platform.
  *
  * The ZIP contains a manifest.json file mapping each downloaded file back to
- * the Zeeschuimer item and platform post it was extracted from.
+ * the stored item and platform post it was extracted from.
  *
  * @param platform
  * @param progress_callback
@@ -1242,7 +1242,7 @@ document.addEventListener('DOMContentLoaded', async function () {
     const current_version = version_container.innerText;
     const known_version = await background.browser.storage.local.get('zs-version');
     if(!known_version || current_version !== known_version['zs-version']) {
-        const version_alert = createElement('span', {'class': 'popup new-version'}, 'Zeeschuimer has been updated to a new version! You can read the release notes via this link.');
+        const version_alert = createElement('span', {'class': 'popup new-version'}, 'Pesquisa Social has been updated to a new version! You can read the release notes via this link.');
         const ok_button = createElement('button', {'class': 'close-popup'}, 'OK');
         ok_button.addEventListener('click', async function(e) {
             await background.browser.storage.local.set({'zs-version': current_version});

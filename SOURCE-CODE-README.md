@@ -45,7 +45,7 @@ powershell -ExecutionPolicy Bypass -File .\build-xpi.ps1
 4. The script creates:
 
 ```text
-pesquisa-social-v1.13.6.xpi
+pesquisa-social-v1.13.7.xpi
 ```
 
 ## Notes for reviewers
