@@ -1,7 +1,7 @@
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$output = "pesquisa-social-source-v1.13.7.zip"
+$output = "pesquisa-social-source-v1.13.8.zip"
 $root = (Get-Location).Path
 
 $includePaths = @(

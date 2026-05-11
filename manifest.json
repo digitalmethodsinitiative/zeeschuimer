@@ -3,7 +3,7 @@
   "description": "Capture social media data while browsing and export it for later analysis",
   "manifest_version": 2,
   "name": "Pesquisa Social",
-  "version": "1.13.7",
+  "version": "1.13.8",
   "homepage_url": "mailto:danilo-f.marinho@hotmail.com",
 
   "browser_specific_settings": {

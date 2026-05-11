@@ -143,6 +143,61 @@ zeeschuimer.register_module(
             add_tweet(item_content['tweet_results']['result']);
         };
 
+        const collect_tweet_candidates = function (obj) {
+            if (!obj || typeof obj !== "object") {
+                return;
+            }
+
+            if (Array.isArray(obj)) {
+                for (const item of obj) {
+                    collect_tweet_candidates(item);
+                }
+                return;
+            }
+
+            // Direct tweet-like object
+            if (
+                obj['legacy']
+                && typeof obj['legacy'] === 'object'
+                && (obj['rest_id'] || obj['id'] || obj['legacy']['id_str'])
+            ) {
+                add_tweet(obj);
+            }
+
+            // Common GraphQL wrapper
+            if (obj['tweet_results'] && obj['tweet_results']['result']) {
+                add_tweet(obj['tweet_results']['result']);
+            }
+
+            // Some responses wrap the tweet one level deeper
+            if (obj['result'] && typeof obj['result'] === 'object') {
+                const result = obj['result'];
+                if (
+                    result['legacy']
+                    || result['tweet']
+                    || result['tweet_results']
+                    || result['__typename'] === 'Tweet'
+                    || result['__typename'] === 'TweetWithVisibilityResults'
+                ) {
+                    collect_tweet_candidates(result);
+                }
+            }
+
+            if (obj['tweet'] && typeof obj['tweet'] === 'object') {
+                collect_tweet_candidates(obj['tweet']);
+            }
+
+            for (let property in obj) {
+                if (!obj.hasOwnProperty(property) || !obj[property]) {
+                    continue;
+                }
+
+                if (typeof obj[property] === "object") {
+                    collect_tweet_candidates(obj[property]);
+                }
+            }
+        };
+
         const traverse = function (obj) {
             for (let property in obj) {
                 let child = obj[property];
@@ -202,6 +257,7 @@ zeeschuimer.register_module(
         };
 
         traverse(data);
+        collect_tweet_candidates(data);
         return comments;
     },
     'twitter-comments'
