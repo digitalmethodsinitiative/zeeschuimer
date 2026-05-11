@@ -1,7 +1,9 @@
 Add-Type -AssemblyName System.IO.Compression
 Add-Type -AssemblyName System.IO.Compression.FileSystem
 
-$output = "pesquisa-social-source-v1.13.8.zip"
+$manifest = Get-Content "manifest.json" | ConvertFrom-Json
+$version = $manifest.version
+$output = "pesquisa-social-source-v$version.zip"
 $root = (Get-Location).Path
 
 $includePaths = @(

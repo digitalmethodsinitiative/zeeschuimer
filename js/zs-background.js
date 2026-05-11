@@ -344,8 +344,6 @@ window.zeeschuimer = {
                         }
                     });
                 }));
-
-                return;
             }
         }
     },

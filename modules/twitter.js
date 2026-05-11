@@ -3,6 +3,8 @@ zeeschuimer.register_module(
     'x.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
+        const root_tweet_id_match = source_platform_url.match(/\/status\/(\d+)/);
+        const root_tweet_id = root_tweet_id_match ? root_tweet_id_match[1] : null;
 
         if (
             !["x.com"].includes(domain)
@@ -37,6 +39,51 @@ zeeschuimer.register_module(
         // One of the 'instructions' is to add entries to the timeline, this is what we are interested in because what
         // is added to the timeline are the tweets!
         // So find those instructions in the object, and reconstruct the tweets from there
+        const normalise_tweet = function (tweet) {
+            if (!tweet || tweet['__typename'] === 'TweetUnavailable') {
+                return null;
+            }
+
+            if ('tweet' in tweet) {
+                tweet = tweet['tweet'];
+            }
+
+            if (!tweet['legacy']) {
+                return null;
+            }
+
+            tweet['id'] = tweet['legacy']['id_str'] || tweet['rest_id'];
+            return tweet['id'] ? tweet : null;
+        };
+
+        const should_include_as_post = function (tweet) {
+            tweet = normalise_tweet(tweet);
+            if (!tweet) {
+                return false;
+            }
+
+            if (!root_tweet_id) {
+                return true;
+            }
+
+            const tweet_id = String(tweet['id']);
+            const legacy = tweet['legacy'] || {};
+            const conversation_id = legacy['conversation_id_str'] ? String(legacy['conversation_id_str']) : null;
+            const reply_to_id = legacy['in_reply_to_status_id_str'] ? String(legacy['in_reply_to_status_id_str']) : null;
+
+            // On a single-tweet thread page, keep the root post in the posts
+            // stream and leave replies to the dedicated comments module.
+            if (tweet_id === root_tweet_id) {
+                return true;
+            }
+
+            if (conversation_id === root_tweet_id || reply_to_id === root_tweet_id || !!reply_to_id) {
+                return false;
+            }
+
+            return true;
+        };
+
         let traverse = function (obj) {
             for (let property in obj) {
                 let child = obj[property];
@@ -69,11 +116,11 @@ zeeschuimer.register_module(
                                 continue;
                             }
 
-                            if('tweet' in tweet) {
-                                // sometimes this is nested once more, for some reason
-                                tweet = tweet['tweet'];
+                            tweet = normalise_tweet(tweet);
+                            if (!tweet || !should_include_as_post(tweet)) {
+                                continue;
                             }
-                            tweet['id'] = tweet['legacy']['id_str'];
+
                             // distinguish tweets that were included because they were "promoted" from
                             // those that are actually part of the user/home timeline or search result.
                             // assume a tweet was promoted if itemContent has promotedMetadata
@@ -87,7 +134,12 @@ zeeschuimer.register_module(
                             }).map(item => {
                                 return item['item']['itemContent']['tweet_results']['result']
                             })) {
-                                tweets.push({...reply_tweet, id: parseInt(reply_tweet['rest_id'])});
+                                const tweet = normalise_tweet(reply_tweet);
+                                if (!tweet || !should_include_as_post(tweet)) {
+                                    continue;
+                                }
+
+                                tweets.push(tweet);
                             }
                         } else {
                             // in other cases this object only contains a reference to the full tweet, which is in turn
@@ -116,7 +168,9 @@ zeeschuimer.register_module(
                             // the user is also stored as a reference - so add the user data to the tweet
                             tweet['user'] = data['globalObjects']['users'][tweet['legacy']['user_id_str']]
 
-                            tweets.push(tweet);
+                            if (should_include_as_post(tweet)) {
+                                tweets.push(tweet);
+                            }
                         }
                     }
 
