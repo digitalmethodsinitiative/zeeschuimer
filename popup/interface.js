@@ -351,16 +351,29 @@ async function button_handler(event) {
     } else if (event.target.matches('.reset-all')) {
         await background.db.items.clear();
 
+    } else if (event.target.matches('.dismiss-csv-warning')) {
+        const warning = document.getElementById('csv-warning');
+        if(warning) warning.hidden = true;
+
     } else if (event.target.matches('.download-format')) {
         const format = event.target.getAttribute('data-format');
-        const blobber = format === 'csv' ? get_csv_blob : get_ndjson_blob;
         const extension = format;
 
         let platform = event.target.getAttribute('data-platform');
         let date = new Date();
         event.target.classList.add('loading');
 
-        let blob = await blobber(platform);
+        let blob;
+        if(format === 'csv') {
+            const result = await get_csv_blob(platform);
+            blob = result.blob;
+            if(result.skipped > 0) {
+                console.warn(`Zeeschuimer: skipped ${result.skipped} ${platform} item(s) during CSV export. First reason: ${result.firstReason}`);
+                show_csv_warning(platform, result.skipped);
+            }
+        } else {
+            blob = await get_ndjson_blob(platform);
+        }
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.' + extension;
         const downloadUrl = window.URL.createObjectURL(blob);
         const downloadId = await browser.downloads.download({
@@ -638,26 +651,61 @@ function csv_escape(value) {
 }
 
 /**
+ * Surface a CSV-export skip warning in the popup.
+ *
+ * Shown when the platform's `map_item` raised MapItemException for one or
+ * more items — typically the platform's response shape has shifted and the
+ * mapper no longer recognises every field. The user is steered to the
+ * .ndjson export, which is unaffected because it skips the mapper entirely.
+ */
+function show_csv_warning(platform, skipped) {
+    const warning = document.getElementById('csv-warning');
+    if(!warning) return;
+    const message = warning.querySelector('p');
+    message.innerText = `Skipped ${skipped} ${platform} item${skipped === 1 ? '' : 's'} in the CSV export — the platform's data format may have changed. Use the .ndjson export to get the full dataset until Zeeschuimer is updated.`;
+    warning.hidden = false;
+}
+
+/**
  * Get a CSV dump of items
  *
  * Returns a Blob with all items in it as CSV rows, mapped via the module's
  * registered mapper function. A header row is included.
  *
+ * Items whose mapper raises MapItemException are skipped and counted; any
+ * other error propagates. Skip count and the first skip reason are returned
+ * alongside the blob so the caller can warn the user. Just like 4CAT!
+ *
  * @param platform
- * @returns {Promise<Blob>}
+ * @returns {Promise<{blob: Blob, skipped: number, firstReason: string|null}>}
  */
 async function get_csv_blob(platform) {
     let csv = [];
+    let skipped = 0;
+    let firstReason = null;
     const module = background.zeeschuimer.modules[platform];
     await iterate_items(platform, function(item) {
-        item = module.mapper(item);
-        if(csv.length === 0) {
-            csv.push(Object.keys(item).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
+        let mapped;
+        try {
+            mapped = module.mapper(item);
+        } catch(e) {
+            // More JS fun: Check tag rather than `instanceof`.
+            // Actual Exception lives in some other realm (where modules and lib.js live), and cross-realm
+            // `instanceof` is unreliable under Firefox's wrappers.
+            if(e && e.name === 'MapItemException') {
+                skipped++;
+                if(firstReason === null) firstReason = e.message;
+                return;
+            }
+            throw e;
         }
-        csv.push(Object.values(item).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
+        if(csv.length === 0) {
+            csv.push(Object.keys(mapped).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
+        }
+        csv.push(Object.values(mapped).map(v => csv_escape(v)).join(CSV_SEPARATOR) + "\n");
     })
 
-    return new Blob(csv, {type: 'text/csv'});
+    return {blob: new Blob(csv, {type: 'text/csv'}), skipped, firstReason};
 }
 
 /**

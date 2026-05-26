@@ -60,6 +60,19 @@ class MissingMappedField {
 }
 
 /**
+ * Raised by `map_item` to signal a known mapping failure.
+ *
+ * Mirrors 4CAT's MapItemException: callers should catch it, skip the item,
+ * and warn the user that the platform's format may have shifted.
+ */
+class MapItemException extends Error {
+    constructor(message) {
+        super(message);
+        this.name = "MapItemException";
+    }
+}
+
+/**
  * Wrap a Zeeschuimer stored item to match the shape a 4CAT map_item expects.
  *
  * 4CAT's importer constructs:

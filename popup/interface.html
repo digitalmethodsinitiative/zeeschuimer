@@ -303,6 +303,42 @@
             text-align: center;
         }
 
+        #csv-warning {
+            position: fixed;
+            inset: 0;
+            background: rgba(60, 60, 59, 0.55);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 1000;
+        }
+
+        #csv-warning[hidden] {
+            display: none;
+        }
+
+        #csv-warning .csv-warning-content {
+            background: var(--accent);
+            color: var(--neutral-contrast);
+            border: 2px solid var(--accent-alt);
+            border-radius: 6px;
+            padding: 1.25em 1.25em 1em 1.25em;
+            max-width: 24em;
+            text-align: center;
+            box-shadow: 0 0 20px var(--neutral-contrast);
+        }
+
+        #csv-warning .csv-warning-content p {
+            margin: 0 0 1em 0;
+            line-height: 1.4;
+        }
+
+        #csv-warning .dismiss-csv-warning {
+            display: block;
+            margin: 0 auto;
+            padding: 0.3em 1.25em;
+        }
+
         .tooltippable:not(a):not(button) {
             display: inline-block;
             background: var(--neutral-contrast);
@@ -409,6 +445,12 @@
     <link rel="shortcut icon" href="/images/zeeschuimer-96.png">
 </head>
 <body>
+<div id="csv-warning" hidden>
+    <div class="csv-warning-content">
+        <p></p>
+        <button class="dismiss-csv-warning">Dismiss</button>
+    </div>
+</div>
 <article>
     <header>
         <h1>Zeeschuimer</h1>
