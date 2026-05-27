@@ -5,6 +5,8 @@
 
 # Testing artefacts
 .temp-profile
+tests/.env
+tests/.env.local
 
 # logs
 geckodriver.log

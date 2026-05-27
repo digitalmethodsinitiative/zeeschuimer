@@ -5,10 +5,12 @@
   "type": "module",
   "scripts": {
     "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js",
-    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch"
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --watch",
+    "probe": "node probe-4cat.mjs"
   },
   "devDependencies": {
     "dexie": "^3.2.4",
+    "dotenv": "^16.4.5",
     "fake-indexeddb": "^5.0.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
