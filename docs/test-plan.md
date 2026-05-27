@@ -63,7 +63,7 @@ Phase 3 — 4CAT integration (optional)
 - Problem: mapping tests live in 4CAT and need NDJSON input.
 - Changes:
   - Add CLI flags: `--4cat-url URL` and `--4cat-key KEY` (API key). Require both for upload.
-  - After writing the per-platform NDJSON, POST it to `{4cat_url.rstrip('/')}/api/import-dataset/` with header `X-Zeeschuimer-Platform: {platform}` and `Authorization: Bearer {key}` (confirm header with your 4CAT instance; alternative is to trigger the extension UI upload button when cookie-based auth is required).
+  - After writing the per-platform NDJSON, POST it to `{4cat_url.rstrip('/')}/api/import-dataset/` with header `X-Zeeschuimer-Platform: {platform}` and `Authorization: {key}` (confirm header with your 4CAT instance; alternative is to trigger the extension UI upload button when cookie-based auth is required).
   - Do not fail the test run on 4CAT errors — print status and continue.
 
 Example upload with `requests`:
@@ -73,7 +73,7 @@ import requests
 with open(ndjson_path, 'rb') as f:
     headers = {
         'X-Zeeschuimer-Platform': platform,
-        'Authorization': f'Bearer {fourcat_key}'
+        'Authorization': f'{fourcat_key}'
     }
     r = requests.post(f"{fourcat_url.rstrip('/')}/api/import-dataset/", headers=headers, data=f)
     # check r.status_code and r.text for details
@@ -149,7 +149,7 @@ Estimated effort: 6–10 hours of focused work to implement and test everything 
 
 Open questions / confirmations needed
 
-- Confirm 4CAT API key header format (currently suggested: `Authorization: Bearer {key}`). If your 4CAT requires cookie-based auth, we should emulate the extension upload button via Selenium instead.
+- Confirm 4CAT API key header format (currently suggested: `Authorization: {key}`). If your 4CAT requires cookie-based auth, we should emulate the extension upload button via Selenium instead.
 - Confirm desired default for interactive mode. (Current recommendation: pause once per platform by default; provide `--no-interactive` to run fully headless.)
 
 Next steps

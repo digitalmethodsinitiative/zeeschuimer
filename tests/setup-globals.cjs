@@ -40,3 +40,14 @@ return { ${EXPOSED_NAMES.join(', ')} };
 `);
 
 Object.assign(globalThis, factory());
+
+// jsdom doesn't expose fetch and Jest's jsdom env shadows Node's global
+// fetch, so the comparator can't hit 4CAT without help. Polyfill from
+// undici (a Node-friendly HTTP client, separately installable on npm —
+// distinct from the undici bundled internally by Node, which isn't
+// require()-able by name).
+// Note: tests that use fetch (e.g. map_item_compare.test.js) declare
+// `@jest-environment node` at the top of the file. Node env has fetch
+// natively. Don't try to polyfill into jsdom — undici's internals use
+// Node-specific globals that jsdom shadows (clearImmediate,
+// markResourceTiming, fast timers), and polyfilling them all is brittle.
