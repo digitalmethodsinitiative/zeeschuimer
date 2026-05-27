@@ -57,6 +57,12 @@ class MissingMappedField {
     toString() {
         return `${this.value}`;
     }
+
+    // Mirror 4CAT's API serialization so JSON.stringify produces the same
+    // tagged form on both sides. See docs/4cat-map-item-api.md.
+    toJSON() {
+        return { __missing: true, value: this.value };
+    }
 }
 
 /**
