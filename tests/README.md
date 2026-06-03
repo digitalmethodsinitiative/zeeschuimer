@@ -103,7 +103,8 @@ comparator.
 For every 4CAT dataset key listed in `FOURCAT_DATASETS`,
 `tests/map_item_compare.test.js`:
 
-1. fetches `/api/dataset/<key>/metadata/` to learn the datasource id
+1. sends a HEAD to the items endpoint and reads the datasource id from its
+   `X-4CAT-Dataset-Datasource` response header (no metadata-endpoint call)
 2. translates that id to a Zeeschuimer module name via
    `zeeschuimer-to-4cat.json` (used in reverse)
 3. fetches `/download/<key>` (NDJSON inputs, already wrapped via

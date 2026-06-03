@@ -2,7 +2,8 @@
  * Compare JS map_item output against 4CAT's Python map_item via dataset keys.
  *
  * For each 4CAT dataset key in FOURCAT_DATASETS, this test:
- *   1. fetches /api/dataset/<key>/metadata/ to learn the datasource id
+ *   1. HEADs the items endpoint to read the datasource id from the
+ *      `X-4CAT-Dataset-*` response headers (no metadata-endpoint dependency)
  *   2. translates that id back to a Zeeschuimer module name via
  *      zeeschuimer-to-4cat.json (used in reverse)
  *   3. inspects the local module (must export map_item)
@@ -134,11 +135,10 @@ function auth_headers(extra = {}) {
     };
 }
 
-async function fetch_json(url) {
-    const res = await fetch(url, { headers: auth_headers() });
-    const text = await res.text();
-    if (!res.ok) throw new Error(`HTTP ${res.status} from ${url}: ${text}`);
-    return JSON.parse(text);
+async function fetch_headers(url) {
+    const res = await fetch(url, { method: 'HEAD', headers: auth_headers() });
+    if (!res.ok) throw new Error(`HTTP ${res.status} from HEAD ${url}`);
+    return res.headers;
 }
 
 async function fetch_ndjson(url) {
@@ -266,16 +266,18 @@ function pair_items(inputs, outputs, dataset_key) {
     };
 }
 
-// 4CAT exposes the datasource via `metadata.type`, which is the datasource
-// id with a `-search` or `-import` suffix appended (e.g. `tiktok-search`,
-// `xiaohongshu-comments-import`). Strip the trailing suffix to get the bare
-// id, which we then translate to a Zeeschuimer module via
-// FOURCAT_TO_ZEESCHUIMER. Datasource ids themselves may contain hyphens
-// (e.g. `xiaohongshu-comments`), so the strip is anchored to end-of-string.
-function extract_datasource_id(metadata) {
-    const type = metadata?.type;
-    if (!type) return null;
-    return type.replace(/-(search|import)$/, '');
+// Recover the datasource id from a dataset's response headers. 4CAT exposes it
+// directly as `X-4CAT-Dataset-Datasource`. Older responses may only carry
+// `X-4CAT-Dataset-Type` (the datasource id with a `-search`/`-import` suffix),
+// so fall back to stripping that — anchored to end-of-string because
+// datasource ids can themselves contain hyphens (e.g. `xiaohongshu-comments`).
+// The result is translated to a Zeeschuimer module via FOURCAT_TO_ZEESCHUIMER.
+function datasource_id_from_headers(headers) {
+    const datasource = headers.get('x-4cat-dataset-datasource');
+    if (datasource) return datasource.trim();
+    const type = headers.get('x-4cat-dataset-type');
+    if (type) return type.trim().replace(/-(search|import)$/, '');
+    return null;
 }
 
 // Fields 4CAT's API attaches to every mapped item that the JS map_item never
@@ -331,36 +333,39 @@ function compare_pairs(pairs, map_item) {
     return { results, halted_count };
 }
 
-// Pre-pass: for each dataset, fetch metadata + items and run the comparison
-// up front, so tests register with knowable counts and a deterministic
-// pass/fail per item. Fetch/setup failures become a single "setup" failure
-// inside that dataset's describe.
+// Pre-pass: for each dataset, resolve the datasource (HEAD), fetch items, and
+// run the comparison up front, so tests register with knowable counts and a
+// deterministic pass/fail per item. Fetch/setup failures become a single
+// "setup" failure inside that dataset's describe.
 const dataset_state = {};
 for (const key of DATASET_KEYS_TO_RUN) {
     try {
-        const metadata = await fetch_json(`${FOURCAT_URL}/api/dataset/${key}/metadata/`);
-        const datasource_id = extract_datasource_id(metadata);
+        // The same items URL serves double duty: a HEAD reveals the datasource
+        // (via X-4CAT-Dataset-* headers) with no body; the GET pulls the mapped
+        // rows. `stream=true` avoids the JSON form's limit=100 pagination, which
+        // would silently drop rows (and break id-pairing) on larger datasets.
+        const items_url = `${FOURCAT_URL}/api/dataset/${key}/items/?annotations=no&missing_fields=keep&stream=true`;
+        const headers = await fetch_headers(items_url);
+        const datasource_id = datasource_id_from_headers(headers);
         if (!datasource_id) {
             throw new Error(
-                `metadata for ${key} has no datasource id (checked parameters.datasource, datasource, type)`
+                `no datasource id in response headers for ${key} ` +
+                `(looked for X-4CAT-Dataset-Datasource / X-4CAT-Dataset-Type)`
             );
         }
         const module_name = FOURCAT_TO_ZEESCHUIMER[datasource_id] ?? datasource_id;
         const module_state = await inspect_module(module_name);
 
         if (module_state.state === 'ok') {
-            // Both sides as NDJSON. `stream=true` on the items endpoint avoids
-            // the JSON-array form's default `limit=100` pagination, which would
-            // silently drop rows (and break id-pairing) on larger datasets.
             const [inputs, outputs] = await Promise.all([
                 fetch_ndjson(`${FOURCAT_URL}/download/${key}`),
-                fetch_ndjson(`${FOURCAT_URL}/api/dataset/${key}/items/?annotations=no&missing_fields=keep&stream=true`),
+                fetch_ndjson(items_url),
             ]);
             const pairing = pair_items(inputs, outputs, key);
             const comparison = compare_pairs(pairing.pairs, module_state.map_item);
-            dataset_state[key] = { metadata, datasource_id, module_name, module_state, pairing, comparison };
+            dataset_state[key] = { datasource_id, module_name, module_state, pairing, comparison };
         } else {
-            dataset_state[key] = { metadata, datasource_id, module_name, module_state };
+            dataset_state[key] = { datasource_id, module_name, module_state };
         }
     } catch (e) {
         dataset_state[key] = { error: e };
