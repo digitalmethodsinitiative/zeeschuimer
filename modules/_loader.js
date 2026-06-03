@@ -1,3 +1,8 @@
+// Load-order dependency: `wrap_for_map_item` (used below) is a free global
+// defined in js/lib.js, which manifest.json loads as a plain background
+// script before this module. There is no import for it here on purpose —
+// MV2 background scripts share one global scope. If lib.js stops being
+// loaded first, the mapper wrapper below will ReferenceError.
 async function load() {
     const imported_modules = [
         await import("./tiktok.js"),
