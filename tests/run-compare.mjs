@@ -3,6 +3,7 @@
  *
  *   npm run test:compare              -> compares every key in FOURCAT_DATASETS
  *   npm run test:compare -- <key>     -> narrows the run to a single key
+ *   npm run test:compare -- <key> --all   -> compare every item (no fail-fast)
  *   npm run test:compare -- <key> -t "id=123"   -> key + forwarded jest flags
  *
  * Why this exists instead of invoking jest directly: jest treats any bare
@@ -21,13 +22,22 @@ import { dirname, join } from 'node:path';
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
 
-// First non-flag arg (if any) is the dataset key to narrow to. Everything
-// that looks like a flag is forwarded to jest verbatim.
+// First non-flag arg (if any) is the dataset key to narrow to.
 const dataset_key = args.find(a => !a.startsWith('-'));
-const jest_flags = args.filter(a => a !== dataset_key);
+const flags = args.filter(a => a !== dataset_key);
+
+// `--all` (alias `--no-fail-fast`) compares every item instead of halting at
+// the first failure. It's offered as a flag, not only via the FAIL_FAST env
+// var, because `FAIL_FAST=0 npm run ...` does not reliably reach node when
+// npm/node is the Windows binary invoked through WSL interop, and isn't env
+// syntax at all in cmd.exe. A CLI flag crosses every shell; the env var still
+// works where it propagates.
+const disable_fail_fast = flags.includes('--all') || flags.includes('--no-fail-fast');
+const jest_flags = flags.filter(f => f !== '--all' && f !== '--no-fail-fast');
 
 const env = { ...process.env };
 if (dataset_key) env.COMPARE_DATASET = dataset_key;
+if (disable_fail_fast) env.FAIL_FAST = '0';
 
 const jest_bin = join(__dirname, 'node_modules', 'jest', 'bin', 'jest.js');
 const child = spawn(
