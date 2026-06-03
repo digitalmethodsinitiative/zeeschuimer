@@ -128,9 +128,18 @@ is an accepted gap; see `docs/map-item-test-plan.md`.
 
 The comparator hard-errors at startup if any of these are missing.
 
-**Optional knob:** `FAIL_FAST=0` (or `FAIL_FAST=false`) runs every item in
-every dataset; default is to halt subsequent items in a dataset once one
-has failed.
+**Optional knob:** by default the comparator halts a dataset at its first
+failing item (reporting the rest as one skipped "halted" placeholder). To
+compare *every* item, pass `--all`:
+
+```bash
+npm run test:compare -- <dataset_key> --all
+```
+
+`FAIL_FAST=0` (or `FAIL_FAST=false`) does the same, but prefer `--all`: an
+inline `FAIL_FAST=0 npm run …` does not reliably reach node when npm/node is
+the Windows binary run through WSL interop, and isn't env syntax in cmd.exe.
+A CLI flag crosses every shell.
 
 ### Running
 
@@ -147,6 +156,9 @@ npm run test:compare
 # the comparator narrowed to one dataset key (must still appear in
 # FOURCAT_DATASETS — protects against typos)
 npm run test:compare -- <dataset_key>
+
+# compare every item instead of halting at the first failure
+npm run test:compare -- <dataset_key> --all
 ```
 
 ### Where does a new test go?

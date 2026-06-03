@@ -119,9 +119,10 @@ const FOURCAT_TO_ZEESCHUIMER = Object.fromEntries(
 
 // When true (default), comparison of a dataset stops at its first failing
 // item; the remaining items are reported as a single skipped "halted"
-// placeholder rather than one failure each. Trim because `set FAIL_FAST=0 &&
-// ...` in cmd.exe includes the trailing space; treat both '0' and 'false'
-// (case-insensitive) as off.
+// placeholder rather than one failure each. Disable it with the `--all`
+// launcher flag (preferred — crosses every shell) or FAIL_FAST=0. Trim
+// because `set FAIL_FAST=0 && ...` in cmd.exe includes the trailing space;
+// treat both '0' and 'false' (case-insensitive) as off.
 const FAIL_FAST_RAW = (process.env.FAIL_FAST ?? '').trim().toLowerCase();
 const FAIL_FAST = FAIL_FAST_RAW !== '0' && FAIL_FAST_RAW !== 'false';
 
@@ -432,7 +433,7 @@ for (const dataset_key of DATASET_KEYS_TO_RUN) {
         if (comparison.halted_count > 0) {
             test.skip(
                 `halted after first failure — ${comparison.halted_count} later item(s) not compared ` +
-                `(set FAIL_FAST=0 to compare all)`,
+                `(pass --all, or set FAIL_FAST=0, to compare every item)`,
                 () => {},
             );
         }
