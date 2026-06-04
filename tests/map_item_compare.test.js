@@ -11,8 +11,11 @@
  *        /download/<key>                       -> INPUTS (post-wrap)
  *        /api/dataset/<key>/items/?annotations=no&missing_fields=keep&stream=true
  *                                              -> mapped EXPECTED OUTPUTS
- *   5. pairs items by `id`, runs each input through the local map_item, and
- *      deep-equals the result against the corresponding expected output.
+ *   5. runs each input through the local map_item, then pairs by the
+ *      resulting MAPPED `id` — which can differ from the raw input id (e.g.
+ *      instagram maps to the post shortcode, not the numeric pk) — and
+ *      deep-equals each mapped result against the corresponding expected
+ *      output.
  *
  * The items endpoint is fetched with `stream=true` (NDJSON): its JSON-array
  * form paginates at `limit=100`, silently dropping rows on larger datasets.
@@ -216,25 +219,49 @@ function format_error_with_location(err) {
         : message;
 }
 
-// Pair inputs and expected outputs by `id`. Falls back to index pairing
-// (with a logged warning) if either side is missing the field on its
-// first item.
-function pair_items(inputs, outputs, dataset_key) {
-    const probe_in = inputs[0];
+// Map each input through the local map_item, then pair the mapped result
+// against the expected output by `id`. Pairing MUST key on the mapped id:
+// some modules emit an `id` that differs from the raw input id — instagram,
+// for instance, maps to the post shortcode (`node.code`), not the numeric pk
+// — so pairing raw input ids against the API's already-mapped ids would match
+// nothing. Falls back to index pairing (with a logged warning) if either side
+// lacks a usable id. A throw inside map_item is captured per-item and surfaced
+// later as that item's failure.
+function map_and_pair(inputs, outputs, map_item, dataset_key) {
+    // Map every input up front so pairing can key on the mapped id.
+    const mapped = inputs.map(input => {
+        try {
+            return { input, js_result: map_item(input), error: null };
+        } catch (e) {
+            return {
+                input,
+                js_result: null,
+                error: new Error(`JS map_item threw: ${format_error_with_location(e)}`),
+            };
+        }
+    });
+
+    const probe_mapped = mapped.find(m => m.js_result)?.js_result;
     const probe_out = outputs[0];
-    const has_id_in = probe_in && 'id' in probe_in && probe_in.id != null;
+    const has_id_mapped = probe_mapped && 'id' in probe_mapped && probe_mapped.id != null;
     const has_id_out = probe_out && 'id' in probe_out && probe_out.id != null;
 
-    if (!has_id_in || !has_id_out) {
+    if (!has_id_mapped || !has_id_out) {
         // eslint-disable-next-line no-console
         console.warn(
-            `[compare] ${dataset_key}: no usable 'id' on ${!has_id_in ? '/download' : '/items'} ` +
+            `[compare] ${dataset_key}: no usable 'id' on ${!has_id_mapped ? 'map_item output' : '/items'} ` +
             `side — falling back to index pairing for this dataset.`
         );
-        const n = Math.min(inputs.length, outputs.length);
+        const n = Math.min(mapped.length, outputs.length);
         return {
             mode: 'index',
-            pairs: Array.from({ length: n }, (_, i) => ({ input: inputs[i], expected: outputs[i], id: i })),
+            pairs: Array.from({ length: n }, (_, i) => ({
+                input: mapped[i].input,
+                js_result: mapped[i].js_result,
+                error: mapped[i].error,
+                expected: outputs[i],
+                id: i,
+            })),
             input_count: inputs.length,
             output_count: outputs.length,
             unmatched_inputs: [],
@@ -247,13 +274,19 @@ function pair_items(inputs, outputs, dataset_key) {
 
     const pairs = [];
     const unmatched_inputs = [];
-    for (const input of inputs) {
-        const expected = by_id_out.get(String(input.id));
+    for (const m of mapped) {
+        // Key on the mapped id when mapping succeeded; for a throw (no mapped
+        // id available) fall back to the raw input id so a pass-through-id
+        // module still surfaces the failure against its expected output.
+        const lookup_id = m.js_result && m.js_result.id != null
+            ? String(m.js_result.id)
+            : (m.input && m.input.id != null ? String(m.input.id) : null);
+        const expected = lookup_id != null ? by_id_out.get(lookup_id) : undefined;
         if (expected) {
-            pairs.push({ input, expected, id: input.id });
-            by_id_out.delete(String(input.id));
+            pairs.push({ input: m.input, js_result: m.js_result, error: m.error, expected, id: lookup_id });
+            by_id_out.delete(lookup_id);
         } else {
-            unmatched_inputs.push(input.id);
+            unmatched_inputs.push(lookup_id);
         }
     }
     return {
@@ -296,24 +329,21 @@ function strip_api_fields(obj) {
     return out;
 }
 
-// Run each paired input through the local map_item and diff the result
-// against 4CAT's expected output. With FAIL_FAST on (default), stop at the
-// first failing item and record how many were left unchecked — so one bad
-// item yields a single failure plus one skipped "halted" placeholder, not N
-// failures.
-function compare_pairs(pairs, map_item) {
+// Diff each paired (already-mapped) JS result against 4CAT's expected output.
+// map_item was run up front during pairing — so we could key on the mapped id
+// — so here we only diff, or report an input whose map_item threw. With
+// FAIL_FAST on (default), stop at the first failing item and record how many
+// were left unchecked — so one bad item yields a single failure plus one
+// skipped "halted" placeholder, not N failures.
+function compare_pairs(pairs) {
     const results = [];
     let halted_count = 0;
     for (let i = 0; i < pairs.length; i++) {
-        const { input, expected, id } = pairs[i];
+        const { id, js_result, error, expected } = pairs[i];
         let message = null;
-        try {
-            let js_result;
-            try {
-                js_result = map_item(input);
-            } catch (e) {
-                throw new Error(`JS map_item threw: ${format_error_with_location(e)}`);
-            }
+        if (error) {
+            message = error.message;
+        } else {
             const diffs = diff_objects(
                 strip_api_fields(normalize(js_result)),
                 strip_api_fields(normalize(expected)),
@@ -321,8 +351,6 @@ function compare_pairs(pairs, map_item) {
             if (diffs.length > 0) {
                 message = `${diffs.length} field(s) differ between JS and 4CAT:\n${format_diffs(diffs)}`;
             }
-        } catch (e) {
-            message = e.message;
         }
         results.push({ id, ok: message === null, message });
         if (message !== null && FAIL_FAST) {
@@ -361,8 +389,8 @@ for (const key of DATASET_KEYS_TO_RUN) {
                 fetch_ndjson(`${FOURCAT_URL}/download/${key}`),
                 fetch_ndjson(items_url),
             ]);
-            const pairing = pair_items(inputs, outputs, key);
-            const comparison = compare_pairs(pairing.pairs, module_state.map_item);
+            const pairing = map_and_pair(inputs, outputs, module_state.map_item, key);
+            const comparison = compare_pairs(pairing.pairs);
             dataset_state[key] = { datasource_id, module_name, module_state, pairing, comparison };
         } else {
             dataset_state[key] = { datasource_id, module_name, module_state };
