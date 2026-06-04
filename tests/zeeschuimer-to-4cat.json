@@ -1,0 +1,7 @@
+{
+  "_comment": "Maps Zeeschuimer module filenames (without .js) to 4CAT datasource ids when they differ. Default behavior is identity — only include entries where the two diverge. Discovered via http://localhost/api/datasources/.",
+  "9gag": "ninegag",
+  "truth": "truthsocial",
+  "rednote": "xiaohongshu",
+  "rednote-comments": "xiaohongshu-comments"
+}
