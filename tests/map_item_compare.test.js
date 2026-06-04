@@ -275,15 +275,21 @@ function map_and_pair(inputs, outputs, map_item, dataset_key) {
     const pairs = [];
     const unmatched_inputs = [];
     for (const m of mapped) {
-        // Key on the mapped id when mapping succeeded; for a throw (no mapped
-        // id available) fall back to the raw input id so a pass-through-id
-        // module still surfaces the failure against its expected output.
-        const lookup_id = m.js_result && m.js_result.id != null
-            ? String(m.js_result.id)
-            : (m.input && m.input.id != null ? String(m.input.id) : null);
+        // A throw produces no mapped id to pair on. Surface it as its own
+        // failing item (labelled with the raw input id) rather than burying it
+        // in the unmatched-id list — otherwise an id-transforming module hides
+        // the actual map_item error behind a generic "unmatched input" report.
+        if (m.error) {
+            const label = m.input && m.input.id != null ? String(m.input.id) : '(no id)';
+            pairs.push({ input: m.input, js_result: null, error: m.error, expected: null, id: label });
+            continue;
+        }
+        // Key on the mapped id; a successful map whose id matches no output is
+        // a genuine pairing miss and goes to unmatched_inputs.
+        const lookup_id = m.js_result && m.js_result.id != null ? String(m.js_result.id) : null;
         const expected = lookup_id != null ? by_id_out.get(lookup_id) : undefined;
         if (expected) {
-            pairs.push({ input: m.input, js_result: m.js_result, error: m.error, expected, id: lookup_id });
+            pairs.push({ input: m.input, js_result: m.js_result, error: null, expected, id: lookup_id });
             by_id_out.delete(lookup_id);
         } else {
             unmatched_inputs.push(lookup_id);
