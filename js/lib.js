@@ -57,6 +57,16 @@ class MissingMappedField {
     toString() {
         return `${this.value}`;
     }
+
+    // Mirror 4CAT's API serialization so JSON.stringify produces the same
+    // tagged form on both sides: 4CAT's /api/dataset/<key>/items/ endpoint,
+    // when called with `missing_fields=keep`, emits missing values as
+    // `{ __missing: true, value: <fallback> }`. Matching that shape here
+    // lets the map_item comparator deep-equal both sides without special
+    // handling.
+    toJSON() {
+        return { __missing: true, value: this.value };
+    }
 }
 
 /**
