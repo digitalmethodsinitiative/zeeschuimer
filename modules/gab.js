@@ -141,7 +141,7 @@ export function map_item(item) {
         body: item['c'] ?? item['content'],
         url: item['ul'] ?? item['url'],
         reaction_count: reactionCount,
-        favourites_count: item['fbc'] ?? item['favourites_count'],
+        favourites_count: item['fbc'] ?? item['favourites_count'] ?? null,
         replies_count: item['rc'] ?? item['replies_count'],
         reblogs_count: item['rbc'] ?? item['reblogs_count'],
         mentions: mentions.map(m => m['username']).join(','),
