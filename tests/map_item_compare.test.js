@@ -269,8 +269,21 @@ function map_and_pair(inputs, outputs, map_item, dataset_key) {
         };
     }
 
+    // An id is NOT guaranteed unique: some datasources re-emit the same post
+    // across paginated/scroll responses (e.g. imgur gallery returns a post on
+    // every page it appears on), so a key can legitimately recur with a
+    // different `collected_from_url` per capture. Bucket outputs into a FIFO
+    // queue per id rather than a single slot — then the k-th input occurrence
+    // of an id pairs with the k-th output occurrence. Both endpoints stream the
+    // dataset in the same stored order, so occurrences line up. (A plain
+    // last-wins Map would cross-match occurrence #0 against the surviving
+    // occurrence #N, fabricating field diffs and bogus unmatched ids.)
     const by_id_out = new Map();
-    for (const item of outputs) by_id_out.set(String(item.id), item);
+    for (const item of outputs) {
+        const k = String(item.id);
+        if (!by_id_out.has(k)) by_id_out.set(k, []);
+        by_id_out.get(k).push(item);
+    }
 
     const pairs = [];
     const unmatched_inputs = [];
@@ -284,16 +297,21 @@ function map_and_pair(inputs, outputs, map_item, dataset_key) {
             pairs.push({ input: m.input, js_result: null, error: m.error, expected: null, id: label });
             continue;
         }
-        // Key on the mapped id; a successful map whose id matches no output is
-        // a genuine pairing miss and goes to unmatched_inputs.
+        // Key on the mapped id; a successful map whose id matches no remaining
+        // output occurrence is a genuine pairing miss and goes to unmatched_inputs.
         const lookup_id = m.js_result && m.js_result.id != null ? String(m.js_result.id) : null;
-        const expected = lookup_id != null ? by_id_out.get(lookup_id) : undefined;
+        const queue = lookup_id != null ? by_id_out.get(lookup_id) : undefined;
+        const expected = queue && queue.length ? queue.shift() : undefined;
         if (expected) {
             pairs.push({ input: m.input, js_result: m.js_result, error: null, expected, id: lookup_id });
-            by_id_out.delete(lookup_id);
         } else {
             unmatched_inputs.push(lookup_id);
         }
+    }
+    // Any output occurrences left in the queues had no matching input.
+    const unmatched_outputs = [];
+    for (const [id, queue] of by_id_out) {
+        for (let i = 0; i < queue.length; i++) unmatched_outputs.push(id);
     }
     return {
         mode: 'id',
@@ -301,7 +319,7 @@ function map_and_pair(inputs, outputs, map_item, dataset_key) {
         input_count: inputs.length,
         output_count: outputs.length,
         unmatched_inputs,
-        unmatched_outputs: Array.from(by_id_out.keys()),
+        unmatched_outputs,
     };
 }
 
