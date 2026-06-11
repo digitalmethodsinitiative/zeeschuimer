@@ -123,7 +123,7 @@ export function map_item(item) {
     }
 
     const hashtags = post.caption && post.caption.text
-        ? [...post.caption.text.matchAll(/#([^\\s!@#$%ˆ&*()_+{}:"|<>?\\[\\];',.\\/`~']+)/g)].map(m => m[1]).join(',')
+        ? [...post.caption.text.matchAll(/#([^\s!@#$%ˆ&*()_+{}:"|<>?\[\];',./`~']+)/g)].map(m => m[1]).join(',')
         : "";
 
     return new MappedItem({
