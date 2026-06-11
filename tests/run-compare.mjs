@@ -18,9 +18,18 @@
 import { spawn } from 'node:child_process';
 import { fileURLToPath } from 'node:url';
 import { dirname, join } from 'node:path';
+import { readFileSync, rmSync } from 'node:fs';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
 const args = process.argv.slice(2);
+
+// The comparator writes its roll-up here (jest buffers in-test stdout and
+// hoists it above the result tree, so we print it from this launcher after
+// jest exits to make it the genuine last output). Keep in sync with the same
+// constant in map_item_compare.test.js.
+const SUMMARY_PATH = join(__dirname, '.compare-summary.txt');
+// Drop any stale summary up front so a crashed run can't print the prior one.
+rmSync(SUMMARY_PATH, { force: true });
 
 // First non-flag arg (if any) is the dataset key to narrow to.
 const dataset_key = args.find(a => !a.startsWith('-'));
@@ -46,7 +55,16 @@ const child = spawn(
     { stdio: 'inherit', cwd: __dirname, env },
 );
 
-child.on('exit', code => process.exit(code ?? 1));
+child.on('exit', code => {
+    // Print the roll-up after jest's own tally so it's the last thing on screen.
+    try {
+        process.stdout.write(readFileSync(SUMMARY_PATH, 'utf8'));
+        rmSync(SUMMARY_PATH, { force: true });
+    } catch {
+        // No summary file (e.g. setup threw before afterAll) — nothing to print.
+    }
+    process.exit(code ?? 1);
+});
 child.on('error', err => {
     console.error(`failed to launch jest: ${err.message}`);
     process.exit(1);

@@ -58,12 +58,18 @@
 
 import 'cross-fetch/polyfill';
 import 'dotenv/config';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inspect_module } from './_module-info.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// The end-of-run roll-up is written here, then printed by run-compare.mjs
+// AFTER jest exits — jest buffers in-test stdout and hoists it above the
+// result tree, so writing it from here directly would never land last. Keep
+// in sync with the same constant in run-compare.mjs.
+const SUMMARY_PATH = join(__dirname, '.compare-summary.txt');
 
 const FOURCAT_URL = process.env.FOURCAT_URL?.replace(/\/$/, '');
 const FOURCAT_API_KEY = process.env.FOURCAT_API_KEY;
@@ -496,3 +502,64 @@ for (const dataset_key of DATASET_KEYS_TO_RUN) {
         }
     });
 }
+
+// Reduce a dataset's pre-computed state to a single verdict + one-line detail.
+// Mirrors the assertions above exactly so the summary never disagrees with the
+// per-test results: PASS only when pairing is clean AND every compared item
+// matched; a FAIL_FAST halt leaves items unchecked, so it cannot be a PASS.
+function summarize_dataset(key, info) {
+    if (info.error) {
+        return { key, status: 'FAIL', datasource: '?', module: '?', detail: `setup error: ${info.error.message}` };
+    }
+    const { datasource_id, module_name, module_state, pairing, comparison } = info;
+    if (module_state.state === 'no_map_item') {
+        return { key, status: 'SKIP', datasource: datasource_id, module: module_name, detail: 'no map_item — nothing to compare' };
+    }
+    if (module_state.state === 'syntax_error' || module_state.state === 'import_error') {
+        return { key, status: 'FAIL', datasource: datasource_id, module: module_name, detail: `module ${module_state.state.replace('_', ' ')}` };
+    }
+
+    const pairing_problems = [];
+    if (pairing.input_count !== pairing.output_count) {
+        pairing_problems.push(`count ${pairing.input_count}!=${pairing.output_count}`);
+    }
+    if (pairing.unmatched_inputs.length) pairing_problems.push(`${pairing.unmatched_inputs.length} unmatched input(s)`);
+    if (pairing.unmatched_outputs.length) pairing_problems.push(`${pairing.unmatched_outputs.length} unmatched output(s)`);
+    if (pairing.mode === 'index') pairing_problems.push(`paired by index`);
+
+    const compared = comparison.results.length;
+    const failed_items = comparison.results.filter(r => !r.ok).length;
+    const total = pairing.pairs.length;
+
+    if (pairing_problems.length || failed_items) {
+        const parts = [];
+        if (pairing_problems.length) parts.push(`pairing: ${pairing_problems.join(', ')}`);
+        if (failed_items) {
+            const halted = comparison.halted_count > 0 ? `, halted (+${comparison.halted_count} unchecked)` : '';
+            parts.push(`${failed_items}/${compared} item(s) differ${halted}`);
+        }
+        return { key, status: 'FAIL', datasource: datasource_id, module: module_name, detail: parts.join('; ') };
+    }
+    return { key, status: 'PASS', datasource: datasource_id, module: module_name, detail: `${total}/${total} items match` };
+}
+
+// Build the per-datasource roll-up once the whole file has run and stash it
+// for run-compare.mjs to print as the genuine final output (see SUMMARY_PATH).
+afterAll(() => {
+    const rows = DATASET_KEYS_TO_RUN.map(key => summarize_dataset(key, dataset_state[key]));
+    const w_status = 4; // PASS/FAIL/SKIP
+    const w_module = Math.max(6, ...rows.map(r => r.module.length));
+
+    const lines = ['', '=== map_item compare summary ==='];
+    for (const r of rows) {
+        const mark = r.status === 'PASS' ? '✓' : r.status === 'SKIP' ? '○' : '✗';
+        lines.push(
+            `  ${mark} ${r.status.padEnd(w_status)}  ${r.module.padEnd(w_module)}  ${r.key}  — ${r.detail}`
+        );
+    }
+    const passed = rows.filter(r => r.status === 'PASS').length;
+    const failed = rows.filter(r => r.status === 'FAIL').length;
+    const skipped = rows.filter(r => r.status === 'SKIP').length;
+    lines.push(`${rows.length} datasource(s): ${passed} passed, ${failed} failed, ${skipped} skipped`);
+    writeFileSync(SUMMARY_PATH, lines.join('\n') + '\n');
+});
