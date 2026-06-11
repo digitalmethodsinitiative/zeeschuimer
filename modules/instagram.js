@@ -532,7 +532,7 @@ function parsePolarisItem(node) {
     }
 
     const user = node.user;
-    const owner = node.owner ?? {};
+    const owner = node.owner;
     if (user && owner) {
         if (owner.id === user.id) {
             // prefer user
@@ -649,7 +649,7 @@ function parseGraphItem(node) {
         location.name = node.location.name ?? "";
         location.location_id = node.location.pk ?? "";
         location.latlong = node.location.lat != null ? `${node.location.lat},${node.location.lng}` : "";
-        location.city = node.location.city ?? "";
+        location.city = node.location.city ?? null;
     }
 
     const no_likes = Boolean(node.like_and_view_counts_disabled);
@@ -781,11 +781,11 @@ function parseItemlistItem(node) {
         location.name = node.location.name ?? "";
         location.location_id = node.location.pk ?? "";
         location.latlong = node.location.lat != null ? `${node.location.lat},${node.location.lng}` : "";
-        location.city = node.location.city ?? "";
+        location.city = node.location.city ?? null;
     }
 
-    const user = node.user ?? {};
-    const owner = node.owner ?? {};
+    const user = node.user;
+    const owner = node.owner;
     if (user && owner) {
         if (owner.id === user.id) {
             // prefer user
