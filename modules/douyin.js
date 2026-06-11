@@ -391,7 +391,7 @@ export function map_item(item) {
             const createtime = stream_data["createtime"] ?? (item["requestTime"] ? item["requestTime"] / 1000 : undefined);
             post_timestamp = new Date((createtime ?? 0) * 1000);
             video_url = stream_data["stream_url"]?.["flv_pull_url"]?.["FULL_HD1"] ?? "";
-            video_thumbnail = stream_data["video"]?.["cover"] ?? "";
+            video_thumbnail = stream_data["video"]?.["cover"] ?? null;
             video_description = stream_data["title"] ?? "";
             duration = "Unknown";
             stats = stream_data["stats"] ?? {};
@@ -410,7 +410,7 @@ export function map_item(item) {
             } else {
                 video_url = "";
             }
-            video_thumbnail = item["video"]?.["cover"] ?? "";
+            video_thumbnail = item["video"]?.["cover"] ?? null;
             video_description = item["desc"] ?? "";
             duration = item["duration"] ?? item["video"]?.["duration"] ?? "Unknown";
             prevent_download = item["download"]?.["prevent"] ? "yes" : "no";
@@ -463,7 +463,7 @@ export function map_item(item) {
             const create_time = stream_data["create_time"] ?? item["create_time"] ?? (metadata["timestamp_collected"] ? metadata["timestamp_collected"] / 1000 : undefined);
             post_timestamp = new Date((create_time ?? 0) * 1000);
             video_url = stream_data["stream_url"]?.["flv_pull_url"]?.["FULL_HD1"] ?? "";
-            video_thumbnail = stream_data["video"]?.["cover"] ?? "";
+            video_thumbnail = stream_data["video"]?.["cover"] ?? null;
             video_description = stream_data["title"] ?? "";
             duration = "Unknown";
             author = stream_data["owner"] ?? {};
@@ -502,13 +502,13 @@ export function map_item(item) {
         url_list_key = "url_list";
         is_fake_key = "is_ad_fake";
         // Stats (may be MissingMappedField)
-        const collect_count = stats ? (stats["collect_count"] ?? new MissingMappedField("Unknown")) : new MissingMappedField("Unknown");
-        const comment_count = stats ? (stats["comment_count"] ?? new MissingMappedField("Unknown")) : new MissingMappedField("Unknown");
-        const digg_count = stats ? (stats["digg_count"] ?? new MissingMappedField("Unknown")) : new MissingMappedField("Unknown");
-        const download_count = stats ? (stats["download_count"] ?? new MissingMappedField("Unknown")) : new MissingMappedField("Unknown");
-        const forward_count = stats ? (stats["forward_count"] ?? new MissingMappedField("Unknown")) : new MissingMappedField("Unknown");
-        const play_count = stats ? (stats["play_count"] ?? new MissingMappedField("Unknown")) : new MissingMappedField("Unknown");
-        const share_count = stats ? (stats["share_count"] ?? new MissingMappedField("Unknown")) : new MissingMappedField("Unknown");
+        const collect_count = stats ? (stats["collect_count"] ?? null) : new MissingMappedField("Unknown");
+        const comment_count = stats ? (stats["comment_count"] ?? null) : new MissingMappedField("Unknown");
+        const digg_count = stats ? (stats["digg_count"] ?? null) : new MissingMappedField("Unknown");
+        const download_count = stats ? (stats["download_count"] ?? null) : new MissingMappedField("Unknown");
+        const forward_count = stats ? (stats["forward_count"] ?? null) : new MissingMappedField("Unknown");
+        const play_count = stats ? (stats["play_count"] ?? null) : new MissingMappedField("Unknown");
+        const share_count = stats ? (stats["share_count"] ?? null) : new MissingMappedField("Unknown");
         // Video tags list
         video_tags = (item["video_tag"] ?? []).filter(t => t["tag_name"]).map(t => t["tag_name"]).join(",");
         const mix_current_episode = item[mix_info_key] ? (item[mix_info_key]["statis"]?.["current_episode"] ?? "N/A") : "N/A";
