@@ -167,11 +167,36 @@ function normalize(value) {
     return JSON.parse(JSON.stringify(value));
 }
 
+function looks_like_url(v) {
+    return typeof v === 'string' && /^https?:\/\//i.test(v);
+}
+
+// Percent-decode for encoding-insensitive URL comparison. Decode each maximal
+// %XX run on its own so a malformed sequence doesn't throw and abort the rest.
+function decode_url_loose(s) {
+    return s.replace(/(?:%[0-9A-Fa-f]{2})+/g, run => {
+        try { return decodeURIComponent(run); } catch { return run; }
+    });
+}
+
 function deep_equal(a, b) {
     if (a === b) return true;
     if (a === null || b === null) return a === b;
     if (typeof a !== typeof b) return false;
-    if (typeof a !== 'object') return false;
+    if (typeof a !== 'object') {
+        // Treat encoding-equivalent URLs as equal. The comparator targets bad
+        // data, not cosmetic percent-encoding differences: `=` vs `%3D` in a
+        // query value (and the like) resolve to the same URL, so 4CAT emitting
+        // one form while the JS normalizer emits the other is not a defect.
+        // Applied at the leaf so it covers URLs nested in arrays/objects too.
+        // Tradeoff: this also collapses `%2F` vs `/`, which can be semantically
+        // distinct — accepted, as a genuinely different URL still differs once
+        // decoded.
+        if (looks_like_url(a) && looks_like_url(b)) {
+            return decode_url_loose(a) === decode_url_loose(b);
+        }
+        return false;
+    }
     if (Array.isArray(a) !== Array.isArray(b)) return false;
     if (Array.isArray(a)) {
         if (a.length !== b.length) return false;
