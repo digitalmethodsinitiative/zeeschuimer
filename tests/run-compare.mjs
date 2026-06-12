@@ -1,0 +1,71 @@
+/**
+ * Launcher for the Tier 2 map_item comparator (`npm run test:compare`).
+ *
+ *   npm run test:compare              -> compares every key in FOURCAT_DATASETS
+ *   npm run test:compare -- <key>     -> narrows the run to a single key
+ *   npm run test:compare -- <key> --all   -> compare every item (no fail-fast)
+ *   npm run test:compare -- <key> -t "id=123"   -> key + forwarded jest flags
+ *
+ * Why this exists instead of invoking jest directly: jest treats any bare
+ * positional argument as a test-path-pattern filter. A 4CAT dataset key
+ * (`5daeba72a2dfbb5ed8c855f824a61570`) matches no test file path, so
+ * `jest <key>` silently discovers zero tests and exits "green" having run
+ * nothing. This launcher intercepts the first non-flag argument, hands it to
+ * the comparator through the COMPARE_DATASET env var, and forwards only the
+ * remaining flags to jest — so the key never reaches jest's argv.
+ */
+
+import { spawn } from 'node:child_process';
+import { fileURLToPath } from 'node:url';
+import { dirname, join } from 'node:path';
+import { readFileSync, rmSync } from 'node:fs';
+
+const __dirname = dirname(fileURLToPath(import.meta.url));
+const args = process.argv.slice(2);
+
+// The comparator writes its roll-up here (jest buffers in-test stdout and
+// hoists it above the result tree, so we print it from this launcher after
+// jest exits to make it the genuine last output). Keep in sync with the same
+// constant in map_item_compare.test.js.
+const SUMMARY_PATH = join(__dirname, '.compare-summary.txt');
+// Drop any stale summary up front so a crashed run can't print the prior one.
+rmSync(SUMMARY_PATH, { force: true });
+
+// First non-flag arg (if any) is the dataset key to narrow to.
+const dataset_key = args.find(a => !a.startsWith('-'));
+const flags = args.filter(a => a !== dataset_key);
+
+// `--all` (alias `--no-fail-fast`) compares every item instead of halting at
+// the first failure. It's offered as a flag, not only via the FAIL_FAST env
+// var, because `FAIL_FAST=0 npm run ...` does not reliably reach node when
+// npm/node is the Windows binary invoked through WSL interop, and isn't env
+// syntax at all in cmd.exe. A CLI flag crosses every shell; the env var still
+// works where it propagates.
+const disable_fail_fast = flags.includes('--all') || flags.includes('--no-fail-fast');
+const jest_flags = flags.filter(f => f !== '--all' && f !== '--no-fail-fast');
+
+const env = { ...process.env };
+if (dataset_key) env.COMPARE_DATASET = dataset_key;
+if (disable_fail_fast) env.FAIL_FAST = '0';
+
+const jest_bin = join(__dirname, 'node_modules', 'jest', 'bin', 'jest.js');
+const child = spawn(
+    process.execPath,
+    ['--experimental-vm-modules', jest_bin, '--config', 'jest.compare.config.cjs', ...jest_flags],
+    { stdio: 'inherit', cwd: __dirname, env },
+);
+
+child.on('exit', code => {
+    // Print the roll-up after jest's own tally so it's the last thing on screen.
+    try {
+        process.stdout.write(readFileSync(SUMMARY_PATH, 'utf8'));
+        rmSync(SUMMARY_PATH, { force: true });
+    } catch {
+        // No summary file (e.g. setup threw before afterAll) — nothing to print.
+    }
+    process.exit(code ?? 1);
+});
+child.on('error', err => {
+    console.error(`failed to launch jest: ${err.message}`);
+    process.exit(1);
+});

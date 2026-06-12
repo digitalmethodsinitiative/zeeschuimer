@@ -5,6 +5,11 @@
 
 # Testing artefacts
 .temp-profile
+tests/.env
+tests/.env.local
+tests/.compare-summary.txt
+__pycache__/
+*.pyc
 
 # logs
 geckodriver.log

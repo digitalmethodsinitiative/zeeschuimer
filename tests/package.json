@@ -1,13 +1,17 @@
 {
   "name": "zeeschuimer-db-tests",
   "version": "1.0.0",
-  "description": "Unit tests for Zeeschuimer duplicate handling logic",
+  "description": "Unit tests for Zeeschuimer duplicate handling logic and map_item generator output",
+  "type": "module",
   "scripts": {
-    "test": "jest",
-    "test:watch": "jest --watch"
+    "test": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs",
+    "test:watch": "node --experimental-vm-modules node_modules/jest/bin/jest.js --config jest.config.cjs --watch",
+    "test:compare": "node run-compare.mjs"
   },
   "devDependencies": {
+    "cross-fetch": "^4.0.0",
     "dexie": "^3.2.4",
+    "dotenv": "^16.4.5",
     "fake-indexeddb": "^5.0.1",
     "jest": "^29.7.0",
     "jest-environment-jsdom": "^29.7.0"
