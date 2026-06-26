@@ -17,16 +17,16 @@ into your own analysis pipeline.
 
 Currently, it supports the following platforms:
 * [TikTok](https://www.tiktok.com) (posts and comments)
-* [Instagram](https://www.instagram.com) (posts only)
+* [Instagram](https://www.instagram.com) (posts and reels only)
+* [Threads](https://www.threads.com)
 * [X/Twitter](https://www.x.com)
-* [LinkedIn](https://www.linkedin.com)
 * [9gag](https://9gag.com)
 * [Imgur](https://imgur.com)
 * [Douyin](https://douyin.com)
 * [Gab](https://gab.com)
 * [Truth Social](https://truth.social)
 * [Pinterest](https://pinterest.com)
-* [RedNote/Xiaohongshu](https://xiaohongshu.com)
+* [RedNote/Xiaohongshu](https://xiaohongshu.com) (posts and comments)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests. See 'Limitations' below for some known limitations to data capture.
