@@ -5,8 +5,9 @@
  * update or merge behaviors to duplicates across navigation boundaries.
  */
 
+import 'fake-indexeddb/auto';
+
 let Dexie;
-require('fake-indexeddb/auto');
 
 // Mock browser extension APIs
 global.browser = {
