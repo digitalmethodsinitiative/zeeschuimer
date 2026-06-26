@@ -11,7 +11,7 @@ is researchers who wish to systematically study content on social media platform
 API-based data collection.
 
 You can, for example, browse TikTok and later export a list of all posts you saw in the order you saw them in. Data can 
-be exported as a JSON file or exported to a [4CAT](https://github.com/digitalmethodsinitiative/4cat) instance for 
+be exported as a JSON or CSV file, or exported to a [4CAT](https://github.com/digitalmethodsinitiative/4cat) instance for 
 analysis and storage. Zeeschuimer is primarily intended as a companion to 4CAT, but you can also integrate its output
 into your own analysis pipeline.
 
@@ -60,7 +60,7 @@ panel (any data loaded previously will not be collected until refreshed). You ca
 or Shift + Command + R on Mac. You will see the amount of items detected per platform increase as you browse. Toggle 
 collection off when done to avoid inadvertantly gathering undesired data.
 
-When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload 
+When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, as a CSV spreadsheet file, or upload 
 it to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
 processors on the data.
 
