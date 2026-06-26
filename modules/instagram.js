@@ -9,7 +9,9 @@ export function capture(response, source_platform_url, source_url) {
         return [];
     }
 
-    const debug_logs = false;
+    const debug_logs = true;
+    // "Explorer" content is pre-loaded and should be ignored on all pages except these
+    const explorer_like_views = ["frontpage", "explore", "location", "search"]
 
     // determine what part of instagram we're working in
     const path = new URL(source_platform_url).pathname.split('/').filter(Boolean);
@@ -17,7 +19,7 @@ export function capture(response, source_platform_url, source_url) {
     let view = "";
     if (["logging_client_events"].includes(source_url_path[0])) {
         // background requests for logging
-        if (debug_logs) console.log('ignoring background request ' + source_url);
+        //if (debug_logs) console.log('ignoring background request ' + source_url);
         return [];
     } else if (path.length === 0) {
         /// www.instagram.com, no sub URL
@@ -107,20 +109,20 @@ export function capture(response, source_platform_url, source_url) {
             console.log('Unknown page type', path, 'for url', source_platform_url);
         }
     }
-    // console.log(view + ' view for ' + source_platform_url + ' from ' + source_url);
+    //console.log(view + ' view for ' + source_platform_url + ' from ' + source_url);
 
-    // instagram sometimes loads content in the background without actually using it
-    // maybe pre-caching it or something?
+    // instagram sometimes loads "explore" content in the background
     // this next bit tries to avoid that noise ending up in the data
-    if ((source_platform_url.indexOf('reels/audio') >= 0
-            || source_platform_url.indexOf('/explore/') >= 0
-        )
-        && source_platform_url.indexOf('/locations/') < 0
+    if (!(explorer_like_views.includes(view))
+        // (source_platform_url.indexOf('reels/audio') >= 0
+        //     || source_platform_url.indexOf('/explore/') >= 0
+        // )
+        // && source_platform_url.indexOf('/locations/') < 0
         && (source_url.endsWith('graphql') || source_url.endsWith('graphql/query'))) {
         // reels audio page f.ex. loads personalised reels in the background (unrelated to the audio) but doesn't
         // seem to actually use them)
 
-        if (debug_logs) console.log('ignoring pre-cache ' + source_url);
+        if (debug_logs) console.log('ignoring pre-cache ' + source_url + ' from ' + source_platform_url);
         return [];
     }
 
@@ -185,7 +187,7 @@ export function capture(response, source_platform_url, source_url) {
             }
             // Handle frontpage and filter our background requests for it
             if (property === "xdt_api__v1__feed__timeline__connection") {
-                if (view === "frontpage") {
+                if (["frontpage"].includes(view)) {
                     // - posts in personal feed without adds (i.e. https://instagram.com)
                     //   ✔️ confirmed working 2026-feb-5
                     if (debug_logs) console.log('processing timeline edges from ' + source_url);
@@ -255,6 +257,12 @@ export function capture(response, source_platform_url, source_url) {
                             // ✔️ confirmed working 2026-feb-5
                             // Popular page e.g. https://www.instagram.com/popular/tag_name/
                             // ✔️ confirmed working 2026-feb-24
+                        } else if (nodes.some(n => n && Array.isArray(n.items))) {
+                            // Some responses nest media inside grid-unit nodes one level deeper:
+                            // edges[].node.items[] (e.g. __typename "XDTTopSerpMediaGridUnit")
+                            // Search top results page e.g. https://www.instagram.com/explore/search/keyword/?q=...
+                            if (debug_logs) console.log('processing edges list (w/ nested grid items) from ' + source_url);
+                            items = nodes.flatMap(n => (n && Array.isArray(n.items)) ? n.items : []);
                         } else {
                             // fallback to original property
                             items = obj[property];
