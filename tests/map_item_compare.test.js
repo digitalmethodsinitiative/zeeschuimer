@@ -58,12 +58,18 @@
 
 import 'cross-fetch/polyfill';
 import 'dotenv/config';
-import { readFileSync, existsSync } from 'node:fs';
+import { readFileSync, existsSync, writeFileSync } from 'node:fs';
 import { join, dirname } from 'node:path';
 import { fileURLToPath } from 'node:url';
 import { inspect_module } from './_module-info.js';
 
 const __dirname = dirname(fileURLToPath(import.meta.url));
+
+// The end-of-run roll-up is written here, then printed by run-compare.mjs
+// AFTER jest exits — jest buffers in-test stdout and hoists it above the
+// result tree, so writing it from here directly would never land last. Keep
+// in sync with the same constant in run-compare.mjs.
+const SUMMARY_PATH = join(__dirname, '.compare-summary.txt');
 
 const FOURCAT_URL = process.env.FOURCAT_URL?.replace(/\/$/, '');
 const FOURCAT_API_KEY = process.env.FOURCAT_API_KEY;
@@ -161,11 +167,36 @@ function normalize(value) {
     return JSON.parse(JSON.stringify(value));
 }
 
+function looks_like_url(v) {
+    return typeof v === 'string' && /^https?:\/\//i.test(v);
+}
+
+// Percent-decode for encoding-insensitive URL comparison. Decode each maximal
+// %XX run on its own so a malformed sequence doesn't throw and abort the rest.
+function decode_url_loose(s) {
+    return s.replace(/(?:%[0-9A-Fa-f]{2})+/g, run => {
+        try { return decodeURIComponent(run); } catch { return run; }
+    });
+}
+
 function deep_equal(a, b) {
     if (a === b) return true;
     if (a === null || b === null) return a === b;
     if (typeof a !== typeof b) return false;
-    if (typeof a !== 'object') return false;
+    if (typeof a !== 'object') {
+        // Treat encoding-equivalent URLs as equal. The comparator targets bad
+        // data, not cosmetic percent-encoding differences: `=` vs `%3D` in a
+        // query value (and the like) resolve to the same URL, so 4CAT emitting
+        // one form while the JS normalizer emits the other is not a defect.
+        // Applied at the leaf so it covers URLs nested in arrays/objects too.
+        // Tradeoff: this also collapses `%2F` vs `/`, which can be semantically
+        // distinct — accepted, as a genuinely different URL still differs once
+        // decoded.
+        if (looks_like_url(a) && looks_like_url(b)) {
+            return decode_url_loose(a) === decode_url_loose(b);
+        }
+        return false;
+    }
     if (Array.isArray(a) !== Array.isArray(b)) return false;
     if (Array.isArray(a)) {
         if (a.length !== b.length) return false;
@@ -269,8 +300,21 @@ function map_and_pair(inputs, outputs, map_item, dataset_key) {
         };
     }
 
+    // An id is NOT guaranteed unique: some datasources re-emit the same post
+    // across paginated/scroll responses (e.g. imgur gallery returns a post on
+    // every page it appears on), so a key can legitimately recur with a
+    // different `collected_from_url` per capture. Bucket outputs into a FIFO
+    // queue per id rather than a single slot — then the k-th input occurrence
+    // of an id pairs with the k-th output occurrence. Both endpoints stream the
+    // dataset in the same stored order, so occurrences line up. (A plain
+    // last-wins Map would cross-match occurrence #0 against the surviving
+    // occurrence #N, fabricating field diffs and bogus unmatched ids.)
     const by_id_out = new Map();
-    for (const item of outputs) by_id_out.set(String(item.id), item);
+    for (const item of outputs) {
+        const k = String(item.id);
+        if (!by_id_out.has(k)) by_id_out.set(k, []);
+        by_id_out.get(k).push(item);
+    }
 
     const pairs = [];
     const unmatched_inputs = [];
@@ -284,16 +328,21 @@ function map_and_pair(inputs, outputs, map_item, dataset_key) {
             pairs.push({ input: m.input, js_result: null, error: m.error, expected: null, id: label });
             continue;
         }
-        // Key on the mapped id; a successful map whose id matches no output is
-        // a genuine pairing miss and goes to unmatched_inputs.
+        // Key on the mapped id; a successful map whose id matches no remaining
+        // output occurrence is a genuine pairing miss and goes to unmatched_inputs.
         const lookup_id = m.js_result && m.js_result.id != null ? String(m.js_result.id) : null;
-        const expected = lookup_id != null ? by_id_out.get(lookup_id) : undefined;
+        const queue = lookup_id != null ? by_id_out.get(lookup_id) : undefined;
+        const expected = queue && queue.length ? queue.shift() : undefined;
         if (expected) {
             pairs.push({ input: m.input, js_result: m.js_result, error: null, expected, id: lookup_id });
-            by_id_out.delete(lookup_id);
         } else {
             unmatched_inputs.push(lookup_id);
         }
+    }
+    // Any output occurrences left in the queues had no matching input.
+    const unmatched_outputs = [];
+    for (const [id, queue] of by_id_out) {
+        for (let i = 0; i < queue.length; i++) unmatched_outputs.push(id);
     }
     return {
         mode: 'id',
@@ -301,7 +350,7 @@ function map_and_pair(inputs, outputs, map_item, dataset_key) {
         input_count: inputs.length,
         output_count: outputs.length,
         unmatched_inputs,
-        unmatched_outputs: Array.from(by_id_out.keys()),
+        unmatched_outputs,
     };
 }
 
@@ -478,3 +527,64 @@ for (const dataset_key of DATASET_KEYS_TO_RUN) {
         }
     });
 }
+
+// Reduce a dataset's pre-computed state to a single verdict + one-line detail.
+// Mirrors the assertions above exactly so the summary never disagrees with the
+// per-test results: PASS only when pairing is clean AND every compared item
+// matched; a FAIL_FAST halt leaves items unchecked, so it cannot be a PASS.
+function summarize_dataset(key, info) {
+    if (info.error) {
+        return { key, status: 'FAIL', datasource: '?', module: '?', detail: `setup error: ${info.error.message}` };
+    }
+    const { datasource_id, module_name, module_state, pairing, comparison } = info;
+    if (module_state.state === 'no_map_item') {
+        return { key, status: 'SKIP', datasource: datasource_id, module: module_name, detail: 'no map_item — nothing to compare' };
+    }
+    if (module_state.state === 'syntax_error' || module_state.state === 'import_error') {
+        return { key, status: 'FAIL', datasource: datasource_id, module: module_name, detail: `module ${module_state.state.replace('_', ' ')}` };
+    }
+
+    const pairing_problems = [];
+    if (pairing.input_count !== pairing.output_count) {
+        pairing_problems.push(`count ${pairing.input_count}!=${pairing.output_count}`);
+    }
+    if (pairing.unmatched_inputs.length) pairing_problems.push(`${pairing.unmatched_inputs.length} unmatched input(s)`);
+    if (pairing.unmatched_outputs.length) pairing_problems.push(`${pairing.unmatched_outputs.length} unmatched output(s)`);
+    if (pairing.mode === 'index') pairing_problems.push(`paired by index`);
+
+    const compared = comparison.results.length;
+    const failed_items = comparison.results.filter(r => !r.ok).length;
+    const total = pairing.pairs.length;
+
+    if (pairing_problems.length || failed_items) {
+        const parts = [];
+        if (pairing_problems.length) parts.push(`pairing: ${pairing_problems.join(', ')}`);
+        if (failed_items) {
+            const halted = comparison.halted_count > 0 ? `, halted (+${comparison.halted_count} unchecked)` : '';
+            parts.push(`${failed_items}/${compared} item(s) differ${halted}`);
+        }
+        return { key, status: 'FAIL', datasource: datasource_id, module: module_name, detail: parts.join('; ') };
+    }
+    return { key, status: 'PASS', datasource: datasource_id, module: module_name, detail: `${total}/${total} items match` };
+}
+
+// Build the per-datasource roll-up once the whole file has run and stash it
+// for run-compare.mjs to print as the genuine final output (see SUMMARY_PATH).
+afterAll(() => {
+    const rows = DATASET_KEYS_TO_RUN.map(key => summarize_dataset(key, dataset_state[key]));
+    const w_status = 4; // PASS/FAIL/SKIP
+    const w_module = Math.max(6, ...rows.map(r => r.module.length));
+
+    const lines = ['', '=== map_item compare summary ==='];
+    for (const r of rows) {
+        const mark = r.status === 'PASS' ? '✓' : r.status === 'SKIP' ? '○' : '✗';
+        lines.push(
+            `  ${mark} ${r.status.padEnd(w_status)}  ${r.module.padEnd(w_module)}  ${r.key}  — ${r.detail}`
+        );
+    }
+    const passed = rows.filter(r => r.status === 'PASS').length;
+    const failed = rows.filter(r => r.status === 'FAIL').length;
+    const skipped = rows.filter(r => r.status === 'SKIP').length;
+    lines.push(`${rows.length} datasource(s): ${passed} passed, ${failed} failed, ${skipped} skipped`);
+    writeFileSync(SUMMARY_PATH, lines.join('\n') + '\n');
+});

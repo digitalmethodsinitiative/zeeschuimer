@@ -136,6 +136,14 @@ function activate_buttons() {
             new_status = !(items > 0);
         }
 
+        if(button.classList.contains('download-menu-trigger')) {
+            if(new_status) {
+                button.parentNode.classList.add('disabled');
+            } else {
+                button.parentNode.classList.remove('disabled');
+            }
+        }
+
         if(new_status !== current) {
             button.disabled = new_status;
         }
@@ -241,7 +249,7 @@ async function get_stats() {
             const trigger = createElement("button", {
                 "data-platform": platform, "class": "download-menu-trigger"
             }, "Download");
-            const options = createElement("div", {"class": "download-options", "hidden": ""});
+            const options = createElement("div", {"class": "download-options"});
             options.appendChild(createElement("button", {
                 "data-platform": platform, "data-format": "ndjson", "class": "download-format"
             }, ".ndjson (original)"));
