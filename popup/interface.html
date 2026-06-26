@@ -85,7 +85,7 @@
         body {
             font-family: 'Open Sans', sans-serif;
             color: var(--neutral-contrast);
-            max-width: 800px;
+            max-width: 960px;
             padding: 2em 0 0 0;
             margin: 0 auto;
             background: var(--neutral);
@@ -96,7 +96,7 @@
 
         article {
             padding: 0;
-            max-width: 600px;
+            max-width: 700px;
             margin: 0 auto 1em auto;
             background: var(--accent);
             border-radius: 1.5em;
@@ -222,16 +222,25 @@
 
         /* download chooser: trigger is a regular button (inherits all button
            styles); */
+
         .download-menu {
             display: inline-block;
             position: relative;
         }
 
-        /* :not([hidden]) so the explicit display:flex doesn't override the
-           [hidden] attribute's default display:none */
-        .download-menu > .download-options:not([hidden]) {
+        .download-menu:not(.disabled):hover .download-menu-trigger {
+            border-bottom-left-radius: 0;
+            border-bottom-right-radius: 0;
+            cursor: initial;
+        }
+
+        .download-menu > .download-options {
+            display: none;
+        }
+
+        .download-menu:not(.disabled):hover > .download-options {
             position: absolute;
-            top: calc(100% + 0.25em);
+            top: calc(100% - 2px);
             left: 0;
             display: flex;
             flex-direction: column;
@@ -240,6 +249,7 @@
             background: var(--neutral-contrast-alt);
             border: 2px solid var(--neutral-contrast);
             border-radius: 0.5em;
+            border-top-left-radius: 0;
             z-index: 10;
             white-space: nowrap;
         }
