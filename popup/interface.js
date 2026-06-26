@@ -303,7 +303,7 @@ async function get_stats() {
                 day: "numeric"
             })));
             row.appendChild(createElement("td", {}, createElement("a", {"href": upload.url, "target": "_blank"}, upload.url.split("/")[2])));
-            document.querySelector("#upload-table tbody").append(row);
+            document.querySelector("#upload-table tbody").appendChild(row);
         }
     });
 
@@ -438,7 +438,7 @@ async function button_handler(event) {
                         status.innerText = 'Error during upload: malformed response from 4CAT server.';
                         return;
                     }
-                    upload_poll.init(response);
+                    upload_poll.init(response, platform);
                 } else if(xhr.status === 429) {
                     status.innerText = '4CAT server refused upload, too soon after previous one. Try again in a minute.'
                 } else if(xhr.status === 403) {
@@ -555,15 +555,16 @@ const upload_poll = {
      * dataset that has been uploaded and is now being processed.
      *
      * @param response
+     * @param platform  Zeeschuimer platform ID of dataset
      * @returns {Promise<void>}
      */
-    init: async function(response) {
+    init: async function(response, platform) {
         let upload_url = await get_4cat_url();
         let poll_url = upload_url.trim() + '/api/check-query/?key=' + response["key"];
         let status = document.getElementById('upload-status');
         let xhr = new XMLHttpRequest();
         xhr.open("GET", poll_url, true);
-        xhr.onreadystatechange = function () {
+        xhr.onreadystatechange = async function () {
             if (xhr.readyState === xhr.DONE) {
                 return;
             }
@@ -584,33 +585,23 @@ const upload_poll = {
 
             if (!progress["done"]) {
                 status.innerText = 'Processing upload: ' + progress["status"];
-                setTimeout(() => upload_poll.init(response), 1000);
+                setTimeout(() => upload_poll.init(response, platform), 1000);
             } else {
                 status.innerHTML = '';
                 status.appendChild(createElement("span", {},"Upload completed! "));
                 status.appendChild(createElement("a", {"href": progress["url"], "target": "_blank"}, "View dataset."));
-                upload_poll.add_dataset(progress);
+                await background.db.uploads.add({
+                    timestamp: (new Date()).getTime(),
+                    url: progress["url"],
+                    platform: platform,
+                    items: progress["rows"]
+                });
 
                 document.querySelectorAll('.upload-to-4cat').forEach(x => x.removeAttribute('disabled'))
                 is_uploading = false;
             }
         }
         xhr.send();
-    },
-
-    /**
-     * Add dataset to Zeeschuimer history
-     *
-     * @param progress
-     * @returns {Promise<void>}
-     */
-    add_dataset: async function(progress) {
-        await background.db.uploads.add({
-            timestamp: (new Date()).getTime(),
-            url: progress["url"],
-            platform: progress["datasource"],
-            items: progress["rows"]
-        });
     }
 }
 
