@@ -16,7 +16,6 @@ async function load() {
         await import("./pinterest.js"),
         await import("./rednote.js"),
         await import("./rednote-comments.js"),
-        await import("./linkedin.js"),
         await import("./twitter.js"),
         await import("./gab.js")
     ];
