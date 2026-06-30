@@ -11,7 +11,7 @@ export function capture(response, source_platform_url, source_url) {
 
     const debug_logs = true;
     // "Explorer" content is pre-loaded and should be ignored on all pages except these
-    const explorer_like_views = ["frontpage", "explore", "location", "search"]
+    const explorer_like_views = ["frontpage", "explore", "location", "search", "user_posts", "user_reels"]
 
     // determine what part of instagram we're working in
     const path = new URL(source_platform_url).pathname.split('/').filter(Boolean);
