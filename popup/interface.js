@@ -480,6 +480,9 @@ async function button_handler(event) {
         let file = document.querySelector('#ndjson-file').files[0];
         let reader = new FileReader();
         reader.readAsText(file);
+        reader.addEventListener('error', function (e) {
+            alert(`An error occurred importing this file ("${reader.error}"). The file may be too large to be read by the browser.`);
+        });
         reader.addEventListener('load', async function (e) {
             let imported_items = 0;
             let skipped = 0;
