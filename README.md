@@ -24,6 +24,9 @@ Currently, it supports the following platforms:
 * [Imgur](https://imgur.com)
 * [Douyin](https://douyin.com)
 * [Gab](https://gab.com)
+* [Truth Social](https://truth.social)
+* [Pinterest](https://pinterest.com)
+* [RedNote/Xiaohongshu](https://xiaohongshu.com)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests. See 'Limitations' below for some known limitations to data capture.
@@ -40,19 +43,29 @@ in any Firefox-based browser. If you want to run the latest development version 
 debugging console](https://www.youtube.com/watch?v=J7el77F1ckg) after cloning the repository locally.
 
 ## How to use
-A [guide to using Zeeschuimer and 4CAT](https://tinyurl.com/nmrw-zeeschuimer-tiktok) is available. Basic instructions 
+A [guide to using Zeeschuimer and 4CAT](https://zeeschuimer.4cat.nl/) is available. Basic instructions 
 are as follows: 
 
-Install the browser extension in a Firefox browser. A button with the Zeeschuimer logo (a 'Z') will appear in the 
-browser toolbar. Click it to open the Zeeschuimer interface. Enable capturing for the sites you want to capture from.
+Install the browser extension in a Firefox browser. A button with the Zeeschuimer logo (<img alt="Zeeschuimer's browser icon, a yellow 'Z' on a green background" src="images/zeeschuimer-16.png">) will appear in the browser toolbar. Click it 
+to open the Zeeschuimer interface. Enable capturing for the sites you want to capture from.
 
-Next, simply browse a supported platform's site. You will see the amount of items detected per platform increase as you 
-browse. When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload it
-to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
+Note that after installation in Firefox, the extension icon may not be immediately visible in the toolbar. If you can't 
+find Zeeschuimer's icon, look for the 'Extensions' icon (a puzzle piece); clicking it will show all available extensions 
+that are not shown in the main browser toolbar.
+
+### Collecting data
+Next, simply browse a supported platform's site. **Zeeschuimer collects data as your browser receives it**.  It is
+always best practices to refresh a page after you toggle collection on for a supported platform's site in the control 
+panel (any data loaded previously will not be collected until refreshed). You can force a refresh with Ctl + F5 on Windows 
+or Shift + Command + R on Mac. You will see the amount of items detected per platform increase as you browse. Toggle 
+collection off when done to avoid inadvertantly gathering undesired data.
+
+When you have the items you need, you can export the data as an [ndjson](https://ndjson.org) file, or upload 
+it to a 4CAT instance where a 4CAT dataset will be created from the uploaded items. You can then run 4CAT's analytical 
 processors on the data.
 
-To upload to 4CAT, copy the URL of the website of the 4CAT instance to the "4CAT instance" field at the top of 
-Zeeschuimer's interface. You can then use the "to 4CAT" button to create a new 4CAT dataset from the captured data. 
+**To upload to 4CAT, copy the URL of the website of the 4CAT instance to the "4CAT instance" field at the bottom of 
+Zeeschuimer's interface**. You can then use the "to 4CAT" button to create a new 4CAT dataset from the captured data. 
 After uploading, Zeeschuimer will show you a link and the ten most recently uploaded datasets are shown at the bottom of
 the interface.
 
@@ -76,6 +89,13 @@ platform. The following limitations are known:
   * 'Suggested for you' and 'Sponsored' posts on the front page feed
 * *TikTok* items that cannot be captured:
   * Live streams
+
+For some platforms, the level of detail of the data that can be collected depends on the page it is captured from:
+
+* *Pinterest* items may lack some metadata unless captured from the individual post's page, most notably the timestamp 
+  of the post.
+* *RedNote/Xiaohongshu* items will often lack the item's post description, timestamp, and video URL, unless captured by 
+  opening the post's own page/clicking it in an overview.
 
 Note that these are *known* limitations; data capture may break or change based on platform changes. Always 
 cross-reference captured data with what you are seeing in your browser.

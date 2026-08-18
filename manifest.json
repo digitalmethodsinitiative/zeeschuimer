@@ -3,12 +3,15 @@
   "description": "Collect data while browsing social media platforms and upload it for analysis later",
   "manifest_version": 2,
   "name": "Zeeschuimer",
-  "version": "1.11.1",
+  "version": "1.13.4",
   "homepage_url": "https://github.com/digitalmethodsinitiative/zeeschuimer",
 
   "browser_specific_settings": {
     "gecko": {
-      "update_url": "https://extensions.digitalmethods.net/updates.json"
+      "update_url": "https://extensions.digitalmethods.net/updates.json",
+      "data_collection_permissions": {
+        "required": ["none"]
+      }
     }
   },
 
@@ -33,6 +36,7 @@
     "scripts": [
       "inc/dexie.js",
       "inc/he.js",
+      "js/lib.js",
       "js/zs-background.js",
       "modules/tiktok.js",
       "modules/tiktok-comments.js",
@@ -44,7 +48,12 @@
       "modules/douyin.js",
       "modules/gab.js",
       "modules/truth.js",
-      "modules/threads.js"
+      "modules/threads.js",
+      "modules/pinterest.js",
+      "modules/rednote.js",
+      "modules/rednote-comments.js",
+      "modules/facebook.js",
+      "modules/facebook-comments.js"
     ]
   }
 }

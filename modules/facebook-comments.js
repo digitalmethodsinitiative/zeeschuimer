@@ -1,5 +1,5 @@
 zeeschuimer.register_module(
-    'Facebook (posts)',
+    'Facebook (comments)',
     'facebook.com',
     function (response, source_platform_url, source_url) {
         let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
@@ -26,6 +26,7 @@ zeeschuimer.register_module(
             }
         }
 
+
         const traverse = function (obj) {
             for (const property in obj) {
                 if (!obj.hasOwnProperty(property)) {
@@ -33,8 +34,8 @@ zeeschuimer.register_module(
                     continue;
                 }
 
-                if(obj['id'] && obj['__typename'] === 'Story' && obj['comet_sections']) {
-                    // deduplicate
+
+                if(obj['id'] && obj['__typename'] === 'Feedback' && obj?.comment_rendering_instance_for_feed_location?.comments?.edges?.length > 0) {
                     const exists = edges.some(edge => edge.id === obj.id);
                     if (!exists) {
                         edges.push(obj);
@@ -52,6 +53,7 @@ zeeschuimer.register_module(
             }
         }
 
+        
         for(const index in edges) {
             try {
                 const better_id = atob(edges[index]['id']);  // decode base64
@@ -61,5 +63,6 @@ zeeschuimer.register_module(
             }
         }
         return edges;
-    }
+    },
+    'facebook-comments'
 );
