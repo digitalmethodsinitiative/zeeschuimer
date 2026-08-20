@@ -9,10 +9,14 @@ import json
 import time
 import os
 import re
+import tempfile
+import uuid
 
+from addon_package import package_addon
 from selenium.webdriver.firefox.options import Options
 from selenium.webdriver.firefox.service import Service
 from selenium.webdriver.common.by import By
+from selenium.webdriver.support.ui import WebDriverWait
 from selenium.common import exceptions as selenium_exceptions
 from termcolor import colored
 from selenium import webdriver
@@ -94,14 +98,25 @@ print("Launching Firefox")
 options = Options()
 profile = webdriver.FirefoxProfile(str(profile_file))
 profile.set_preference("security.fileuri.strict_origin_policy", False)
+zeeschuimer_uuid = str(uuid.uuid4())
+profile.set_preference(
+    "extensions.webextensions.uuids",
+    json.dumps({"zeeschuimer@digitalmethods.net": zeeschuimer_uuid}),
+)
 profile.update_preferences()
 
 options.profile = profile
-service = Service(args.geckodriver) if args.geckodriver else None
+service = Service(
+    executable_path=args.geckodriver or None,
+    service_args=["--allow-system-access"],
+)
 driver = webdriver.Firefox(service=service, options=options)
 
-# load zeeschuimer from parent folder
-driver.install_addon(str(Path("..").resolve()), temporary=True)
+# Load Zeeschuimer without development-only directories such as node_modules.
+with tempfile.TemporaryDirectory() as temporary_directory:
+    addon_path = Path(temporary_directory, "zeeschuimer.xpi")
+    package_addon(Path("..").resolve(), addon_path)
+    driver.install_addon(str(addon_path), temporary=True)
 
 # make it a bit more difficult to detec that we're using selenium
 driver.execute_script(open("stealth.js").read())
@@ -111,20 +126,32 @@ driver.set_page_load_timeout(15)
 driver.set_script_timeout(120)
 driver.implicitly_wait(5)
 
-# find UUID to get Zeeschuimer interface URL
-# we cannot directly interact with the extension, but we can find the UUID
-# (which is randomized because we're loading the extension as a folder, not an
-# xpi file) via the 'temporary addons' panel in the Firefox debugging settings
-# we need the UUID to find the URL of the Zeeschuimer interface to manipulate
+# The test profile maps Zeeschuimer's manifest ID to this UUID before Firefox
+# starts. Marionette blocks direct navigation to moz-extension URLs, so Firefox
+# browser chrome performs the trusted navigation instead.
 print("Ensuring Zeeschuimer is loaded")
-driver.get("about:debugging#/runtime/this-firefox")
-time.sleep(0.1)
-# find Zeeschuimer element, parent, child with Internal UUID as text, parent, next sibling which contains the UUID
-uuid = driver.find_element(By.XPATH, '//span[@title="Zeeschuimer"]//..//dt[text()="Internal UUID"]//..//dd').text
-zeeschuimer_url = f"moz-extension://{uuid}/popup/interface.html"
+zeeschuimer_url = f"moz-extension://{zeeschuimer_uuid}/popup/interface.html"
+with driver.context(driver.CONTEXT_CHROME):
+    driver.execute_script(
+        """
+        const { BrowserWindowTracker } = ChromeUtils.importESModule(
+            "resource:///modules/BrowserWindowTracker.sys.mjs"
+        );
+        const browser_window = BrowserWindowTracker.getTopWindow();
+        browser_window.gBrowser.selectedBrowser.loadURI(Services.io.newURI(arguments[0]), {
+            triggeringPrincipal: Services.scriptSecurityManager.getSystemPrincipal(),
+        });
+        """,
+        zeeschuimer_url,
+    )
+WebDriverWait(driver, 10).until(
+    lambda current_driver: (
+        current_driver.current_url == zeeschuimer_url
+        and current_driver.find_element(By.CSS_SELECTOR, "button.reset-all")
+    )
+)
 
 # open interface in first tab and open another one for the platform sites
-driver.get(zeeschuimer_url)
 driver.switch_to.new_window("tab")
 handles = driver.window_handles
 
