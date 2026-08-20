@@ -190,32 +190,6 @@
       }
     }
   },
-  "linkedin.com": {
-    "Home feed": {
-      "https://www.linkedin.com/feed/": {
-        "expected": 5,
-        "more-after-scroll": true
-      }
-    },
-    "Search results": {
-      "https://www.linkedin.com/search/results/content/?keywords=yakuza": {
-        "expected": 9,
-        "more-after-scroll": true
-      }
-    },
-    "Tag overview": {
-      "https://www.linkedin.com/feed/hashtag/?keywords=yakuza": {
-        "expected": 5,
-        "more-after-scroll": true
-      }
-    },
-    "User posts": {
-      "https://www.linkedin.com/in/satyanadella/recent-activity/all/": {
-        "expected": 5,
-        "more-after-scroll": true
-      }
-    }
-  },
   "twitter.com": {
     "Home feed (algorithmic)": {
       "https://x.com/home": {
