@@ -2,25 +2,46 @@ export const MODULE_NAME = 'X/Twitter';
 export const DOMAIN = 'x.com';
 export const MODULE_ID = 'twitter.com';
 
+/**
+ * API endpoints that carry posts.
+ *
+ * Matched as substrings of the request URL. For GraphQL those look like
+ * `/i/api/graphql/<queryId>/<OperationName>?variables=...`, so the operation
+ * name is what we key on. The query ID appears to change on every deploy.
+ *
+ * X renames and splits these as it reworks the UI. 
+ * 2026: the single profile timeline was split into one operation per tab and
+ * the Posts tab moved to `UserOriginalsTimeline`.
+ */
+const POST_BEARING_ENDPOINTS = [
+    'adaptive.json',             // legacy REST timeline
+    'HomeTimeline',              // home, "For you" tab
+    'HomeLatestTimeline',        // home, "Following" tab
+    'ListLatestTweetsTimeline',  // list timeline
+    'SearchTimeline',            // search results (all products: top/latest/media)
+    'TweetDetail',               // a single post and its conversation
+    'UserTweets',                // also matches UserTweetsAndReplies (the "All" tab)
+    'UserOriginalsTimeline',     // profile, "Posts" tab
+    'UserRepliesTimeline',       // profile, "Replies" tab
+    'UserRepostsTimeline',       // profile, "Reposts" tab
+    'UserPhotoTimeline',         // profile, "Media"/"Photos" tab
+    'UserVideoTimeline',         // profile, "Media"/"Videos" tab
+    'ExplorePage',               // explore landing page, which does render posts
+    'Likes',                     // profile, "Likes" tab (own likes only; other
+                                 // users' likes are no longer viewable)
+];
+
 export function capture(response, source_platform_url, source_url) {
-    let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
+    // source_platform_url is the tab's URL
+    let domain = (source_platform_url || '').split("/")[2];
+    if (!domain) {
+        return [];
+    }
+    domain = domain.toLowerCase().replace(/^www\./, '');
 
     if (
         !["x.com"].includes(domain)
-        || (
-            // these are known API endpoints used to fetch tweets for the interface
-            source_url.indexOf('adaptive.json') < 0
-            && source_url.indexOf('HomeLatestTimeline') < 0
-            && source_url.indexOf('HomeTimeline') < 0
-            && source_url.indexOf('ListLatestTweetsTimeline') < 0
-            && source_url.indexOf('UserTweets') < 0
-            && source_url.indexOf('Likes') < 0
-            && source_url.indexOf('SearchTimeline') < 0
-            && source_url.indexOf('TweetDetail') < 0
-            // this one is not enabled because it is always loaded when viewing a user profile
-            // even when not viewing the media tab
-            // && source_url.indexOf('UserMedia') < 0
-        )
+        || !POST_BEARING_ENDPOINTS.some(endpoint => source_url.indexOf(endpoint) >= 0)
     ) {
         return [];
     }
@@ -44,6 +65,11 @@ export function capture(response, source_platform_url, source_url) {
             if (!child) {
                 continue;
             }
+            // Timeline instructions deliver posts in two shapes: most carry an
+            // `entries` array, but a pinned post arrives as its own
+            // TimelinePinEntry instruction holding a single `entry`. 
+            // Normalise both here.
+            let entries = null;
             if (
                 (
                     (child.hasOwnProperty('type') && child['type'] === 'TimelineAddEntries')
@@ -51,9 +77,13 @@ export function capture(response, source_platform_url, source_url) {
                 )
                 && child.hasOwnProperty('entries')
             ) {
+                entries = child['entries'];
+            } else if (child['type'] === 'TimelinePinEntry' && child['entry']) {
+                entries = [child['entry']];
+            }
 
-                for (let entry in child['entries']) {
-                    entry = child['entries'][entry];
+            if (entries) {
+                for (let entry of entries) {
                     if ('itemContent' in entry['content']) {
                         // tweets are sometimes embedded directly in this object
                         if (entry['content']['itemContent']['itemType'].indexOf('Cursor') >= 0) {
@@ -82,13 +112,32 @@ export function capture(response, source_platform_url, source_url) {
                         tweets.push(tweet);
 
                     } else if ('__typename' in entry['content'] && entry['content']['__typename'] === 'TimelineTimelineModule') {
-                        // this is for replies to a tweet when viewing a single tweet
-                        for (const reply_tweet of entry['content']['items'].filter(item => {
-                            return ['Tweet', 'TimelineTweet'].includes(item['item']['itemContent']['__typename']);
-                        }).map(item => {
-                            return item['item']['itemContent']['tweet_results']['result']
-                        })) {
-                            tweets.push({...reply_tweet, id: parseInt(reply_tweet['rest_id'])});
+                        // conversation threads, e.g. the replies under a single post
+                        for (const item of (entry['content']['items'] ?? [])) {
+                            const item_content = item?.['item']?.['itemContent'];
+                            if (!item_content || !['Tweet', 'TimelineTweet'].includes(item_content['__typename'])) {
+                                continue;
+                            }
+
+                            // X returns an empty `tweet_results: {}` for replies that
+                            // have been deleted or are otherwise unavailable.
+                            let reply_tweet = item_content['tweet_results']?.['result'];
+                            if (!reply_tweet || reply_tweet['__typename'] === 'TweetUnavailable') {
+                                continue;
+                            }
+                            if ('tweet' in reply_tweet) {
+                                // sometimes nested once more, as above
+                                reply_tweet = reply_tweet['tweet'];
+                            }
+                            if (!reply_tweet['rest_id']) {
+                                continue;
+                            }
+
+                            // Keep the id a string. Post ids passed 2^53 long ago, so
+                            // parseInt silently rounds them
+                            // (e.g. 2090457220026626468 -> 2090457220026626600)
+                            // old deduplication key and the permalink built may be corrupt
+                            tweets.push({...reply_tweet, id: reply_tweet['rest_id']});
                         }
                     } else {
                         // in other cases this object only contains a reference to the full tweet, which is in turn
@@ -108,14 +157,20 @@ export function capture(response, source_platform_url, source_url) {
 
                         // 'legacy' is a weird key, but Twitter uses it in its other data format to store the actual
                         // tweet data, so let's use it here as well to make processing later a bit easier
+                        // id stays a string for the same precision reason as above
+                        const legacy_tweet = data['globalObjects']?.['tweets']?.[tweet_id];
+                        if (!legacy_tweet) {
+                            // referenced but not actually included in the response
+                            continue;
+                        }
                         let tweet = {
-                            id: parseInt(tweet_id),
-                            legacy: data['globalObjects']['tweets'][tweet_id],
+                            id: tweet_id,
+                            legacy: legacy_tweet,
                             type: 'adaptive'
                         }
 
                         // the user is also stored as a reference - so add the user data to the tweet
-                        tweet['user'] = data['globalObjects']['users'][tweet['legacy']['user_id_str']]
+                        tweet['user'] = data['globalObjects']?.['users']?.[legacy_tweet['user_id_str']]
 
                         tweets.push(tweet);
                     }
