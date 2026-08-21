@@ -125,9 +125,16 @@ window.zeeschuimer = {
                     enabled_modules.push(module_id);
                 }
             }
-            await zeeschuimer.parse_request(full_response, origin_url, document_url, details.tabId, enabled_modules);
-            filter.disconnect();
-            full_response = '';
+            try {
+                await zeeschuimer.parse_request(full_response, origin_url, document_url, details.tabId, enabled_modules);
+            } catch (error) {
+                // never leave the response filter connected: the request would
+                // hang and the tab would stall on that resource
+                console.error('Zeeschuimer failed to parse a response', document_url, error);
+            } finally {
+                filter.disconnect();
+                full_response = '';
+            }
         }
 
         return {};
@@ -199,7 +206,15 @@ window.zeeschuimer = {
                 continue
             }
 
-            item_list = this.modules[module_id].callback(response, origin_url, document_url);
+            // A module parsing a response it does not fully understand should
+            // not be able to take down the capture.
+            try {
+                item_list = this.modules[module_id].callback(response, origin_url, document_url);
+            } catch (error) {
+                console.error(`Zeeschuimer module ${module_id} threw while parsing ${document_url}`, error);
+                continue;
+            }
+
             if (item_list && item_list.length > 0) {
                 await Promise.all(item_list.map(async (item) => {
                     if (!item) {
