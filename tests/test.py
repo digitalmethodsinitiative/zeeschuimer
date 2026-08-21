@@ -9,8 +9,17 @@ import json
 import time
 import os
 import re
+import sys
 import tempfile
 import uuid
+
+# Result lines are marked with ✓ / ⋯ / ⨯. On Windows, stdout falls back to
+# cp1252 whenever it is not a console
+try:
+    sys.stdout.reconfigure(encoding="utf-8")
+except AttributeError:
+    # stdout replaced by a stream that does not support reconfigure
+    pass
 
 from addon_package import package_addon
 from selenium.webdriver.firefox.options import Options
@@ -29,6 +38,9 @@ from glob import glob
 cli = argparse.ArgumentParser()
 cli.add_argument("--profiledir", help="Firefox profile folder", default="")
 cli.add_argument("--geckodriver", help="Path to geckodriver", default="")
+cli.add_argument("--binary", help="Path to the Firefox binary. Only needed when geckodriver cannot "
+                                  "find Firefox itself, which happens with portable builds and some "
+                                  "non-default installs.", default="")
 cli.add_argument("--login", help="Wait and allow user to login", default=False, action="store_true")
 cli.add_argument("--tests", help="Path to JSON file containing tests", default="tests.json")
 cli.add_argument("--sources", help="Sources to test, comma-separated; by default, test all", default="")
@@ -106,6 +118,26 @@ profile.set_preference(
 profile.update_preferences()
 
 options.profile = profile
+
+# geckodriver normally locates Firefox by itself, but it cannot always do so -
+# portable builds and some installs leave it unable to find a binary at all.
+# Prefer an explicit --binary, otherwise fall back to the platform's usual
+# install path if something is actually there.
+firefox_binary = args.binary
+if not firefox_binary:
+    default_binaries = {
+        "Windows": [
+            "C:/Program Files/Mozilla Firefox/firefox.exe",
+            "C:/Program Files (x86)/Mozilla Firefox/firefox.exe",
+        ],
+        "Darwin": ["/Applications/Firefox.app/Contents/MacOS/firefox"],
+    }.get(system(), ["/usr/bin/firefox", "/usr/local/bin/firefox", "/snap/bin/firefox"])
+    firefox_binary = next((path for path in default_binaries if Path(path).exists()), "")
+
+if firefox_binary:
+    print(f"Using Firefox binary {firefox_binary}")
+    options.binary_location = firefox_binary
+
 service = Service(
     executable_path=args.geckodriver or None,
     service_args=["--allow-system-access"],
