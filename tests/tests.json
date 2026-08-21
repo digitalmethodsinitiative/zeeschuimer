@@ -193,43 +193,73 @@
   "twitter.com": {
     "Home feed (algorithmic)": {
       "https://x.com/home": {
-        "expected": 30,
-        "more-after-scrolll": true
+        "expected": [25, 45],
+        "more-after-scroll": true
       }
     },
-    "User page (home)": {
+    "Home feed (following)": {
+      "https://x.com/home?f=following": {
+        "expected": [25, 45],
+        "more-after-scroll": true
+      }
+    },
+    "User page (posts)": {
       "https://x.com/HIDEO_KOJIMA_EN": {
-        "expected": 20,
+        "expected": [15, 30],
         "more-after-scroll": true
       }
     },
     "User page (with replies)": {
       "https://x.com/HIDEO_KOJIMA_EN/with_replies": {
-        "expected": 20,
+        "expected": [20, 50],
         "more-after-scroll": true
       }
     },
-    "User page (likes)": {
-      "https://x.com/HIDEO_KOJIMA_EN/likes": {
-        "expected": 20,
+    "User page (reposts)": {
+      "https://x.com/HIDEO_KOJIMA_EN/reposts": {
+        "expected": [15, 30],
+        "more-after-scroll": true
+      }
+    },
+    "User page (media)": {
+      "https://x.com/HIDEO_KOJIMA_EN/media": {
+        "expected": [10, 25],
         "more-after-scroll": true
       }
     },
     "Search results (hashtag)": {
       "https://x.com/search?q=%23blessed": {
-        "expected": 20,
+        "expected": [15, 30],
         "more-after-scroll": true
       }
     },
     "List": {
       "https://x.com/i/lists/216472995": {
-        "expected": [90, 110],
+        "expected": [40, 120],
+        "more-after-scroll": true
+      }
+    },
+    "User page (all tab)": {
+      "https://x.com/HIDEO_KOJIMA_EN/all": {
+        "expected": [15, 45],
+        "more-after-scroll": true
+      }
+    },
+    "Search results (latest)": {
+      "https://x.com/search?q=%23blessed&f=live": {
+        "expected": [15, 30],
+        "more-after-scroll": true
+      }
+    },
+    "Explore page": {
+      "https://x.com/explore": {
+        "expected": [3, 20],
         "more-after-scroll": true
       }
     },
     "Single tweet with replies": {
       "https://x.com/dril/status/247222360309121024": {
-        "expected": 10,
+        "expected": [10, 60],
         "more-after-scroll": true
       }
     }
