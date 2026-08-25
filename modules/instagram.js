@@ -281,7 +281,26 @@ export function capture(response, source_platform_url, source_url) {
                         // - posts on explore pages for specific tags (e.g. https://www.instagram.com/explore/tags/blessed/)
                         // ✔️ confirmed working as of 2026-feb-5
                         if (debug_logs) console.log('processing medias/fill_items list from ' + source_url);
-                        items = obj[property].map(media => media["media"]);
+                        items = obj[property].flatMap(wrapper => {
+                            if (!wrapper || typeof wrapper !== "object") {
+                                return [];
+                            }
+                            const found = [];
+                            if (wrapper["media"]) {
+                                found.push(wrapper["media"]);
+                            }
+                            // The explore grid mixes a reels tray in among the
+                            // ordinary tiles. Those wrappers carry no `media` of
+                            // their own - the reels sit under `clips.items[]`,
+                            // each with its own media
+                            const clips = wrapper["clips"];
+                            if (clips && Array.isArray(clips["items"])) {
+                                found.push(...clips["items"]
+                                    .map(clip => clip && clip["media"])
+                                    .filter(Boolean));
+                            }
+                            return found;
+                        });
                     } else {
                         if (debug_logs) console.log('ignoring background medias/fill_items from ' + source_url);
                         continue;
