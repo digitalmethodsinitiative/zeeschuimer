@@ -204,12 +204,34 @@ for platform, testcases in tests.items():
     start_time = time.time()
     # enable data source in zeeschuimer:
     driver.switch_to.window(handles[0])
+
+    # wait for the actual buttons to be present in the Zeeschuimer interface
+    toggle_selector = "#zs-enabled-" + platform.replace(".", "\\.")
+    try:
+        WebDriverWait(driver, 15).until(
+            lambda current_driver: current_driver.execute_script(
+                "return !!document.querySelector(arguments[0]);", toggle_selector))
+    except selenium_exceptions.TimeoutException:
+        print(hr)
+        print(f"{platform} :: {colored('[⨯]', 'red', attrs=['bold'])} no toggle found in the Zeeschuimer "
+              f"interface ({toggle_selector}); is the module registered under this id? Skipping.")
+        continue
+
     # disable all
     driver.execute_script(
         "document.querySelectorAll('.toggle-switch input').forEach((e) => { if(e.checked) { e.click() }; });")
     # enable current platform
-    driver.execute_script("document.querySelectorAll('#zs-enabled-" + platform.replace(".",
-                                                                                       "\\\\.") + "').forEach((e) => { if(!e.checked) { e.click(); }}); ")
+    driver.execute_script(
+        "document.querySelectorAll(arguments[0]).forEach((e) => { if(!e.checked) { e.click(); }});",
+        toggle_selector)
+
+    # Confirm capture is actually on. Without this the tests below would run
+    # against a disabled module and report zeroes that mean nothing.
+    if not driver.execute_script("return !!document.querySelector(arguments[0])?.checked;", toggle_selector):
+        print(hr)
+        print(f"{platform} :: {colored('[⨯]', 'red', attrs=['bold'])} could not enable capture in "
+              f"Zeeschuimer; skipping (results would be meaningless)")
+        continue
 
     print(hr)
     if selected_tests and platform not in selected_tests:
