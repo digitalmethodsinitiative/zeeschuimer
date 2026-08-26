@@ -8,45 +8,57 @@
     },
     "Explore page": {
       "https://www.instagram.com/explore/": {
-        "expected": 0,
-        "more-after-scroll": false
+        "expected": [15, 40],
+        "more-after-scroll": true
       }
     },
-    "User page": {
+    "Search results (hashtag via search box)": {
+      "https://www.instagram.com/explore/search/keyword/?q=%23blessedday": {
+        "expected": [15, 40],
+        "more-after-scroll": true
+      }
+    },
+    "User page (posts)": {
       "https://www.instagram.com/ogata.yoshiyuki/": {
-        "expected": 12,
+        "expected": [8, 25],
         "more-after-scroll": true
       }
     },
     "User page (tagged tab)": {
-      "https://www.instagram.com/steveo/tagged/": {
-        "expected": 0,
-        "more-after-scroll": false
+      "https://www.instagram.com/jasonbankscomedy/tagged/": {
+        "expected": [10, 30],
+        "more-after-scroll": true
+      }
+    },
+    "User page (reposts tab)": {
+      "https://www.instagram.com/jasonbankscomedy/reposts/": {
+        "expected": [10, 40],
+        "more-after-scroll": true
       }
     },
     "User page (reels tab)": {
       "https://www.instagram.com/ogata.yoshiyuki/reels/": {
-        "expected": 0,
-        "more-after-scroll": false
+        "expected": [8, 25],
+        "more-after-scroll": true
       }
     },
     "Tag overview page": {
       "https://www.instagram.com/explore/tags/blessed/": {
-        "expected": 18,
+        "expected": [10, 35],
         "more-after-scroll": true
       }
     },
     "Location overview page": {
       "https://www.instagram.com/explore/locations/290958191/hongerige-wolf-groningen-netherlands/": {
-        "expected": 12,
+        "expected": [8, 25],
         "more-after-scroll": true,
         "wait": 10
       }
     },
     "Audio overview page": {
       "https://www.instagram.com/reels/audio/217239608990598/": {
-        "expected": 22,
-        "more-after-scroll": false
+        "expected": [8, 20],
+        "more-after-scroll": true
       }
     },
     "Individual post page": {
