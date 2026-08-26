@@ -279,27 +279,27 @@
   "douyin.com": {
     "Front Page": {
       "https://www.douyin.com/discover": {
-        "expected": 70,
+        "expected": [20, 60],
         "more-after-scroll": true,
         "wait": 10,
-        "comment": "Douyin loves captchas; longer wait is needed until for them to load",
+        "comment": "Douyin loves captchas; longer wait is needed until for them to load. Redirects to /jingxuan. Serves 50 to a logged-out visitor and about 90 after scrolling, but loads them in batches of 20 so a slow load lands lower.",
         "captcha-selector": "div#captcha_container"
       }
     },
     "Recommended": {
       "https://www.douyin.com/": {
-        "expected": 2,
+        "expected": [20, 60],
         "more-after-scroll": true,
         "wait": 10,
+        "comment": "Only one of the several aweme_list objects this page loads is visible, so the count is far below the number of videos in the responses.",
         "captcha-selector": "div#captcha_container"
       }
     },
     "User page": {
       "https://www.douyin.com/user/MS4wLjABAAAAqtpQNZmjRtGJdpyk0gbAh6OpqqBjJddNTgLhmK3Y0CI": {
-        "expected": 20,
+        "expected": [15, 40],
         "more-after-scroll": false,
         "wait": 10,
-        "comment": "more-after-scroll is true if logged in, false if not",
         "captcha-selector": "div#captcha_container"
       }
     },
@@ -313,17 +313,19 @@
     },
     "Hot": {
       "https://www.douyin.com/hot": {
-        "expected": 20,
+        "expected": [8, 30],
         "more-after-scroll": true,
         "wait": 10,
+        "comment": "Starts with a short list, around 10, and reaches 40 to 50 after scrolling.",
         "captcha-selector": "div#captcha_container"
       }
     },
     "Channels": {
       "https://www.douyin.com/channel/300205": {
-        "expected": 30,
+        "expected": [20, 60],
         "more-after-scroll": true,
         "wait": 10,
+        "comment": "Redirects to /jingxuan/game. Same batching as the front page.",
         "captcha-selector": "div#captcha_container"
       }
     },
@@ -332,7 +334,7 @@
         "expected": 1,
         "more-after-scroll": false,
         "wait": 10,
-        "comment": "Douyin loads full background page (i.e. www.douyin.com) and then individual post in popup",
+        "comment": "Douyin loads full background page (i.e. www.douyin.com) and then individual post in popup. The post itself is embedded in the page under app.videoDetail rather than fetched; the recommendations behind the popup are deliberately not collected.",
         "captcha-selector": "div#captcha_container"
       }
     },
