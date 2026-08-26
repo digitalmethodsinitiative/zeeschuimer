@@ -15,19 +15,45 @@ export function capture(response, source_platform_url, source_url) {
      * Some data is embedded in the page rather than loaded asynchronously.
      * This here extracts it!
      */
-    let embedded_sigil_start = /(<script class="STREAM_RENDER_DATA" type="application\/json">)/mg;
-    let embedded_sigil_end = /(<\/script>)/mg;
+    // Douyin ships more than one embedding format, and not on every page, so
+    // each is tried in turn. No `g` flag: a global regex keeps its lastIndex
+    // between .test() calls and would report a match it already consumed.
+    let embedded_sigils = [
+        /(<script id="RENDER_DATA"[^>]*>)/,
+        /(<script class="STREAM_RENDER_DATA" type="application\/json">)/
+    ];
+    let embedded_sigil_end = /(<\/script>)/;
     let response_jsons = [];
     let from_embed = false;
-    if (embedded_sigil_start.test(response)) {
-        response = response.split(embedded_sigil_start)[2];
-        if (!embedded_sigil_end.test(response)) {
-            return [];
+    for (let sigil of embedded_sigils) {
+        if (!sigil.test(response)) {
+            continue;
         }
-        response_jsons.push(response.split(embedded_sigil_end)[0]);
+        let after_sigil = response.split(sigil)[2];
+        if (!after_sigil || !embedded_sigil_end.test(after_sigil)) {
+            continue;
+        }
+        let embedded_content = after_sigil.split(embedded_sigil_end)[0];
+        // RENDER_DATA carries its JSON percent-encoded.
+        if (embedded_content.startsWith("%7B") || embedded_content.startsWith("%5B")) {
+            try {
+                embedded_content = decodeURIComponent(embedded_content);
+            } catch (error) {
+                continue;
+            }
+        }
+        // A matching script tag is not enough: RENDER_DATA carries app
+        // configuration on pages whose videos live elsewhere. Only take content
+        // that holds videos, otherwise fall through to the next format.
+        if (!embedded_content.includes("awemeId") && !embedded_content.includes("aweme_id")) {
+            continue;
+        }
+        response_jsons.push(embedded_content);
         console.log(`Found embedded Douyin videos on page ${source_platform_url}: ${source_url}`)
         from_embed = true;
-    } else {
+        break;
+    }
+    if (!from_embed) {
         // Recommend aka douyin.com home page has a different embedding!
         let embedded_sigil_start = /(self.__pace_f.push\()/mg;
         let embedded_sigil_end = /(\)<\/script>)/mg;
@@ -111,8 +137,6 @@ export function capture(response, source_platform_url, source_url) {
      */
     let usable_items = [];
     for (let i in response_jsons) {
-        // Declare potential_json and data outside the try: `let` is block-scoped, so declaring it
-        // inside left every use below throwing "data is not defined"
         let potential_json = response_jsons[i];
         let data;
         try {
@@ -129,7 +153,7 @@ export function capture(response, source_platform_url, source_url) {
         if (from_embed) {
             let awemeList_count = 0;
             let recommendAwemeList_count = 0;
-            if (source_platform_url.includes("?modal_id=") && "recommendAwemeList" in data["value"]) {
+            if (source_platform_url.includes("?modal_id=") && data["value"] && "recommendAwemeList" in data["value"]) {
                 // This is an individual video page and the embedded data is NOT the video itself! Only visible when the individual video is closed.
                 console.log("Recommended videos on individual page are not visible")
                 // console.log(data)
@@ -177,6 +201,17 @@ export function capture(response, source_platform_url, source_url) {
                             usable_items.push(item);
                         }
                         recommendAwemeList_count = data["value"]["recommendAwemeList"].length;
+                    }
+                } else if (data["app"] && data["app"]["videoDetail"] && typeof data["app"]["videoDetail"] === "object") {
+                    // A video opened over another page (douyin.com/?modal_id=...) is
+                    // not fetched separately; it is embedded here. videoDetail is the
+                    // string "$undefined" on pages carrying no such video.
+                    let item = data["app"]["videoDetail"];
+                    if ("awemeId" in item) {
+                        item["id"] = item["awemeId"];
+                        item["ZS_collected_from_embed"] = from_embed;
+                        usable_items.push(item);
+                        console.log(`Collected single video from embedded videoDetail ${source_platform_url}`)
                     }
                 }
             }
