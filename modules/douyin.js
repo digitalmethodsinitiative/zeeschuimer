@@ -56,39 +56,34 @@ export function capture(response, source_platform_url, source_url) {
                                 if (item && ebmedded_list_test.test(item)) {
                                     try {
                                         let parsed_list = JSON.parse(item.substring(item.indexOf(":[") + 1))
-                                        for (let k in parsed_list) {
-                                            let embedded_json = parsed_list[k];
-                                            let embedded_json_list = [];
-                                            if (embedded_json instanceof Array) {
-                                                // lists of lists...
-                                                for (let l in embedded_json) {
-                                                    let embedded_json_item = embedded_json[l];
-                                                    if (embedded_json_item instanceof Object) {
-                                                        // console.log(`Embedded JSON item:`)
-                                                        // console.log(embedded_json_item)
-                                                        embedded_json_list.push(embedded_json_item);
-                                                    } else {
-                                                        // console.log(`Unknown embedded_json_item: ${embedded_json_item}`)
-                                                    }
-                                                }
-                                            } else {
-                                                embedded_json_list.push(embedded_json);
+
+                                        // Search the whole structure rather than a couple of
+                                        // levels. As of 2026-08 items are five or six levels
+                                        // down, behind repeated `children` wrappers.
+                                        let found_nodes = [];
+                                        let visit = function (node, depth) {
+                                            if (!node || typeof node !== "object" || depth > 20) {
+                                                return;
                                             }
-                                            for (let m in embedded_json_list) {
-                                                let embedded_json = embedded_json_list[m];
-                                                if (embedded_json && (embedded_json instanceof Object)) {
-                                                    if ("recommendAwemeList" in embedded_json) {
-                                                        // Add value key to format as expected
-                                                        response_jsons.push(JSON.stringify({"value": embedded_json}));
-                                                    } else if ("videoDetail" in embedded_json && embedded_json["videoDetail"]) {
-                                                        // Add value key to format as expected
-                                                        response_jsons.push(JSON.stringify({"single_vid": embedded_json["videoDetail"], "value": []}));
-                                                    }
-                                                    // console.log(`Extracted embedded Douyin videos on page ${source_platform_url}`)
-                                                } else {
-                                                    // console.log(`Unknown embedded_json: ${embedded_json}`)
+                                            if (Array.isArray(node)) {
+                                                for (let entry of node) {
+                                                    visit(entry, depth + 1);
                                                 }
+                                                return;
                                             }
+                                            if ("recommendAwemeList" in node || "homeFetchData" in node) {
+                                                found_nodes.push({"value": node});
+                                            } else if (node["videoDetail"] && typeof node["videoDetail"] === "object") {
+                                                found_nodes.push({"single_vid": node["videoDetail"], "value": []});
+                                            }
+                                            for (let key in node) {
+                                                visit(node[key], depth + 1);
+                                            }
+                                        };
+                                        visit(parsed_list, 0);
+
+                                        for (let found of found_nodes) {
+                                            response_jsons.push(JSON.stringify(found));
                                         }
                                     } catch (SyntaxError) {
                                         console.log(`Embedded parse error ${SyntaxError}:`)
@@ -116,9 +111,12 @@ export function capture(response, source_platform_url, source_url) {
      */
     let usable_items = [];
     for (let i in response_jsons) {
+        // Declare potential_json and data outside the try: `let` is block-scoped, so declaring it
+        // inside left every use below throwing "data is not defined"
         let potential_json = response_jsons[i];
+        let data;
         try {
-            let data = JSON.parse(`${potential_json}`);
+            data = JSON.parse(`${potential_json}`);
         } catch (SyntaxError) {
             if (from_embed) {
                 console.log("Failed to parse embedded Douyin videos")
@@ -136,8 +134,8 @@ export function capture(response, source_platform_url, source_url) {
                 console.log("Recommended videos on individual page are not visible")
                 // console.log(data)
             } else {
-                // Embedded data
-                if ("single_vid" in data) {
+                // Embedded data; check single_vid not $undefined and object
+                if (data["single_vid"] && typeof data["single_vid"] === "object") {
                     // Single video extracted above
                     let item = data["single_vid"];
                     if ("awemeId" in item) {
@@ -155,6 +153,12 @@ export function capture(response, source_platform_url, source_url) {
                     if (("homeFetchData" in data["value"]) && !(data["value"]["homeFetchData"] === "$undefined") && ("awemeList" in data["value"]["homeFetchData"])) {
                         for (let i in data["value"]["homeFetchData"]["awemeList"]) {
                             let item = data["value"]["homeFetchData"]["awemeList"][i];
+                            // Some object use bare "$" and "$N" strings as references 
+                            // to values defined elsewhere in the stream. Ensure actual
+                            // object.
+                            if (!item || typeof item !== "object" || !item["awemeId"]) {
+                                continue;
+                            }
                             item["id"] = item["awemeId"];
                             item["ZS_collected_from_embed"] = from_embed;
                             usable_items.push(item);
@@ -164,6 +168,10 @@ export function capture(response, source_platform_url, source_url) {
                     if ("recommendAwemeList" in data["value"]) {
                         for (let i in data["value"]["recommendAwemeList"]) {
                             let item = data["value"]["recommendAwemeList"][i];
+                            // Same as above; ensure actual objects
+                            if (!item || typeof item !== "object" || !item["awemeId"]) {
+                                continue;
+                            }
                             item["id"] = item["awemeId"];
                             item["ZS_collected_from_embed"] = from_embed;
                             usable_items.push(item);
