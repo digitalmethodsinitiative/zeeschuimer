@@ -10,8 +10,29 @@ export function capture(response, source_platform_url, source_url) {
     }
 
     const debug_logs = true;
-    // "Explorer" content is pre-loaded and should be ignored on all pages except these
-    const explorer_like_views = ["frontpage", "explore", "location", "search", "user_posts", "user_reels"]
+    // Instagram serves both a page's real content AND content it prefetches but
+    // never displays over the same /graphql/query endpoint. Nothing in the
+    // response distinguishes them - only which view is open does. So a view
+    // must be listed here for its /graphql/query responses to be kept.
+    //
+    // I decided on an allowlist: omissions fail silently and we get an issue
+    // on GH. Extra posts collected but should not be is a harder thing to 
+    // expect users to notice and report (and muddies their data). I'd rather
+    // the first.
+    //
+    // Adding a view is therefore cheap and safe; omitting one is a bug, but a
+    // visible one. Add a view here after verifying that view's own posts
+    // arriving on /graphql/query
+    const views_serving_own_posts = [
+        "frontpage",      // verified 2026-08: 20 posts captured, 0 missed
+        "explore",        // verified 2026-08: 74 posts captured, 0 missed
+        "location",       // verified 2026-08: 16 posts captured, 0 missed
+        "search",         // verified 2026-08: 122 posts captured, 0 missed
+        "user_posts",     // verified 2026-08: 62 posts captured, 0 missed
+        "user_reels",     // verified 2026-08: 61 posts captured, 0 missed
+        "user_tagged",    // verified 2026-08: 48 posts
+        "user_reposts",   // verified 2026-08
+    ]
 
     // determine what part of instagram we're working in
     const path = new URL(source_platform_url).pathname.split('/').filter(Boolean);
@@ -73,6 +94,10 @@ export function capture(response, source_platform_url, source_url) {
         }
     } else if (path[0] === "reel") {
         // single reel
+        // EFFECTIVELY DEAD as of 2026-08-26: Instagram redirects /reel/<code>/
+        // to /reels/<code>/, so web navigation never lands here and this branch
+        // does not fire. Kept because share links still use this form and the
+        // redirect could be dropped again at any point.
         view = "single_reel";
     } else if (path[0] === "p") {
         // single post page
@@ -111,16 +136,30 @@ export function capture(response, source_platform_url, source_url) {
     }
     //console.log(view + ' view for ' + source_platform_url + ' from ' + source_url);
 
-    // instagram sometimes loads "explore" content in the background
-    // this next bit tries to avoid that noise ending up in the data
-    if (!(explorer_like_views.includes(view))
-        // (source_platform_url.indexOf('reels/audio') >= 0
-        //     || source_platform_url.indexOf('/explore/') >= 0
-        // )
-        // && source_platform_url.indexOf('/locations/') < 0
+    // A URL that names one specific reel should yield that reel and nothing
+    // else. Two things make this necessary:
+    //
+    //  - /reel/<code>/ AND /reels/ redirects to /reels/<code>/, so opening a 
+    //    either lands on the reels feed rather than a single-item page;
+    //  - the page it lands on embeds the NEXT queued reel alongside the one
+    //    that was asked for, so a share link otherwise collects two posts.
+    //
+    // Going to a URL for one post and collecting more than that post is the
+    // thing this avoids. NOTE: this also caps the browsing case at one reel per
+    // response should "reels" ever be added to the allowlist above!
+    let requested_reel = null;
+    if (path[0] === "reel" && path[1]) {
+        requested_reel = path[1];
+    } else if (path[0] === "reels" && path[1] && path[1] !== "audio") {
+        requested_reel = path[1];
+    }
+
+    // Views not on the list above have their /graphql/query responses dropped as
+    // presumed prefetch. If a view collects nothing when the page clearly shows
+    // posts, this is the first place to look - and the fix is to record it and
+    // add it above, not to widen the condition.
+    if (!(views_serving_own_posts.includes(view))
         && (source_url.endsWith('graphql') || source_url.endsWith('graphql/query'))) {
-        // reels audio page f.ex. loads personalised reels in the background (unrelated to the audio) but doesn't
-        // seem to actually use them)
 
         if (debug_logs) console.log('ignoring pre-cache ' + source_url + ' from ' + source_platform_url);
         return [];
@@ -419,7 +458,14 @@ export function capture(response, source_platform_url, source_url) {
 
     if (debug_logs) console.log(view + ' got ' + edges.length + ' (partial: ' + partial_count + ') via ' + source_url)
     // generic ad filter...
-    return enriched.filter(edge => edge["product_type"] !== "ad");
+    let collected = enriched.filter(edge => edge["product_type"] !== "ad");
+
+    // See `requested_reel` above: a URL naming one reel yields only that reel.
+    if (requested_reel) {
+        collected = collected.filter(edge => edge["code"] === requested_reel);
+    }
+
+    return collected;
 }
 
 export function overwrite_partial(incoming_item, existing_item) {
