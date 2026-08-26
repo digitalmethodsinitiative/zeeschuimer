@@ -198,6 +198,35 @@ failed = 0
 warnings = 0
 start_time = time.time()
 
+# Not every feed scrolls the document. Douyin keeps the page itself at exactly
+# viewport height and scrolls an inner container instead, so window.scrollBy
+# moves nothing there and every test for it reports no increase after scrolling.
+# Scroll the document where the document is what scrolls, and otherwise the
+# largest scrollable element on the page. Returns whether the scroll position
+# actually changed, so a feed that loaded nothing more can be told apart from a
+# scroll that never happened.
+scroll_script = """
+if (document.documentElement.scrollHeight > window.innerHeight + 50) {
+    const before = window.scrollY;
+    window.scrollBy(0, document.querySelector('html').scrollHeight);
+    return window.scrollY !== before;
+}
+
+let target = null;
+for (const element of document.querySelectorAll("div, main, section, ul")) {
+    if (element.clientHeight < 200) continue;
+    if (element.scrollHeight <= element.clientHeight + 100) continue;
+    if (!/(auto|scroll)/.test(getComputedStyle(element).overflowY)) continue;
+    const area = element.clientHeight * element.clientWidth;
+    if (!target || area > target.clientHeight * target.clientWidth) target = element;
+}
+if (!target) return false;
+
+const before = target.scrollTop;
+target.scrollTop = target.scrollHeight;
+return target.scrollTop !== before;
+"""
+
 hr = "=" * (shutil.get_terminal_size().columns - 5)
 
 for platform, testcases in tests.items():
@@ -241,11 +270,11 @@ for platform, testcases in tests.items():
     for testcase, urls in testcases.items():
         for url, settings in urls.items():
             print(f"{platform} :: {testcase} :: {url}")
+            indent = len(platform) * " " + " ::"
 
             # reset all data in zeeschuimer
             driver.switch_to.window(handles[0])
             driver.execute_script("document.querySelector('button.reset-all').click();")
-            indent = len(platform) * " " + " ::"
 
             # load relevant platform page in other tab
             driver.switch_to.window(handles[1])
@@ -279,16 +308,14 @@ for platform, testcases in tests.items():
                 f"return document.querySelector('#stats-{safename} .num-items').innerText")))
 
             num_after_scroll = 0
+            scrolled = False
             try_scrolling = settings.get("more-after-scroll", False)
             if try_scrolling:
                 # scroll and check if more items are loaded
                 driver.switch_to.window(handles[1])
-                driver.execute_script("window.scrollBy(0, document.querySelector('html').scrollHeight);")
-                time.sleep(0.5)
-                driver.execute_script("window.scrollBy(0, document.querySelector('html').scrollHeight);")
-                time.sleep(0.5)
-                driver.execute_script("window.scrollBy(0, document.querySelector('html').scrollHeight);")
-                time.sleep(settings.get("wait", 5) - 1)
+                for pause in (0.5, 0.5, settings.get("wait", 5) - 1):
+                    scrolled = driver.execute_script(scroll_script) or scrolled
+                    time.sleep(pause)
 
                 driver.switch_to.window(handles[0])
                 num_after_scroll = int(re.sub("[^0-9]", "", driver.execute_script(
@@ -297,7 +324,10 @@ for platform, testcases in tests.items():
             msg = f"{indent} {str.rjust(str(num_items), 4, ' ')} items :: "
             if try_scrolling:
                 msg += f" {str.rjust(str(num_after_scroll), 4, ' ')} after scroll :: "
-                if num_items >= expected[0] and num_items <= expected[1] and num_after_scroll > num_items:
+                if not scrolled and num_after_scroll == num_items:
+                    msg += colored("[⋯]", "yellow", attrs=["bold"]) + f" nothing on the page scrolled, so scrolling was not tested"
+                    warnings += 1
+                elif num_items >= expected[0] and num_items <= expected[1] and num_after_scroll > num_items:
                     msg += colored("[✓]", "green", attrs=["bold"]) + " as expected"
                     passed += 1
                 elif expected[0] > num_items and num_after_scroll > num_items:
