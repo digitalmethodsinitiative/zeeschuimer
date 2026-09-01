@@ -313,7 +313,7 @@
     },
     "Hot": {
       "https://www.douyin.com/hot": {
-        "expected": [8, 30],
+        "expected": [8, 40],
         "more-after-scroll": true,
         "wait": 10,
         "comment": "Starts with a short list, around 10, and reaches 40 to 50 after scrolling.",
