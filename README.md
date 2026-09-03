@@ -83,12 +83,13 @@ platform. The following limitations are known:
 
 * *Instagram* items that cannot be captured:
   * Stories
-  * Posts from the 'Tagged' and 'Reels' tabs on a profile page
   * Posts from the 'Saved' overview of bookmarked posts
   * Posts from the 'For You' feed on the 'Explore' page (the 'Not personalized' feed _does_ work)
   * 'Suggested for you' and 'Sponsored' posts on the front page feed
 * *TikTok* items that cannot be captured:
   * Live streams
+* *Douyin*
+  * douyin.com/search/ page is untested (requires login) 
 
 For some platforms, the level of detail of the data that can be collected depends on the page it is captured from:
 
