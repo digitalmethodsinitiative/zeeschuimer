@@ -391,6 +391,116 @@ without `?.` on a value that could be null/undefined.
 
 ---
 
+### Python `or` vs JS `??` (falsy vs nullish)
+
+**Status:** open
+
+**Why it happens:** Python's `a or b` falls through on **any falsy** value —
+`None`, `""`, `0`, `False`, `[]`, `{}`. JavaScript's `a ?? b` falls through
+**only** on `null` / `undefined`. The generator emits `??` for Python `or`,
+which silently changes behaviour whenever the left side can be an empty
+string or zero. Python `or` is JS `||`; `??` is the translation for an
+explicit `is not None` check.
+
+**Wrong JS:**
+```js
+screen_name: core.screen_name ?? legacy.screen_name ?? "",
+```
+
+**Correct JS:**
+```js
+screen_name: core.screen_name || legacy.screen_name || "",
+```
+
+**Example:** `modules/twitter.js` `map_user` — X's transitional format carries
+an empty string in the new `core` / `avatar` / `banner` objects while the real
+value still sits in `legacy`, so `??` blanked four author fields and degraded
+the permalink to `/i/web/status/<id>`. Also `modules/instagram.js`
+`getAuthorId`, where Python's `author.get("id") or author.get("pk")` falls
+through an empty-string id and the JS `??` does not.
+
+**Search pattern:** `\?\?` next to a chain of two or more property reads —
+worth reading any `a ?? b ?? c` against the Python it came from.
+
+---
+
+### Empty collections are falsy in Python, truthy in JavaScript
+
+**Status:** open
+
+**Why it happens:** Python treats `[]`, `{}`, `""` and `0` as false, so
+`if videos_list:` means "there is something in the list". In JavaScript only
+`""` and `0` are falsy — `[]` and `{}` are truthy — so the same condition
+takes the opposite branch on an empty list, and the code inside then indexes
+element `[0]` of an empty array.
+
+**Wrong JS:**
+```js
+const videos_list = item["video"]?.["bitRateList"];
+if (videos_list) {                          // [] is truthy here
+    video_url = videos[0]["playApi"];       // TypeError on an empty list
+}
+```
+
+**Correct JS:**
+```js
+if (Array.isArray(videos_list) && videos_list.length) {
+```
+
+The negated form is the same bug in mirror image: Python's
+`if not videos_list:` takes the "nothing here" branch for `[]`, while JS's
+`if (!videos_list)` does not.
+
+**Example:** `modules/douyin.js` — both the embedded `bitRateList` and the
+non-embed `bit_rate` guards. Surfaced as `Cannot read properties of undefined
+(reading 'playApi')` in the 4CAT comparator on an image gallery.
+
+**Search pattern:** `if \(!?[a-zA-Z_$][\w$]*(_list|s|List)\)` — a bare
+truthy check on something named like a collection. Quick check:
+`grep -nE "if \(!?[a-zA-Z_$][\w$]*([Ll]ist|s)\)" modules/`
+
+---
+
+### `??` swallowing a deliberate null
+
+**Status:** open
+
+**Why it happens:** The mirror image of the entry above, and it bites even
+when the Python has no `or` in it at all. Python's `dict.get(key, default)`
+returns the default **only** when the key is absent — a key that is present
+and null returns null. `data?.[key] ?? default` collapses those two cases,
+so a field the platform explicitly sent as null comes back as the fallback.
+
+**Wrong JS:**
+```js
+function defined(data, key, defaultValue = null) {
+    const value = data?.[key] ?? defaultValue;   // present-but-null -> default
+    return value === "$undefined" ? defaultValue : value;
+}
+```
+
+**Correct JS:**
+```js
+function defined(data, key, defaultValue = null) {
+    const value = py_get(data, key, defaultValue);
+    return value === "$undefined" ? defaultValue : value;
+}
+```
+
+`py_get` and `value_or_missing` are in `js/lib.js` for exactly this; see the
+table in the prompt-feedback list below for which of the three forms matches
+which Python source.
+
+**Example:** `modules/douyin.js` `defined()` — the regression arrived in the
+same regeneration that first taught the generator `||` over `??`, on a helper
+whose Python docstring says a present null is "left alone". Over-applying the
+nullish rule is its own failure mode.
+
+**Search pattern:** `\?\.\[[^\]]+\]\s*\?\?` and `\?\?` inside any
+helper that mirrors `dict.get`.
+
+---
+
 ## Generator prompt feedback (running list)
 
 Concrete things to fold into the generator's prompt over time:
@@ -428,3 +538,19 @@ Concrete things to fold into the generator's prompt over time:
     JS must explicitly assign `null` (not leave the value as `undefined`).
     `JSON.stringify` drops `undefined` keys silently. Use `value ?? null`
     when the field is expected to appear in the mapped output.
+
+11. **Python `or` is JS `||`, not `??`** — `or` falls through on any falsy
+    value; `??` only on null/undefined. Reserve `??` for Python's explicit
+    `is not None`.
+12. **Empty collections** — `[]` and `{}` are falsy in Python and truthy in
+    JS. Translate `if some_list:` as `Array.isArray(x) && x.length`, not
+    `if (x)`.
+13. **Reading a field** — three Python forms, three JS forms, and they are
+    not interchangeable:
+    | Python | JS |
+    |---|---|
+    | `d.get(k, default)` | `py_get(d, k, default)` |
+    | `value_or_missing(d, k, default)` | `value_or_missing(d, k, default)` |
+    | absent **or** null both mean missing | `d[k] ?? new MissingMappedField(default)` |
+    `py_get` and `value_or_missing` are globals from `js/lib.js` — use them
+    rather than hand-rolling a `??` chain.

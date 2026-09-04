@@ -149,3 +149,44 @@ function normalize_url_encoding(url) {
 function formatUtcTimestamp(unixSeconds) {
     return new Date(unixSeconds * 1000).toISOString().replace('T', ' ').slice(0, 19);
 }
+
+/**
+ * Read a field the way Python's `dict.get(key, default)` does
+ *
+ * A key that is absent gives the default; a key that is present but null
+ * gives null. JavaScript's `??` collapses those two cases into one, which is
+ * why `map_item` ports that reach for it drift from 4CAT: 4CAT emits `null`
+ * for a field the platform sent as null, and the fallback for one it left
+ * out entirely.
+ *
+ * @param source  Object to read from
+ * @param key  Name of the field to read
+ * @param fallback  Value to return when the field is absent
+ * @returns  The stored value, or the fallback
+ */
+function py_get(source, key, fallback = null) {
+    return source && key in source ? source[key] : fallback;
+}
+
+/**
+ * Read a field, marking it missing when the source did not send it
+ *
+ * Port of 4CAT's `value_or_missing` in `common/lib/item_mapping.py`. An
+ * absent key means the source told us nothing about this field, so there is
+ * no value to record. Everything the source did send is returned as it is,
+ * including zero, an empty string, false and null — whether a null means "no
+ * value collected" or "the value is nothing" depends on the field, so the
+ * calling `map_item` decides.
+ *
+ * Where a datasource answers that the same way for most of its fields it may
+ * treat null as missing too; that is `source[key] ?? new MissingMappedField(default)`,
+ * not this function.
+ *
+ * @param source  Object to read from
+ * @param key  Name of the field to read
+ * @param fallback  Value processors should fall back on when missing
+ * @returns  The stored value, or a MissingMappedField
+ */
+function value_or_missing(source, key, fallback) {
+    return py_get(source, key, new MissingMappedField(fallback));
+}
