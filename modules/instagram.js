@@ -742,12 +742,12 @@ function parseGraphItem(node) {
     }
     const location = { name: '', latlong: '', city: '', location_id: '' };
     if (node.location) {
-        location.name = node.location.name || '';
-        location.location_id = node.location.pk || '';
-        if (node.location.lat != null) {
+        location.name = py_get(node.location, 'name');
+        location.location_id = py_get(node.location, 'pk');
+        if (node.location.lat) {
             location.latlong = node.location.lat + ',' + node.location.lng;
         }
-        location.city = node.location.city || '';
+        location.city = py_get(node.location, 'city');
     }
     const no_likes = Boolean(node.like_and_view_counts_disabled);
     const author = getAuthor(node);
@@ -859,7 +859,7 @@ function parseItemlistItem(node) {
     if (node.location) {
         location.name = node.location.name || '';
         location.location_id = node.location.pk || '';
-        if (node.location.lat != null) {
+        if (node.location.lat) {
             location.latlong = node.location.lat + ',' + node.location.lng;
         }
         location.city = node.location.city || '';
@@ -876,9 +876,9 @@ function parseItemlistItem(node) {
             coauthor_ids.push(coauthor_node.id || '');
         }
     }
-    const coauthors_str = coauthors.length ? coauthors.join(',') : '';
-    const coauthor_fullnames_str = coauthor_fullnames.length ? coauthor_fullnames.join(',') : '';
-    const coauthor_ids_str = coauthor_ids.length ? coauthor_ids.join(',') : '';
+    const coauthors_str = coauthors.some(Boolean) ? coauthors.join(',') : '';
+    const coauthor_fullnames_str = coauthor_fullnames.some(Boolean) ? coauthor_fullnames.join(',') : '';
+    const coauthor_ids_str = coauthor_ids.some(Boolean) ? coauthor_ids.join(',') : '';
     const no_likes = Boolean(node.like_and_view_counts_disabled);
     const num_likes = (!no_likes && node.like_count != null) ? node.like_count : new MissingMappedField(-1);
     let play_count;
