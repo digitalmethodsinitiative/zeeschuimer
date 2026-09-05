@@ -345,9 +345,13 @@ function map_item_legacy(tweet) {
         quoteTweetId = py_get(quoteTweet.result, "rest_id", "");
     }
     const isQuoteTweet = Boolean(quoteTweetId || quoteTweet || py_get(py_get(tweet, "legacy", {}), "is_quote_status"));
+    const retweetUser = retweetObj
+        ? py_get(py_get(py_get(py_get(retweetObj, "result", {}), "core", {}), "user_results", {}), "result", {})
+        : {};
     let quoteAuthor = "";
     if (quoteTweet) {
-        quoteAuthor = py_get(py_get(py_get(py_get(quoteTweet, "result", {}), "core", {}), "user_results", {}), "result", {}).legacy.screen_name || "";
+        const quoteUser = py_get(py_get(py_get(py_get(quoteTweet, "result", {}), "core", {}), "user_results", {}), "result", {});
+        quoteAuthor = py_get(py_get(quoteUser, "legacy", {}), "screen_name", "");
     }
     if (!quoteAuthor) {
         const permalink = py_get(py_get(py_get(tweet, "legacy", {}), "quoted_status_permalink", {}), "expanded", "");
@@ -381,7 +385,7 @@ function map_item_legacy(tweet) {
         "quote_count": py_get(py_get(tweet, "legacy", {}), "quote_count"),
         "impression_count": py_get(py_get(tweet, "ext_views", {}), "count", ""),
         "is_retweet": retweetObj ? "yes" : "no",
-        "retweeted_user": retweetObj ? py_get(py_get(py_get(py_get(retweetObj, "result", {}), "core", {}), "user_results", {}), "result", {}).legacy.screen_name : "",
+        "retweeted_user": retweetObj ? py_get(py_get(retweetUser, "legacy", {}), "screen_name", "") : "",
         "is_quote_tweet": isQuoteTweet ? "yes" : "no",
         "quote_tweet_id": quoteTweetId,
         "quote_author": quoteAuthor,
@@ -428,7 +432,7 @@ function map_user(userResult) {
         fullname: core.name || legacy.name || "",
         avatar_url: avatar.image_url || legacy.profile_image_url_https || "",
         banner_url: banner.image_url || legacy.profile_banner_url || "",
-        verified: userResult.is_blue_verified || "",
+        verified: py_get(userResult, "is_blue_verified", ""),
         followers: first(counts.followers, legacy.followers_count),
         following: first(counts.following, legacy.friends_count),
         bio: first(profileBio.description, legacy.description),
