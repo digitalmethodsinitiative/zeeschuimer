@@ -1,0 +1,64 @@
+# Run the test suite and the linter on every push and pull request.
+#
+# This is the first automation in this repository, and it exists mainly for the
+# pull requests 4CAT opens automatically. Those carry `map_item` functions
+# translated from Python by a language model, and until now nothing looked at
+# them until a person did: a batch once arrived calling five helper functions
+# that the same batch had deleted, and every one of those pull requests
+# reported no problems.
+#
+# `npm test` is the Tier 1 suite: it loads every module, checks it parses and
+# imports, and exercises the duplicate-handling and navigation-index logic.
+# `npm run lint` adds ESLint's `no-undef` over the extension source, which is
+# the check that catches a helper that is called but never defined.
+#
+# The comparator (`npm run test:compare`) is deliberately not here. It needs a
+# reachable 4CAT, an API key and dataset keys, so it stays a local step.
+#
+# Note on draft pull requests: this workflow DOES run on them, and should. The
+# `pull_request` event fires its `opened` type whatever the draft state, and
+# 4CAT opens its sync pull requests as drafts on purpose, so filtering drafts
+# out with `github.event.pull_request.draft == false` would skip exactly the
+# pull requests this is here to check. Those arrive from a GitHub App token
+# rather than the default GITHUB_TOKEN, which is what lets them start a
+# workflow run at all.
+
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+jobs:
+  test:
+    name: Tests and lint
+    runs-on: ubuntu-latest
+    defaults:
+      run:
+        # The only package.json in the repository lives here. The lint script
+        # steps up to the root itself, so that ESLint sees the whole extension.
+        working-directory: tests
+    steps:
+      - name: Check out Zeeschuimer
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      - name: Run linter
+        run: npm run lint
