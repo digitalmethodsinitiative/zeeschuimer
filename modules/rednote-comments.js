@@ -45,11 +45,6 @@ export function capture(response, source_platform_url, source_url) {
         return useable_items;
     }
 
-    if (embedded_posts && embedded_posts.length > 0) {
-        // if we found any posts this way, return them
-        return embedded_posts;
-    }
-
     // no posts, no data
     return [];
 }
