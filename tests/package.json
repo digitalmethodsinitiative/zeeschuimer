@@ -10,6 +10,7 @@
     "lint": "cd .. && eslint ."
   },
   "devDependencies": {
+    "@eslint/js": "10.0.1",
     "cross-fetch": "^4.0.0",
     "dexie": "^3.2.4",
     "dotenv": "^16.4.5",

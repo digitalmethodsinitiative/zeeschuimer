@@ -1,14 +1,15 @@
 /**
  * ESLint configuration for Zeeschuimer.
  *
- * The one rule enabled is `no-undef`: does this code use a name that nothing
- * defines? That is worth checking here because most of what the extension runs
- * is loaded as plain background scripts rather than as modules, so the helpers
- * in `js/lib.js` are free identifiers everywhere, and nothing else notices when
- * one of them goes missing. The Jest suite loads each module and confirms it
- * exports `map_item`, which a module referring to an undefined helper passes
- * without complaint — the error only appears once `map_item` actually runs, on
- * a researcher's machine.
+ * The rules are ESLint's recommended set, with the handful listed further down
+ * switched off. The one doing most of the work is `no-undef`: does this code use
+ * a name that nothing defines? That is worth checking here because most of what
+ * the extension runs is loaded as plain background scripts rather than as
+ * modules, so the helpers in `js/lib.js` are free identifiers everywhere, and
+ * nothing else notices when one of them goes missing. The Jest suite loads each
+ * module and confirms it exports `map_item`, which a module referring to an
+ * undefined helper passes without complaint — the error only appears once
+ * `map_item` actually runs, on a researcher's machine.
  *
  * It also covers the `map_item` functions 4CAT generates and syncs in. Those
  * are written by a language model, and a helper called but never defined has
@@ -29,11 +30,33 @@ import { createRequire } from 'node:module';
 // because the Jest setup file sharing it has to be.
 const require = createRequire(new URL('tests/package.json', import.meta.url));
 const globals = require('globals');
+const js = require('@eslint/js');
 const { ALL_NAMES, BACKGROUND_SCRIPTS } = require('./lib-globals.cjs');
 
 const zeeschuimer_globals = Object.fromEntries(
     ALL_NAMES.map(name => [name, 'readonly']),
 );
+
+const rules = {
+    ...js.configs.recommended.rules,
+
+    // Every empty block in the codebase is a `catch` that means it.
+    'no-empty': ['error', { allowEmptyCatch: true }],
+
+    // Off because the `map_item` bodies 4CAT generates trip them, and a sync
+    // replaces those blocks whole, so a fix here does not survive one. None of
+    // them change what the code does.
+    'no-extra-boolean-cast': 'off',    // !!value ? "yes" : "no"
+    'no-redeclare': 'off',             // the same `var` declared twice in one function
+    'no-unused-vars': 'off',           // variables assigned and then never read
+    'no-useless-assignment': 'off',    // a value replaced before anything reads it
+    'no-useless-escape': 'off',        // \[ and \/ inside a character class
+
+    // Off for now, and this one is not cosmetic: `obj.hasOwnProperty(key)`
+    // throws if the JSON a platform sent has a key of that name. The fix is
+    // `Object.hasOwn(obj, key)` at 31 places across js/ and modules/.
+    'no-prototype-builtins': 'off',
+};
 
 export default [
     {
@@ -62,7 +85,7 @@ export default [
             sourceType: 'module',
             globals: { ...globals.browser, ...globals.webextensions, ...zeeschuimer_globals },
         },
-        rules: { 'no-undef': 'error' },
+        rules,
     },
     {
         // Plain scripts rather than modules: everything manifest.json lists under
@@ -74,6 +97,6 @@ export default [
             sourceType: 'script',
             globals: { ...globals.browser, ...globals.webextensions, ...zeeschuimer_globals },
         },
-        rules: { 'no-undef': 'error' },
+        rules,
     },
 ];
