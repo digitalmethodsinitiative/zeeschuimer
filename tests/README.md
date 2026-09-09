@@ -1,13 +1,15 @@
 ## Tests for Zeeschuimer
 
-This folder contains testing code for Zeeschuimer. There are three suites,
-each with a different purpose and a different runtime environment:
+This folder contains testing code for Zeeschuimer. Each check below has a
+different purpose and a different runtime environment:
 
 | Suite                            | Tests                                                     | Environment        | When it runs                    | Needs                                  |
 |----------------------------------|-----------------------------------------------------------|--------------------|---------------------------------|----------------------------------------|
 | Selenium integration             | Page captures real items from each supported platform     | Real Firefox       | Reviewer-supervised, manual     | Firefox profile, sometimes a human     |
 | Duplicate-behavior unit (Jest)   | DB merge / keep / update semantics in isolation           | jsdom + fake-IDB   | `npm test` (every push)         | None                                   |
 | Module load smoke (Jest, Tier 1) | Each `modules/*.js` parses and imports cleanly            | jsdom              | `npm test` (every push)         | None                                   |
+| Navigation index (Jest)          | Tab and navigation bookkeeping in `js/zs-background.js`   | jsdom + fake-IDB   | `npm test` (every push)         | None                                   |
+| ESLint                           | Every name `js/` and `modules/` use is defined somewhere  | Node               | `npm run lint` (every push)     | None                                   |
 | `map_item` comparator (Jest, Tier 2) | JS `map_item` output matches 4CAT's Python mapping per item | jsdom + cross-fetch | `npm run test:compare` (on demand) | Live 4CAT, API key, dataset key(s) |
 
 Hermetic suites (no external dependencies) live in `npm test`. Anything that
@@ -58,7 +60,7 @@ Tests are defined in `tests.json` with the following structure:
 ### Jest suites
 
 **Prerequisites**
-- Node.js (v18 or later) and npm
+- Node.js (v20.19 or later, the floor ESLint sets) and npm
 - `cd tests && npm install`
 
 **Recommended: develop the tests inside Docker.** On Windows the global
@@ -151,6 +153,9 @@ npm test
 # watch mode for the same
 npm run test:watch
 
+# ESLint over js/ and modules/
+npm run lint
+
 # the comparator — every dataset key in FOURCAT_DATASETS
 npm run test:compare
 
@@ -171,6 +176,9 @@ npm run test:compare -- <dataset_key> --all
   comparator. Add a dataset to `FOURCAT_DATASETS` that covers the case;
   the comparator will pick it up.
 - **End-to-end user flow in the extension.** Selenium.
+- **A name that nothing defines** — a helper a `map_item` calls but no file
+  declares. Nothing to add: ESLint's `no-undef` covers every name in `js/` and
+  `modules/` already.
 
 ### Why the environments differ
 

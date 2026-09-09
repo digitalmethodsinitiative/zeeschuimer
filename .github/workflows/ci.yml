@@ -1,0 +1,60 @@
+# Runs the test suite and the linter on every push and pull request.
+#
+# `npm test` loads every module, checks it parses and imports, and exercises the
+# duplicate-handling and navigation-index logic. `npm run lint` runs ESLint over
+# the extension source.
+#
+# The comparator (`npm run test:compare`) is not here. It needs a reachable
+# 4CAT, an API key and dataset keys, so it stays a local step.
+#
+# This runs on draft pull requests too. 4CAT opens its map_item sync pull
+# requests as drafts, and those are the ones this is here to check.
+
+name: Tests
+
+on:
+  push:
+    branches: [master]
+  pull_request:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+
+# Pushing again to a branch cancels the run still going for the commit before it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  test:
+    name: Tests and lint
+    runs-on: ubuntu-latest
+    # The job takes well under a minute. This caps a hung step.
+    timeout-minutes: 10
+    defaults:
+      run:
+        # The only package.json with dependencies and scripts lives here. The
+        # lint script steps up to the root itself.
+        working-directory: tests
+    steps:
+      - name: Check out Zeeschuimer
+        uses: actions/checkout@v4
+
+      - name: Set up Node
+        uses: actions/setup-node@v4
+        with:
+          node-version: '24'
+          cache: npm
+          cache-dependency-path: tests/package-lock.json
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run tests
+        run: npm test
+
+      # Runs even when the tests above failed, so one run reports both.
+      - name: Run linter
+        if: '!cancelled()'
+        run: npm run lint

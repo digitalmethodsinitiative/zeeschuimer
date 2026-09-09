@@ -66,7 +66,6 @@ export function capture(response, source_platform_url, source_url) {
     /// capture posts in search
     if (source_url.indexOf('search?') >= 0 && data.statuses && Array.isArray(data.statuses)) {
         for (let post of data.statuses) {
-            post["id"] = post.id;
             post["c"] = removeHtmlTagsUsingDOMParser(post.content);
             items.push(post);
         }
