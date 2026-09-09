@@ -26,7 +26,14 @@ function read(...parts) {
 
 // The scripts that share the background page's global scope, in the order the
 // browser loads them.
-const BACKGROUND_SCRIPTS = JSON.parse(read('manifest.json')).background.scripts;
+const BACKGROUND_SCRIPTS = JSON.parse(read('manifest.json')).background?.scripts;
+
+if (!Array.isArray(BACKGROUND_SCRIPTS) || BACKGROUND_SCRIPTS.length === 0) {
+    throw new Error(
+        'lib-globals.cjs: manifest.json has no background.scripts for this file to ' +
+        'read.'
+    );
+}
 
 // `inc/dexie.js` and `inc/he.js` are third-party bundles: minified, and wrapped
 // so that nothing about them can be read off the source. Their names are written
@@ -35,6 +42,15 @@ const VENDORED_NAMES = {
     'inc/dexie.js': ['Dexie'],
     'inc/he.js': ['he'],
 };
+
+const unloaded = Object.keys(VENDORED_NAMES).filter(script => !BACKGROUND_SCRIPTS.includes(script));
+if (unloaded.length > 0) {
+    throw new Error(
+        `lib-globals.cjs: ${unloaded.join(', ')} named above, but manifest.json does ` +
+        'not load it. A renamed file or a swapped-out library leaves an entry here ' +
+        'that no longer does anything; drop it, or correct the path.'
+    );
+}
 
 // Identify the names one statement declares. A statement that declares nothing like a
 // function call, an assignment, or an if block gives back an empty list.
@@ -100,15 +116,24 @@ function global_names(script, source) {
 const LIB_SOURCE = read('js/lib.js');
 const LIB_NAMES = global_names('js/lib.js', LIB_SOURCE);
 
-if (LIB_NAMES.length === 0) {
-    throw new Error(
-        'lib-globals.cjs: found nothing declared at the top level of js/lib.js. ' +
-        'The tests and the linter both read this list, and neither works without it.'
-    );
-}
+// Every script is expected to put something into global scope, so one that
+// contributes nothing probably means this file could not read it rather than that 
+// there was nothing to find.
+const ALL_NAMES = [...new Set(BACKGROUND_SCRIPTS.flatMap(script => {
+    if (script in VENDORED_NAMES) {
+        return VENDORED_NAMES[script];
+    }
 
-const ALL_NAMES = [...new Set(BACKGROUND_SCRIPTS.flatMap(
-    script => VENDORED_NAMES[script] ?? global_names(script, read(script))
-))];
+    const names = global_names(script, read(script));
+    if (names.length === 0) {
+        throw new Error(
+            `lib-globals.cjs: manifest.json loads ${script}, but no global names ` +
+            'could be read out of it. Add them to VENDORED_NAMES above, keyed by ' +
+            `'${script}' or, if it really does declare nothing, list it there ` +
+            'with an empty array.'
+        );
+    }
+    return names;
+}))];
 
 module.exports = { LIB_SOURCE, LIB_NAMES, ALL_NAMES };
