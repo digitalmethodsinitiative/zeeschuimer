@@ -104,12 +104,22 @@ function assigned_names(statement) {
 // statements only, so a helper written inside another one like `_traverse_data`
 // inside `traverse_data` is not in the list.
 function global_names(script, source) {
-    return espree
-        .parse(source, { ecmaVersion: 'latest', sourceType: 'script', loc: true })
-        .body.flatMap(statement => [
-            ...declared_names(statement, script, source),
-            ...assigned_names(statement),
-        ]);
+    let parsed;
+    try {
+        parsed = espree.parse(source, { ecmaVersion: 'latest', sourceType: 'script', loc: true });
+    } catch (error) {
+        throw new Error(
+            `lib-globals.cjs: cannot read ${script}, which manifest.json loads as a ` +
+            `plain script:\n\n    line ${error.lineNumber}: ${error.message}\n\n` +
+            'A background script cannot use import or export. If that is the problem ' +
+            'here, the browser will not load the file either.'
+        );
+    }
+
+    return parsed.body.flatMap(statement => [
+        ...declared_names(statement, script, source),
+        ...assigned_names(statement),
+    ]);
 }
 
 // setup-globals.cjs evaluates js/lib.js and pulls these names back out of it.
@@ -136,4 +146,4 @@ const ALL_NAMES = [...new Set(BACKGROUND_SCRIPTS.flatMap(script => {
     return names;
 }))];
 
-module.exports = { LIB_SOURCE, LIB_NAMES, ALL_NAMES };
+module.exports = { BACKGROUND_SCRIPTS, LIB_SOURCE, LIB_NAMES, ALL_NAMES };

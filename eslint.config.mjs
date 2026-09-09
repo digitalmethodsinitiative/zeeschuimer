@@ -29,7 +29,7 @@ import { createRequire } from 'node:module';
 // because the Jest setup file sharing it has to be.
 const require = createRequire(new URL('tests/package.json', import.meta.url));
 const globals = require('globals');
-const { ALL_NAMES } = require('./lib-globals.cjs');
+const { ALL_NAMES, BACKGROUND_SCRIPTS } = require('./lib-globals.cjs');
 
 const zeeschuimer_globals = Object.fromEntries(
     ALL_NAMES.map(name => [name, 'readonly']),
@@ -39,21 +39,16 @@ export default [
     {
         ignores: [
             'inc/**',            // third-party bundles, minified and not ours to fix
-            '**/node_modules/**',
             '.claude/**',        // scratch worktrees hold copies of every module
-            // The test harness is left out on purpose. Running it is a stronger
-            // check than `no-undef` could be, and most of what lives there is
-            // not extension code at all: a Firefox profile's prefs.js, and a
-            // stealth script written to run inside a page rather than in Node.
+            // The test harness is left out. Most of it is not extension code — a
+            // Firefox profile's prefs.js, a stealth script written to run inside a
+            // page — and what is gets loaded and run by `npm test`.
             'tests/**',
-            // The popup is left out for now, and not because it is clean: it
-            // reaches for `streamSaver` and `encode`, which come from scripts
-            // popup.html loads out of `js/` that are not in the repository at
-            // all, and it assigns `fileStream` and `writer` without declaring
-            // them. Those want deciding on their own rather than as part of
-            // switching a linter on, and until then including this directory
-            // would leave every run red, which makes the next real failure
-            // easy to miss.
+            // The popup is left out. `popup/interface.js` uses `init_tooltips` from
+            // `popup/tooltips.js`, a separate script `popup/interface.html` loads
+            // into the same scope, and nothing here works out that list. The other
+            // names no-undef reports there are inside `download_blob`, which the
+            // file marks as unused.
             'popup/**',
         ],
     },
@@ -61,6 +56,7 @@ export default [
         // Capture and map_item modules. `modules/package.json` marks these as
         // ES modules; they still reach for the background-script globals.
         files: ['modules/**/*.js'],
+        ignores: BACKGROUND_SCRIPTS,
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'module',
@@ -69,9 +65,10 @@ export default [
         rules: { 'no-undef': 'error' },
     },
     {
-        // The background scripts themselves, loaded by the manifest as plain
-        // scripts rather than as modules.
-        files: ['js/**/*.js'],
+        // Plain scripts rather than modules: everything manifest.json lists under
+        // `background`, which is how `modules/_loader.js` lands here rather than
+        // above, plus anything else in `js/`.
+        files: ['js/**/*.js', ...BACKGROUND_SCRIPTS],
         languageOptions: {
             ecmaVersion: 'latest',
             sourceType: 'script',
