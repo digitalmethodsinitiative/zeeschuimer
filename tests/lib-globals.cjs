@@ -6,12 +6,12 @@
  * functions generated from 4CAT — uses those names without declaring or
  * importing anything.
  *
- * Two things need that list, and they need the same one:
+ * Two things read that list:
  *   - `setup-globals.cjs`, which puts the helpers into scope for Jest.
  *   - `eslint.config.mjs`, which tells `no-undef` that these names exist.
  *
- * The names are read out of the source rather than typed here, so adding a
- * helper to `js/lib.js` makes it available to both without editing this file.
+ * The names come out of the source, so adding a helper to `js/lib.js` needs no
+ * edit here.
  */
 
 const fs = require('node:fs');
@@ -24,8 +24,7 @@ function read(...parts) {
     return fs.readFileSync(path.join(ROOT, ...parts), 'utf8');
 }
 
-// The scripts that share the background page's global scope, in the order the
-// browser loads them.
+// The scripts that share the background page's global scope.
 const BACKGROUND_SCRIPTS = JSON.parse(read('manifest.json')).background?.scripts;
 
 if (!Array.isArray(BACKGROUND_SCRIPTS) || BACKGROUND_SCRIPTS.length === 0) {
@@ -79,19 +78,17 @@ function declared_names(statement, script, source) {
     return [];
 }
 
-// Identify the name one statement hangs off `window`. js/zs-background.js opens
-// with `window.db = new Dexie(...)` and `window.zeeschuimer = {...}`, and this
-// picks `db` and `zeeschuimer` out of them.
+// Identify the name one statement hangs off `window`, as js/zs-background.js
+// does with `window.db = new Dexie(...)` and `window.zeeschuimer = {...}`.
 function assigned_names(statement) {
     // First drop anything that is not an assignment
     if (statement.expression?.type !== 'AssignmentExpression') {
         return [];
     }
 
-    // Then take the name after the dot in `window.<name>`. Only that spelling: the
-    // browser treats `window['db'] = ...` and `window[key] = ...` the same way,
-    // but the first hides the name inside a string and the second does not have
-    // one in the file at all. Neither appears in js/zs-background.js.
+    // Then take the name after the dot in `window.<name>`. Only that spelling:
+    // `window['db']` hides the name in a string and `window[key]` has no name in
+    // the file at all. Neither appears in js/zs-background.js.
     const target = statement.expression.left;
     if (!target.computed && target.object?.name === 'window') {
         return [target.property.name];
@@ -127,8 +124,8 @@ const LIB_SOURCE = read('js/lib.js');
 const LIB_NAMES = global_names('js/lib.js', LIB_SOURCE);
 
 // Every script is expected to put something into global scope, so one that
-// contributes nothing probably means this file could not read it rather than that 
-// there was nothing to find.
+// contributes nothing probably means this file could not read it rather than
+// that there was nothing to find.
 const ALL_NAMES = [...new Set(BACKGROUND_SCRIPTS.flatMap(script => {
     if (script in VENDORED_NAMES) {
         return VENDORED_NAMES[script];
