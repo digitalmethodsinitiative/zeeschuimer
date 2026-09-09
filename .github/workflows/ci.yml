@@ -9,8 +9,9 @@
 #
 # `npm test` is the Tier 1 suite: it loads every module, checks it parses and
 # imports, and exercises the duplicate-handling and navigation-index logic.
-# `npm run lint` adds ESLint's `no-undef` over the extension source, which is
-# the check that catches a helper that is called but never defined.
+# `npm run lint` runs ESLint's recommended rules over the extension source. The
+# one that matters most here is `no-undef`, which catches a helper that is
+# called but never defined.
 #
 # The comparator (`npm run test:compare`) is deliberately not here. It needs a
 # reachable 4CAT, an API key and dataset keys, so it stays a local step.
@@ -34,14 +35,24 @@ on:
 permissions:
   contents: read
 
+# One run per branch: pushing again to a pull request cancels the run still
+# going for the commit before it.
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
 jobs:
   test:
     name: Tests and lint
     runs-on: ubuntu-latest
+    # The whole job takes well under a minute; this is only here so that a hung
+    # step gives the runner back rather than holding it for the default six hours.
+    timeout-minutes: 10
     defaults:
       run:
-        # The only package.json in the repository lives here. The lint script
-        # steps up to the root itself, so that ESLint sees the whole extension.
+        # The only package.json with dependencies and scripts lives here. The
+        # lint script steps up to the root itself, so that ESLint sees the whole
+        # extension.
         working-directory: tests
     steps:
       - name: Check out Zeeschuimer
@@ -60,5 +71,8 @@ jobs:
       - name: Run tests
         run: npm test
 
+      # Runs even when the tests above failed: a batch that breaks a test often
+      # breaks the linter too, and reporting both saves a round trip.
       - name: Run linter
+        if: '!cancelled()'
         run: npm run lint
