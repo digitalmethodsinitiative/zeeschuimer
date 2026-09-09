@@ -1,11 +1,10 @@
 /**
  * The names Zeeschuimer's own scripts put into global scope.
  *
- * The manifest loads `inc/dexie.js`, `inc/he.js`, `js/lib.js`,
- * `js/zs-background.js` and `modules/_loader.js` as plain background scripts,
- * so their top-level declarations are shared globals. Module code — and the
- * `map_item` functions generated from 4CAT — uses those names without
- * declaring or importing anything.
+ * manifest.json loads the scripts under `background` as plain scripts, so what
+ * they declare at their top level is shared. Module code — and the `map_item`
+ * functions generated from 4CAT — uses those names without declaring or
+ * importing anything.
  *
  * Two things need that list, and they need the same one:
  *   - `setup-globals.cjs`, which puts the helpers into scope for Jest.
@@ -25,12 +24,21 @@ function read(...parts) {
     return fs.readFileSync(path.join(ROOT, ...parts), 'utf8');
 }
 
-const LIB_SOURCE = read('js', 'lib.js');
+// The scripts that share the background page's global scope, in the order the
+// browser loads them.
+const BACKGROUND_SCRIPTS = JSON.parse(read('manifest.json')).background.scripts;
+
+// `inc/dexie.js` and `inc/he.js` are third-party bundles: minified, and wrapped
+// so that nothing about them can be read off the source. Their names are written
+// out here against the path the manifest loads them from.
+const VENDORED_NAMES = {
+    'inc/dexie.js': ['Dexie'],
+    'inc/he.js': ['he'],
+};
 
 // Identify the names one statement declares. A statement that declares nothing like a
-// function call, an assignment, or an if block returns gives back an empty list.
-function declared_names(statement) {
-    function declared_names(statement) {
+// function call, an assignment, or an if block gives back an empty list.
+function declared_names(statement, script, source) {
     if (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') {
         // functions and classes
         return [statement.id.name];
@@ -38,29 +46,59 @@ function declared_names(statement) {
     if (statement.type === 'VariableDeclaration') {
         // variables
         return statement.declarations.map(declaration => {
-                if (declaration.id.type === 'Identifier') {
-                    return declaration.id.name;
-                } else {
-                    // multiple names for a single statement
-                    const line = declaration.loc.start.line;
-                    throw new Error(
-                        `lib-globals.cjs: js/lib.js line ${line} declares names in a ` +
-                        'form this file does not read:\n\n' +
-                        `    ${LIB_SOURCE.split('\n')[line - 1].trim()}\n\n` +
-                        'Add that form to declared_names(), or declare the names one ' +
-                        'per line.'
-                    );
-                }
-            });
+            if (declaration.id.type === 'Identifier') {
+                return declaration.id.name;
+            } else {
+                const line = declaration.loc.start.line;
+                throw new Error(
+                    `lib-globals.cjs: ${script} line ${line} declares names in a ` +
+                    'form this file does not read:\n\n' +
+                    `    ${source.split('\n')[line - 1].trim()}\n\n` +
+                    'Add that form to declared_names(), or declare the names one ' +
+                    'per line.'
+                );
+            }
+        });
     }
+    return [];
 }
 
-// Every name js/lib.js declares at its top level. `body` holds the outermost
-// statements only, so a helper written inside another one like`_traverse_data` 
+// Identify the name one statement hangs off `window`. js/zs-background.js opens
+// with `window.db = new Dexie(...)` and `window.zeeschuimer = {...}`, and this
+// picks `db` and `zeeschuimer` out of them.
+function assigned_names(statement) {
+    // First drop anything that is not an assignment
+    if (statement.expression?.type !== 'AssignmentExpression') {
+        return [];
+    }
+
+    // Then take the name after the dot in `window.<name>`. Only that spelling: the
+    // browser treats `window['db'] = ...` and `window[key] = ...` the same way,
+    // but the first hides the name inside a string and the second does not have
+    // one in the file at all. Neither appears in js/zs-background.js.
+    const target = statement.expression.left;
+    if (!target.computed && target.object?.name === 'window') {
+        return [target.property.name];
+    }
+
+    return [];
+}
+
+// Every name a script puts into global scope. `body` holds the outermost
+// statements only, so a helper written inside another one like `_traverse_data`
 // inside `traverse_data` is not in the list.
-const LIB_NAMES = espree
-    .parse(LIB_SOURCE, { ecmaVersion: 'latest', sourceType: 'script', loc: true })
-    .body.flatMap(declared_names);
+function global_names(script, source) {
+    return espree
+        .parse(source, { ecmaVersion: 'latest', sourceType: 'script', loc: true })
+        .body.flatMap(statement => [
+            ...declared_names(statement, script, source),
+            ...assigned_names(statement),
+        ]);
+}
+
+// setup-globals.cjs evaluates js/lib.js and pulls these names back out of it.
+const LIB_SOURCE = read('js/lib.js');
+const LIB_NAMES = global_names('js/lib.js', LIB_SOURCE);
 
 if (LIB_NAMES.length === 0) {
     throw new Error(
@@ -69,18 +107,8 @@ if (LIB_NAMES.length === 0) {
     );
 }
 
-// `js/zs-background.js` takes the other shape, assigning onto `window`.
-const BACKGROUND_ASSIGNMENT = /^window\.([A-Za-z_$][A-Za-z0-9_$]*)\s*=/gm;
-const BACKGROUND_NAMES = Array.from(
-    read('js', 'zs-background.js').matchAll(BACKGROUND_ASSIGNMENT),
-    m => m[1],
-);
+const ALL_NAMES = [...new Set(BACKGROUND_SCRIPTS.flatMap(
+    script => VENDORED_NAMES[script] ?? global_names(script, read(script))
+))];
 
-// `inc/dexie.js` and `inc/he.js` are third-party bundles: minified, and
-// wrapped so that nothing about them can be read off the source. Their names
-// are written out here, and only change if one of those libraries is swapped.
-const VENDORED_NAMES = ['Dexie', 'he'];
-
-const ALL_NAMES = [...new Set([...LIB_NAMES, ...BACKGROUND_NAMES, ...VENDORED_NAMES])];
-
-module.exports = { LIB_SOURCE, LIB_NAMES, BACKGROUND_NAMES, VENDORED_NAMES, ALL_NAMES };
+module.exports = { LIB_SOURCE, LIB_NAMES, ALL_NAMES };
