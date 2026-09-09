@@ -9,8 +9,8 @@
  *
  * Which names those are is worked out in lib-globals.cjs, which the ESLint
  * config reads as well so both agree on what exists. Only lib.js is evaluated
- * here: the other background scripts need a browser to run in, and nothing
- * under test calls into them.
+ * here; nav-index.test.js evaluates js/zs-background.js itself, with the browser
+ * API stubs that file needs.
  */
 
 const { LIB_SOURCE, LIB_NAMES } = require('./lib-globals.cjs');
