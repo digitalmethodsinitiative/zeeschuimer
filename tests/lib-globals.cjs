@@ -17,6 +17,7 @@
 
 const fs = require('node:fs');
 const path = require('node:path');
+const espree = require('espree');
 
 const ROOT = path.join(__dirname, '..');
 
@@ -24,19 +25,47 @@ function read(...parts) {
     return fs.readFileSync(path.join(ROOT, ...parts), 'utf8');
 }
 
-// `js/lib.js` declares its helpers unindented at the top level. Requiring
-// column 0 keeps nested helpers — such as the `_traverse_data` inside
-// `traverse_data` — from being treated as globals.
 const LIB_SOURCE = read('js', 'lib.js');
-const LIB_DECLARATION = /^(?:function|class)\s+([A-Za-z_$][A-Za-z0-9_$]*)\b/gm;
-const LIB_NAMES = Array.from(LIB_SOURCE.matchAll(LIB_DECLARATION), m => m[1]);
+
+// Identify the names one statement declares. A statement that declares nothing like a
+// function call, an assignment, or an if block returns gives back an empty list.
+function declared_names(statement) {
+    function declared_names(statement) {
+    if (statement.type === 'FunctionDeclaration' || statement.type === 'ClassDeclaration') {
+        // functions and classes
+        return [statement.id.name];
+    }
+    if (statement.type === 'VariableDeclaration') {
+        // variables
+        return statement.declarations.map(declaration => {
+                if (declaration.id.type === 'Identifier') {
+                    return declaration.id.name;
+                } else {
+                    // multiple names for a single statement
+                    const line = declaration.loc.start.line;
+                    throw new Error(
+                        `lib-globals.cjs: js/lib.js line ${line} declares names in a ` +
+                        'form this file does not read:\n\n' +
+                        `    ${LIB_SOURCE.split('\n')[line - 1].trim()}\n\n` +
+                        'Add that form to declared_names(), or declare the names one ' +
+                        'per line.'
+                    );
+                }
+            });
+    }
+}
+
+// Every name js/lib.js declares at its top level. `body` holds the outermost
+// statements only, so a helper written inside another one like`_traverse_data` 
+// inside `traverse_data` is not in the list.
+const LIB_NAMES = espree
+    .parse(LIB_SOURCE, { ecmaVersion: 'latest', sourceType: 'script', loc: true })
+    .body.flatMap(declared_names);
 
 if (LIB_NAMES.length === 0) {
     throw new Error(
-        'lib-globals.cjs: no top-level function or class declarations found in ' +
-        'js/lib.js. The pattern that finds them is broken, and everything ' +
-        'relying on those names will fail: tests with a ReferenceError, the ' +
-        'linter with a no-undef error on every module.'
+        'lib-globals.cjs: found nothing declared at the top level of js/lib.js. ' +
+        'The tests and the linter both read this list, and neither works without it.'
     );
 }
 
