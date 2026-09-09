@@ -58,7 +58,7 @@ Tests are defined in `tests.json` with the following structure:
 ### Jest suites
 
 **Prerequisites**
-- Node.js (v18 or later) and npm
+- Node.js (v20.19 or later, the floor ESLint sets) and npm
 - `cd tests && npm install`
 
 **Recommended: develop the tests inside Docker.** On Windows the global
