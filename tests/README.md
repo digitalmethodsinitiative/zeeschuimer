@@ -38,6 +38,15 @@ but you can also pass one with the `--profiledir` argument. Log in to the
 various sites (Instagram, etc) in your 'normal' Firefox, and the tests then
 borrow that login.
 
+RedNote (Xiaohongshu) is the exception: an account needs a Chinese phone
+number, and no current developer has one, so all RedNote development and
+testing is done logged out. Logged out, search redirects to the login page,
+saved-post boards are empty, and profile pages show only their first 12
+posts, without post IDs. Anything that needs a login can only be checked
+against items researchers have already collected and uploaded to 4CAT.
+RedNote also limits logged-out browsing: after enough page views, every page
+redirects to the login page, even after clearing cookies.
+
 Run `test.py` to run tests. Required non-standard libraries are in
 `requirements.txt`.
 

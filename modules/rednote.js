@@ -38,8 +38,10 @@ export function capture(response, source_platform_url, source_url) {
             return item;
         }
 
-        // user pages
-        if(item.hasOwnProperty('type') && item['type'] === 'video' && item.hasOwnProperty('note_id')) {
+        // user pages and saved-post boards; require 'user' to skip the previews
+        // of someone's posts shown when hovering over their name
+        // (user/hover_card), which have the same keys but no author or content
+        if(item.hasOwnProperty('type') && item['type'] === 'video' && item.hasOwnProperty('note_id') && item.hasOwnProperty('user')) {
             item['id'] = item['note_id'];
             return item;
         }
