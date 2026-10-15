@@ -464,5 +464,54 @@
         "more-after-scroll": true
       }
     }
+  },
+  "weibo.com": {
+    "Hot feed": {
+      "https://weibo.com/": {
+        "comment": "Logged out, weibo.com redirects to /newlogin, which shows the hot feed",
+        "expected": 10,
+        "more-after-scroll": true,
+        "wait": 8
+      }
+    },
+    "Hot list": {
+      "https://weibo.com/newlogin?tabtype=list&gid=1028039999&openLoginLayer=0&url=https://weibo.com/": {
+        "expected": [10, 20],
+        "more-after-scroll": true,
+        "wait": 8
+      }
+    },
+    "Post page": {
+      "https://weibo.com/1644114654/RmKa9CzPq": {
+        "expected": 1,
+        "more-after-scroll": false
+      }
+    },
+    "Profile, video tab": {
+      "https://weibo.com/u/1644114654?tabtype=newVideo": {
+        "comment": "The profile's main timeline needs a login; the video tab does not",
+        "expected": 20,
+        "more-after-scroll": true,
+        "wait": 8
+      }
+    },
+    "Super-topic": {
+      "https://weibo.com/p/10080892b1f367dec8ee89a39109d0b5fe9c0d/super_index": {
+        "comment": "Logged out, the page shows one post but loads about 8",
+        "expected": [1, 10],
+        "more-after-scroll": false,
+        "wait": 8
+      }
+    }
+  },
+  "weibo-comments": {
+    "Post page": {
+      "https://weibo.com/5908064369/RlZSU3Pg2": {
+        "comment": "Top-level comments plus up to two replies to each",
+        "expected": [20, 60],
+        "more-after-scroll": true,
+        "wait": 8
+      }
+    }
   }
 }

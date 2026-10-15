@@ -47,6 +47,10 @@ against items researchers have already collected and uploaded to 4CAT.
 RedNote also limits logged-out browsing: after enough page views, every page
 redirects to the login page, even after clearing cookies.
 
+Weibo is tested logged out as well, since no current developer has an account.
+Logged out, Weibo shows no search results, profile timelines or reposts, so
+the Weibo tests do not cover them.
+
 Run `test.py` to run tests. Required non-standard libraries are in
 `requirements.txt`.
 

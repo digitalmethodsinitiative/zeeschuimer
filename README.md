@@ -27,6 +27,7 @@ Currently, it supports the following platforms:
 * [Truth Social](https://truth.social)
 * [Pinterest](https://pinterest.com)
 * [RedNote/Xiaohongshu](https://xiaohongshu.com) (posts and comments)
+* [Weibo](https://weibo.com) (posts and comments)
 
 Platform support requires regular maintenance to keep up with changes to the platforms. If something does not work, we
 welcome issues and pull requests. See 'Limitations' below for some known limitations to data capture.
@@ -90,6 +91,13 @@ platform. The following limitations are known:
   * Live streams
 * *Douyin*
   * douyin.com/search/ page is untested (requires login) 
+* *Weibo* is only supported on the desktop site, weibo.com, and is untested while logged in. Logged out, Weibo itself
+  does not show:
+  * Search results
+  * A profile's timeline (its video tab does work)
+  * Reposts of a post
+* *Weibo* items that cannot be captured:
+  * Posts on video pages (weibo.com/tv); their comments are captured
 
 For some platforms, the level of detail of the data that can be collected depends on the page it is captured from:
 
@@ -97,6 +105,9 @@ For some platforms, the level of detail of the data that can be collected depend
   of the post.
 * *RedNote/Xiaohongshu* items will often lack the item's post description, timestamp, and video URL, unless captured by 
   opening the post's own page/clicking it in an overview.
+* *Weibo* shortens long posts in feeds and lists. Opening the post's own page captures its full text; with 'Skip 
+  duplicates' or 'Update existing' selected, the full post replaces the shortened one. Mapped items say whether the 
+  text was shortened.
 
 Note that these are *known* limitations; data capture may break or change based on platform changes. Always 
 cross-reference captured data with what you are seeing in your browser.
