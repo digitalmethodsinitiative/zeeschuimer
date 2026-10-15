@@ -7,6 +7,7 @@ different purpose and a different runtime environment:
 |----------------------------------|-----------------------------------------------------------|--------------------|---------------------------------|----------------------------------------|
 | Selenium integration             | Page captures real items from each supported platform     | Real Firefox       | Reviewer-supervised, manual     | Firefox profile, sometimes a human     |
 | Duplicate-behavior unit (Jest)   | DB merge / keep / update semantics in isolation           | jsdom + fake-IDB   | `npm test` (every push)         | None                                   |
+| Navigation index (Jest)          | The real background script counts navigations and dedupes across them | jsdom + fake-IDB   | `npm test` (every push)         | None                                   |
 | Module load smoke (Jest, Tier 1) | Each `modules/*.js` parses and imports cleanly            | jsdom              | `npm test` (every push)         | None                                   |
 | Navigation index (Jest)          | Tab and navigation bookkeeping in `js/zs-background.js`   | jsdom + fake-IDB   | `npm test` (every push)         | None                                   |
 | ESLint                           | Every name `js/` and `modules/` use is defined somewhere  | Node               | `npm run lint` (every push)     | None                                   |
@@ -47,6 +48,10 @@ against items researchers have already collected and uploaded to 4CAT.
 RedNote also limits logged-out browsing: after enough page views, every page
 redirects to the login page, even after clearing cookies.
 
+Weibo is tested logged out as well, since no current developer has an account.
+Logged out, Weibo shows no search results, profile timelines or reposts, so
+the Weibo tests do not cover them.
+
 Run `test.py` to run tests. Required non-standard libraries are in
 `requirements.txt`.
 
@@ -59,12 +64,64 @@ Tests are defined in `tests.json` with the following structure:
       "url": {
         "expected": 0,
         "more-after-scroll": false,
-        "wait": 10
+        "wait": 10,
+        "comment": "free-form note, ignored by the runner",
+        "captcha-selector": "div#captcha_container"
       }
     }
   }
 }
 ```
+
+`expected` may be a single number or a `[low, high]` range, inclusive. A range
+is usually the honest answer: platforms load in batches and a slow page lands
+on a lower count without anything being wrong. `captcha-selector` names an
+element whose appearance pauses the run so a human can solve the captcha.
+
+Douyin is the exception to the borrowed-login note above: no maintainer
+currently has an account, so its expectations record what a **logged-out**
+visitor sees. Search is not covered at all, because Douyin will not show
+results without a login.
+
+#### Sending a run to 4CAT
+
+A capture is only useful if 4CAT can read it, and a module that starts
+returning a new shape breaks that quietly. `--fourcat` uploads what each
+platform captured, as one dataset per platform, once that platform's tests
+finish:
+
+```bash
+python3 test.py --fourcat http://localhost
+```
+
+Uploading is deliberate about a few things:
+
+- **One dataset per platform, not per test case.** Which case an item came from
+  is recoverable afterwards from `source_platform_url` in the NDJSON.
+- **A bad run is uploaded too.** A capture 4CAT cannot read is the finding, not
+  a reason to withhold it.
+- **You must be logged in to that 4CAT in the test browser.** Uploads
+  authenticate with the browser session, not an API key, so the script checks at
+  startup and waits rather than discovering it after the first platform. Note
+  that a session cookie is not written to disk, so a profile that was logged in
+  when it was copied usually is not logged in when the tests run - expect to log
+  in at the prompt.
+- **Failures ask rather than abort.** Not logged in, rate limited, or refused:
+  the run pauses with `[Enter] retry`, `[s]` skip this platform, `[n]` stop
+  uploading. With no terminal attached it takes the last of those and carries
+  on.
+
+The run ends with the dataset URLs and a line to paste into `tests/.env`, so the
+`map_item` comparator can be pointed straight at what was just captured:
+
+```
+FOURCAT_DATASETS=a1b2c3,d4e5f6
+```
+
+`--dump-dir <folder>` writes the same NDJSON to disk instead of, or as well as,
+uploading. It is byte for byte what an upload sends, so a dump can be uploaded
+by hand later. `--keep-open` leaves the browser running at the end so the
+captured items can be looked at in the interface.
 
 ### Jest suites
 
@@ -98,6 +155,32 @@ Coverage:
 - Skip: no modifications occur when duplicate found
 - Platform isolation: same `item_id` on different platforms are independent
 - Tie-breaker: when `last_updated` is equal, prefer higher `id`
+
+#### Navigation index
+
+`tests/nav-index.test.js` evaluates `js/zs-background.js` the way the browser
+does - as a classic script against `Dexie` and `browser` globals - and calls
+the functions it defines.
+
+This is deliberately not a re-implementation. The duplicate-behavior suite
+above supplies `nav_index` values as fixtures (`'1:1:0'`, `'1:1:1'`), which
+assumes navigations are counted correctly without ever running the code that
+counts them; a `nav_handler` that stored `NaN` on every navigation therefore
+went unnoticed while every test passed.
+
+Coverage:
+- `nav_handler` assigns a first index and increments it on each navigation
+- the stored index stays a usable number
+- consecutive navigations produce distinct indices
+- the object form `webNavigation.onCommitted` passes is unwrapped
+- tabs are counted independently
+- an item seen twice on one page is stored once
+- "keep duplicates" records an item once per page it appears on
+- "skip duplicates" keeps only the first sighting
+
+The duplicate-handling cases browse three pages rather than two: an index that
+is merely wrong still differs from the initial one, so a single navigation
+cannot tell a working counter from a stuck one.
 
 #### Module load smoke (Tier 1)
 
@@ -156,7 +239,7 @@ A CLI flag crosses every shell.
 ### Running
 
 ```bash
-# everything that's hermetic — duplicate-behavior unit + module load smoke
+# everything that's hermetic — duplicate-behavior, nav index, module smoke
 npm test
 
 # watch mode for the same
@@ -181,6 +264,9 @@ npm run test:compare -- <dataset_key> --all
 - **Pure data transformation, no live external state, runs anywhere.**
   Duplicate-behavior unit suite (DB logic) or the Tier 1 smoke
   (`map_item` static checks).
+- **Behaviour of the background script itself.** Navigation-index suite. Call
+  the real functions from `js/zs-background.js` rather than restating what they
+  are supposed to do.
 - **Field-by-field correctness against 4CAT's Python `map_item`.** Tier 2
   comparator. Add a dataset to `FOURCAT_DATASETS` that covers the case;
   the comparator will pick it up.
