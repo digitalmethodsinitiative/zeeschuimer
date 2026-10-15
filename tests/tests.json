@@ -497,9 +497,9 @@
     },
     "Super-topic": {
       "https://weibo.com/p/10080892b1f367dec8ee89a39109d0b5fe9c0d/super_index": {
-        "comment": "Logged out, the page shows one post but loads about 8",
+        "comment": "About 8 posts per page; the first page loads with fewer shown than captured",
         "expected": [1, 10],
-        "more-after-scroll": false,
+        "more-after-scroll": true,
         "wait": 8
       }
     }
