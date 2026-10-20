@@ -383,9 +383,11 @@ async function button_handler(event) {
             blob = await get_ndjson_blob(platform);
         }
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.' + extension;
+        // One object URL, kept against the download id so downloadListener can
+        // revoke it once the download finishes.
         const downloadUrl = window.URL.createObjectURL(blob);
         const downloadId = await browser.downloads.download({
-            url: window.URL.createObjectURL(blob),
+            url: downloadUrl,
             filename: filename,
             conflictAction: 'uniquify'
         });
