@@ -17,7 +17,9 @@ async function load() {
         await import("./rednote.js"),
         await import("./rednote-comments.js"),
         await import("./twitter.js"),
-        await import("./gab.js")
+        await import("./gab.js"),
+        await import("./weibo.js"),
+        await import("./weibo-comments.js")
     ];
 
     for(const module of imported_modules) {
