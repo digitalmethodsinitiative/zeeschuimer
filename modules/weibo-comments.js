@@ -97,7 +97,7 @@ function weibo_commented_post(comment) {
             }
         }
     }
-    return { id: fields['mid'] || null, author_id: fields['author_uid'] || null };
+    return { id: fields['mid'] ?? null, author_id: fields['author_uid'] ?? null };
 }
 
 function weibo_first_set(...values) {
