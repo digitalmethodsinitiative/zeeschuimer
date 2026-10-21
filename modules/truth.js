@@ -91,7 +91,7 @@ export function map_item(item) {
     const timestamp = `${postTime.getUTCFullYear()}-${pad(postTime.getUTCMonth() + 1)}-${pad(postTime.getUTCDate())} ${pad(postTime.getUTCHours())}:${pad(postTime.getUTCMinutes())}:${pad(postTime.getUTCSeconds())}`;
 
     const mapped_item = {
-        collected_from_url: normalize_url_encoding(item.__import_meta?.source_platform_url ?? ""),
+        collected_from_url: readable_url(item.__import_meta?.source_platform_url ?? ""),
         id: item.id,
         created_at: item.created_at,
         body: item.content,

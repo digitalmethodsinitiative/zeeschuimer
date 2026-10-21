@@ -38,8 +38,10 @@ export function capture(response, source_platform_url, source_url) {
             return item;
         }
 
-        // user pages
-        if(item.hasOwnProperty('type') && item['type'] === 'video' && item.hasOwnProperty('note_id')) {
+        // user pages and saved-post boards; require 'user' to skip the previews
+        // of someone's posts shown when hovering over their name
+        // (user/hover_card), which have the same keys but no author or content
+        if(item.hasOwnProperty('type') && item['type'] === 'video' && item.hasOwnProperty('note_id') && item.hasOwnProperty('user')) {
             item['id'] = item['note_id'];
             return item;
         }
@@ -171,7 +173,7 @@ function map_item_from_json_api_explore(post) {
 
     const body = ('desc' in item) ? item.desc : new MissingMappedField("");
 
-    const collected_from_url = normalize_url_encoding(py_get(py_get(post, '__import_meta', {}), 'source_platform_url', ''));
+    const collected_from_url = readable_url(py_get(py_get(post, '__import_meta', {}), 'source_platform_url', ''));
 
     return new MappedItem({
         collected_from_url,
@@ -228,7 +230,7 @@ function map_item_from_json_embedded(item) {
         : new MissingMappedField("");
     const body = ('desc' in note) ? note.desc : new MissingMappedField("");
 
-    const collected_from_url = normalize_url_encoding(py_get(py_get(item, '__import_meta', {}), 'source_platform_url', ''));
+    const collected_from_url = readable_url(py_get(py_get(item, '__import_meta', {}), 'source_platform_url', ''));
 
     return new MappedItem({
         collected_from_url,
@@ -249,7 +251,7 @@ function map_item_from_json_embedded(item) {
 }
 
 function map_item_from_html(item) {
-    const collected_from_url = normalize_url_encoding(py_get(py_get(item, '__import_meta', {}), 'source_platform_url', ''));
+    const collected_from_url = readable_url(py_get(py_get(item, '__import_meta', {}), 'source_platform_url', ''));
     return new MappedItem({
         collected_from_url,
         id: item.id,

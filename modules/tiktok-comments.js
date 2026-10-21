@@ -37,7 +37,7 @@ export function map_item(item) {
     const timestamp = formatUtcTimestamp(item.create_time);
     const thread_id = item.reply_id === "0" ? item.aweme_id : item.reply_id;
     const avatar_url = item.user?.avatar_thumb?.url_list?.[0] ?? null;
-    const collected_from_url = normalize_url_encoding(item.__import_meta?.source_platform_url ?? "");
+    const collected_from_url = readable_url(item.__import_meta?.source_platform_url ?? "");
     const post_url = item.share_info?.url?.split(".html")[0] ?? null;
     return new MappedItem({
         collected_from_url: collected_from_url,
