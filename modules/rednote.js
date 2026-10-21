@@ -131,7 +131,7 @@ function map_item_from_json_api_explore(post) {
 
     // Images handling
     let images;
-    if (item && item.image_list) {
+    if (item && Array.isArray(item.image_list) && item.image_list.length) {
         images = [];
         for (const image of item.image_list) {
             if ('url_default' in image && image.url_default) {
