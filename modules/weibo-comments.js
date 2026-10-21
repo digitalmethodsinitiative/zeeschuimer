@@ -135,7 +135,7 @@ export function map_item(item) {
     const reply_to = py_get(item, 'reply_comment') || {};
 
     return new MappedItem({
-        collected_from_url: normalize_url_encoding(
+        collected_from_url: readable_url(
             py_get(py_get(item, '__import_meta', {}), 'source_platform_url', '')
         ),
         id: item['idstr'],

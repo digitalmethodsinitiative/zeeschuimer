@@ -170,7 +170,7 @@ statement. JS parses that as `..` then `.` then `/js/lib.js` — syntax error.
 // === auto-generated imports — DO NOT EDIT BY HAND ===
 // Provided as globals by js/lib.js (loaded via manifest.json):
 //   MappedItem, MissingMappedField, MapItemException, traverse_data,
-//   strip_tags, normalize_url_encoding, formatUtcTimestamp
+//   strip_tags, readable_url, formatUtcTimestamp
 // === end auto-generated imports ===
 ```
 

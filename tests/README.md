@@ -39,6 +39,32 @@ but you can also pass one with the `--profiledir` argument. Log in to the
 various sites (Instagram, etc) in your 'normal' Firefox, and the tests then
 borrow that login.
 
+`tests/blank_firefox_profile` is a profile kept for exactly this, with logins
+to the platforms that need one. It is the profile to pass to `--profiledir`.
+
+**Adding or refreshing a login in it.** The run works on a *copy* of the
+profile (`.temp-profile`) and deletes that copy when it finishes, so logging in
+during a run is thrown away. Log in to the profile itself instead: close the
+tests, start Firefox on it directly, log in, and close the window so the
+cookies are written to disk.
+
+```powershell
+& 'C:/Program Files/Mozilla Firefox/firefox.exe' -no-remote -profile 'C:/path/to/zeeschuimer/tests/blank_firefox_profile'
+```
+
+`-no-remote` matters: without it Firefox hands the request to an instance that
+is already running and uses that instance's profile instead, and nothing is
+saved where the tests will look. `about:profiles` in the new window shows which
+profile is actually in use.
+
+Logins expire. If a platform's tests start failing in a way that looks like
+being logged out, refresh its login the same way. The stored cookies and their
+expiry dates can be read from `cookies.sqlite` in that folder.
+
+The same applies to the 4CAT server used by `--fourcat`: uploads authenticate
+with the browser session, so log in to it in this profile too and the tests
+will stop asking.
+
 RedNote (Xiaohongshu) is the exception: an account needs a Chinese phone
 number, and no current developer has one, so all RedNote development and
 testing is done logged out. Logged out, search redirects to the login page,

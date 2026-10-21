@@ -664,7 +664,7 @@ function parsePolarisItem(node) {
         media_urls = new MissingMappedField('');
     }
     return {
-        collected_from_url: normalize_url_encoding(py_get(node, '__import_meta', {}).source_platform_url),
+        collected_from_url: readable_url(py_get(node, '__import_meta', {}).source_platform_url),
         collected_from_view: py_get(node, '_zs_instagram_view', ''),
         partial_item: partial_item,
         id: node.code,
@@ -761,7 +761,7 @@ function parseGraphItem(node) {
     }
     return {
         id: node.shortcode,
-        collected_from_url: normalize_url_encoding(py_get(node, '__import_meta', {}).source_platform_url || ''),
+        collected_from_url: readable_url(py_get(node, '__import_meta', {}).source_platform_url || ''),
         collected_from_view: getValueOrMissing(node, '_zs_instagram_view', ''),
         partial_item: getValueOrMissing(node, '_zs_partial', ''),
         timestamp: formatUtcTimestamp(node.taken_at_timestamp),
@@ -903,7 +903,7 @@ function parseItemlistItem(node) {
         unix_at = new MissingMappedField(0);
     }
     return {
-        collected_from_url: normalize_url_encoding(py_get(node, '__import_meta', {}).source_platform_url || ''),
+        collected_from_url: readable_url(py_get(node, '__import_meta', {}).source_platform_url || ''),
         collected_from_view: py_get(node, '_zs_instagram_view', ''),
         partial_item: py_get(node, '_zs_partial', ''),
         id: code,

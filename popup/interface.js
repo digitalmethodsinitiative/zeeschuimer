@@ -383,9 +383,11 @@ async function button_handler(event) {
             blob = await get_ndjson_blob(platform);
         }
         let filename = 'zeeschuimer-export-' + platform + '-' + date.toISOString().split(".")[0].replace(/:/g, "") + '.' + extension;
+        // One object URL, kept against the download id so downloadListener can
+        // revoke it once the download finishes.
         const downloadUrl = window.URL.createObjectURL(blob);
         const downloadId = await browser.downloads.download({
-            url: window.URL.createObjectURL(blob),
+            url: downloadUrl,
             filename: filename,
             conflictAction: 'uniquify'
         });
@@ -423,14 +425,15 @@ async function button_handler(event) {
         xhr.onreadystatechange = function() {
             let response = xhr.responseText.replace(/\n/g, '');
             if(xhr.readyState === xhr.DONE) {
+                // First check if redirected to login page if session expired/does not exist (the request follows that redirect)
+                if (xhr.responseURL && xhr.responseURL.indexOf('/login/') >= 0) {
+                    is_uploading = false;
+                    status.innerText = 'You are not logged in to this 4CAT server! Open it in a separate tab, log in and try again.'
+                    return;
+                }
+                // If not login page, then check codes of our actual endpoint
                 if(xhr.status === 200) {
                     status.innerText = 'File uploaded. Waiting for processing to finish.'
-                    if (xhr.responseURL.indexOf('/login/') >= 0) {
-                        is_uploading = false;
-                        status.innerText = 'You are not logged in to this 4CAT server! Open it in a separate tab, log in and try again.'
-                        return;
-                    }
-
                     try {
                         response = JSON.parse(response);
                     } catch (e) {
@@ -441,7 +444,7 @@ async function button_handler(event) {
                     upload_poll.init(response, platform);
                 } else if(xhr.status === 429) {
                     status.innerText = '4CAT server refused upload, too soon after previous one. Try again in a minute.'
-                } else if(xhr.status === 403) {
+                } else if(xhr.status === 401 || xhr.status === 403) {
                     status.innerText = 'Could not log in to 4CAT server. Make sure to log in to 4CAT in this browser.';
                 } else if(xhr.status === 404 && xhr.responseText.indexOf('Unknown platform or source format') >= 0) {
                     status.innerText = 'The 4CAT server does not accept ' + platform + ' datasets. The 4CAT ' +
@@ -568,12 +571,16 @@ const upload_poll = {
         let xhr = new XMLHttpRequest();
         xhr.open("GET", poll_url, true);
         xhr.onreadystatechange = async function () {
-            if (xhr.readyState === xhr.DONE) {
+            if (xhr.readyState !== xhr.DONE) {
+                // Not ready yet, return
                 return;
             }
 
             if (xhr.status !== 200) {
                 status.innerText = 'Error while checking for upload status.'
+                // Release the upload, so it can be tried again.
+                document.querySelectorAll('.upload-to-4cat').forEach(x => x.removeAttribute('disabled'));
+                is_uploading = false;
                 return;
             }
 
@@ -583,6 +590,9 @@ const upload_poll = {
                 progress = JSON.parse(json_response);
             } catch (SyntaxError) {
                 status.innerText = 'Error during upload: malformed response from 4CAT server.';
+                // Same as above; release the upload.
+                document.querySelectorAll('.upload-to-4cat').forEach(x => x.removeAttribute('disabled'));
+                is_uploading = false;
                 return;
             }
 
