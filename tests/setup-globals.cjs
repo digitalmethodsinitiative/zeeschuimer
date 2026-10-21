@@ -3,7 +3,7 @@
  * them after the manifest loads lib.js as a plain script.
  *
  * `map_item` bodies use these as free identifiers — MappedItem,
- * MissingMappedField, strip_tags, normalize_url_encoding and the rest — and
+ * MissingMappedField, strip_tags, readable_url and the rest — and
  * would hit ReferenceError without this.
  *
  * lib-globals.cjs works out which names those are; the ESLint config reads it

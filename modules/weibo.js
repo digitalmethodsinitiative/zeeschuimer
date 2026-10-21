@@ -225,7 +225,7 @@ export function map_item(item) {
     }
 
     return new MappedItem({
-        collected_from_url: normalize_url_encoding(py_get(importMeta, 'source_platform_url') || ''),
+        collected_from_url: readable_url(py_get(importMeta, 'source_platform_url') || ''),
         id: py_get(item, 'idstr'),
         thread_id: py_get(item, 'idstr'),
         url: `https://weibo.com/${py_get(user, 'idstr')}/${py_get(item, 'mblogid')}`,

@@ -376,6 +376,7 @@ UPLOAD_FAILURES = [
     ("platform not accepted by this 4CAT", "does not accept"),
     ("could not connect", "Could not connect to 4CAT server"),
     ("malformed response", "malformed response from 4CAT server"),
+    ("4CAT could not read the data", "Processor error"),
     ("upload error", "during upload"),
 ]
 
@@ -410,20 +411,37 @@ def upload_platform(platform):
     driver.execute_script("document.querySelector(arguments[0]).click();", button)
 
     deadline = time.time() + 600
+    reported = None
     while time.time() < deadline:
         state = driver.execute_script("""
             const status = document.getElementById('upload-status');
-            const link = status ? status.querySelector('a[href]') : null;
-            return {text: status ? status.innerText : '', url: link ? link.href : null};
+            if (!status) return {text: '', url: null};
+            const link = status.querySelector('a[href]');
+            // While uploading, the status area also holds a Cancel button; its
+            // label is a control, not part of the message.
+            const text = [...status.childNodes]
+                .filter(node => !(node.nodeType === Node.ELEMENT_NODE && node.tagName === 'BUTTON'))
+                .map(node => node.textContent)
+                .join(' ');
+            return {text: text, url: link ? link.href : null};
         """)
         if state["url"]:
             return state["url"]
         for label, needle in UPLOAD_FAILURES:
             if needle in state["text"]:
                 return ("error", label, " ".join(state["text"].split()))
+
+        # Importing takes as long as it takes, and 4CAT names the stage it is
+        # on. Echo each new stage so a long wait shows its progress instead of
+        # looking like a hung script.
+        progress = " ".join(state["text"].split())
+        if progress and progress != reported:
+            print(f"{platform_indent(platform)} 4CAT: {progress}")
+            reported = progress
         time.sleep(1)
 
-    return ("error", "timed out", "4CAT did not finish processing within 600 seconds")
+    return ("error", "timed out",
+            f"4CAT did not finish processing within 600 seconds; last reported: {reported or 'nothing'}")
 
 
 def upload_platform_supervised(platform):
