@@ -571,12 +571,16 @@ const upload_poll = {
         let xhr = new XMLHttpRequest();
         xhr.open("GET", poll_url, true);
         xhr.onreadystatechange = async function () {
-            if (xhr.readyState === xhr.DONE) {
+            if (xhr.readyState !== xhr.DONE) {
+                // Not ready yet, return
                 return;
             }
 
             if (xhr.status !== 200) {
                 status.innerText = 'Error while checking for upload status.'
+                // Release the upload, so it can be tried again.
+                document.querySelectorAll('.upload-to-4cat').forEach(x => x.removeAttribute('disabled'));
+                is_uploading = false;
                 return;
             }
 
@@ -586,6 +590,9 @@ const upload_poll = {
                 progress = JSON.parse(json_response);
             } catch (SyntaxError) {
                 status.innerText = 'Error during upload: malformed response from 4CAT server.';
+                // Same as above; release the upload.
+                document.querySelectorAll('.upload-to-4cat').forEach(x => x.removeAttribute('disabled'));
+                is_uploading = false;
                 return;
             }
 
