@@ -137,7 +137,7 @@ function weibo_first_set(...values) {
 
 function weibo_post_text(post) {
     const longText = py_get(post, 'longText');
-    if (typeof longText === 'object' && longText !== null && typeof longText.content === 'string') {
+    if (typeof longText === 'object' && longText !== null && longText.content) {
         return longText.content;
     }
     const raw = py_get(post, 'text_raw');
