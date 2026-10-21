@@ -127,7 +127,7 @@ export function map_item(item) {
         }
 
         return new MappedItem({
-            collected_from_url: normalize_url_encoding(post['__import_meta']?.source_platform_url ?? ""),
+            collected_from_url: readable_url(post['__import_meta']?.source_platform_url ?? ""),
             id: post_id,
             thread_id: post_id,
             author: post['pinner']?.username,
@@ -153,7 +153,7 @@ export function map_item(item) {
 
     function map_item_from_html(post) {
         return new MappedItem({
-            collected_from_url: normalize_url_encoding(post['__import_meta']?.source_platform_url ?? ""),
+            collected_from_url: readable_url(post['__import_meta']?.source_platform_url ?? ""),
             id: parseInt(post['id'], 10),
             thread_id: parseInt(post['id'], 10),
             author: new MissingMappedField(""),

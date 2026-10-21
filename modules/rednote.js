@@ -152,7 +152,7 @@ function map_item_from_json_api_explore(post) {
     const unix_ts = timestamp ? Math.floor(timestamp / 1000) : new MissingMappedField("");
 
     return new MappedItem({
-        collected_from_url: normalize_url_encoding(post.__import_meta?.source_platform_url ?? ""),
+        collected_from_url: readable_url(post.__import_meta?.source_platform_url ?? ""),
         id: item_id,
         thread_id: item_id,
         url: `https://www.xiaohongshu.com/explore/${post.id}${xsec_bit}`,
@@ -185,7 +185,7 @@ function map_item_from_json_embedded(item) {
     const unix_ts = timestamp ? Math.floor(timestamp / 1000) : new MissingMappedField("");
 
     return new MappedItem({
-        collected_from_url: normalize_url_encoding(item.__import_meta?.source_platform_url ?? ""),
+        collected_from_url: readable_url(item.__import_meta?.source_platform_url ?? ""),
         id: item.id,
         thread_id: item.id,
         url: `https://www.xiaohongshu.com/explore/${item.id}${xsec_bit}`,
@@ -204,7 +204,7 @@ function map_item_from_json_embedded(item) {
 
 function map_item_from_html(item) {
     return new MappedItem({
-        collected_from_url: normalize_url_encoding(item.__import_meta?.source_platform_url ?? ""),
+        collected_from_url: readable_url(item.__import_meta?.source_platform_url ?? ""),
         id: item.id,
         thread_id: item.id,
         url: `https://www.xiaohongshu.com${item.url}`,

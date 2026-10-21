@@ -159,7 +159,7 @@ export function map_item(post) {
     const thumbnail_url = validThumbnails.length ? validThumbnails[validThumbnails.length - 1] : "";
 
     return new MappedItem({
-        "collected_from_url": metadata["source_platform_url"] ? normalize_url_encoding(metadata["source_platform_url"]) : "",
+        "collected_from_url": metadata["source_platform_url"] ? readable_url(metadata["source_platform_url"]) : "",
         "id": post["id"],
         "thread_id": post["id"],
         "author": user_nickname,

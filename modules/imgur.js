@@ -43,7 +43,7 @@ export function map_item(item) {
     const unix_timestamp = Math.floor(Date.parse(createdAt) / 1000);
     const timestamp = formatUtcTimestamp(unix_timestamp);
 
-    const collected_from_url = normalize_url_encoding(item.__import_meta?.source_platform_url ?? "");
+    const collected_from_url = readable_url(item.__import_meta?.source_platform_url ?? "");
 
     return new MappedItem({
         collected_from_url,

@@ -267,7 +267,7 @@ function map_item_modern(tweet) {
     const entities = get_entities(tweet);
 
     return {
-        "collected_from_url": normalize_url_encoding(py_get(py_get(tweet, "__import_meta", {}), "source_platform_url", "")),
+        "collected_from_url": readable_url(py_get(py_get(tweet, "__import_meta", {}), "source_platform_url", "")),
         "id": py_get(tweet, "rest_id"),
         "thread_id": py_get(py_get(tweet, "legacy", {}), "conversation_id_str"),
         "timestamp": timestamp,
@@ -359,7 +359,7 @@ function map_item_legacy(tweet) {
     }
 
     return {
-        "collected_from_url": normalize_url_encoding(py_get(py_get(tweet, "__import_meta", {}), "source_platform_url", "")),
+        "collected_from_url": readable_url(py_get(py_get(tweet, "__import_meta", {}), "source_platform_url", "")),
         "id": tweetId,
         "thread_id": py_get(py_get(tweet, "legacy", {}), "conversation_id_str"),
         "timestamp": timestamp,

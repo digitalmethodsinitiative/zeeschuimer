@@ -94,7 +94,7 @@ export function map_item(comment) {
     const unix_timestamp = weibo_unix_timestamp(comment.created_at);
 
     return new MappedItem({
-        collected_from_url: normalize_url_encoding(comment.__import_meta?.source_platform_url ?? ""),
+        collected_from_url: readable_url(comment.__import_meta?.source_platform_url ?? ""),
         id: comment.idstr,
         thread_id: post.id ?? new MissingMappedField(""),
         post_id: post.id ?? new MissingMappedField(""),
