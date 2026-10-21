@@ -127,7 +127,7 @@ export function map_item(item) {
         : "";
 
     return new MappedItem({
-        collected_from_url: normalize_url_encoding(post.__import_meta?.source_platform_url ?? ""),
+        collected_from_url: readable_url(post.__import_meta?.source_platform_url ?? ""),
         id: post.code,
         thread_id: post.code,
         url: `https://www.threads.com/@${post.user?.username ?? ""}/post/${post.code}`,

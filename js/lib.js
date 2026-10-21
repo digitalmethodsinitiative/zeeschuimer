@@ -117,33 +117,55 @@ function strip_tags(html, convertNewlines = true) {
 }
 
 /**
- * Normalize URL encoding for display and linking.
- * Decodes percent-encoded URLs and re-encodes the query string canonically.
- * Returns the original URL on parse failure.
+ * Characters that readable_url percent-encodes: those a URL cannot contain as
+ * they are (control characters, the space and " < > ^ ` { | }), and those that
+ * would be invisible or look like a space. Same list as URL_ENCODED_CHARACTERS
+ * in 4CAT's common/lib/helpers.py.
+ */
+// eslint-disable-next-line no-control-regex, no-misleading-character-class -- control and combining characters are on the list on purpose
+const URL_ENCODED_CHARACTERS = /[\x00-\x20"<>^`{|}\x7f\u0080-\u00a0\u00ad\u034f\u0600-\u0605\u061c\u06dd\u070f\u08e2\u115f\u1160\u1680\u17b4\u17b5\u180b-\u180f\u2000-\u200b\u200e\u200f\u2028-\u202f\u205f-\u206f\u2800\u3000\u3164\ue000-\uf8ff\ufdd0-\ufdef\ufeff\uffa0\ufff0-\uffff]/g;
+
+/**
+ * Make a URL readable without changing where it leads.
+ *
+ * Copy of readable_url in 4CAT's common/lib/helpers.py, which explains each
+ * step. Encoded text in other scripts and with accents (Chinese, Arabic, é,
+ * emoji) is shown as the characters themselves; encoded plain characters such
+ * as %20, %23 or %2F stay as written, because decoding them would change the
+ * link; what a URL cannot contain as it is, and what would be invisible, is
+ * encoded.
+ *
+ * 4CAT first unpacks URLs that were saved with the whole URL encoded
+ * ("https%3A%2F%2F..."), which it can get from uploads and other tools. That
+ * step is left out here: Zeeschuimer's URLs come straight from the browser and
+ * never start like that, so the result is the same.
  * @param {string} url
  * @returns {string}
  */
-function normalize_url_encoding(url) {
-    if (!url) return "";
-    try {
-        // Iterative decode handles double-encoded inputs.
-        let decoded = url;
-        let prev;
-        do {
-            prev = decoded;
-            try {
-                decoded = decodeURIComponent(prev);
-            } catch {
-                decoded = prev;
-                break;
-            }
-        } while (decoded !== prev);
-        const parsed = new URL(decoded);
-        // URL.toString() re-encodes the query/fragment correctly.
-        return parsed.toString();
-    } catch {
-        return url;
+function readable_url(url) {
+    if (!url) {
+        return "";
     }
+
+    url = String(url);
+
+    // like a browser does with a pasted URL, ignore spaces and control
+    // characters around it, and tabs and line breaks inside it
+    // eslint-disable-next-line no-control-regex -- matches control characters on purpose
+    url = url.replace(/^[\x00-\x20]+|[\x00-\x20]+$/g, "");
+    url = url.replace(/[\t\n\r]/g, "");
+
+    // decode each run of escapes for bytes outside ASCII, if it is valid UTF-8
+    url = url.replace(/(?:%[89A-Fa-f][0-9A-Fa-f])+/g, (run) => {
+        try {
+            return decodeURIComponent(run);
+        } catch (e) {
+            return run;
+        }
+    });
+
+    // encode what a URL cannot contain as it is, and what would be invisible
+    return url.replace(URL_ENCODED_CHARACTERS, (character) => encodeURIComponent(character));
 }
 
 function formatUtcTimestamp(unixSeconds) {

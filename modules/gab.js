@@ -134,7 +134,7 @@ export function map_item(item) {
 
     const mappedItem = {
         collected_at: collectedAt,
-        collected_from_url: normalize_url_encoding(metadata['source_platform_url'] ?? ''),
+        collected_from_url: readable_url(metadata['source_platform_url'] ?? ''),
         id: postId,
         created_at: postTimeStr,
         body: item['c'] ?? item['content'],

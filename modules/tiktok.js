@@ -178,7 +178,7 @@ export function map_item(item) {
     const timestampSec = parseInt(post.createTime, 10);
 
     return new MappedItem({
-        collected_from_url: metadata && py_get(metadata, 'source_platform_url') ? normalize_url_encoding(py_get(metadata, 'source_platform_url')) : "",
+        collected_from_url: metadata && py_get(metadata, 'source_platform_url') ? readable_url(py_get(metadata, 'source_platform_url')) : "",
         id: post.id,
         thread_id: post.id,
         author: user_nickname,
