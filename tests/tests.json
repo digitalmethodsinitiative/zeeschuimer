@@ -279,16 +279,16 @@
   "douyin.com": {
     "Front Page": {
       "https://www.douyin.com/discover": {
-        "expected": [20, 60],
+        "expected": [20, 100],
         "more-after-scroll": true,
         "wait": 10,
-        "comment": "Douyin loves captchas; longer wait is needed until for them to load. Redirects to /jingxuan. Serves 50 to a logged-out visitor and about 90 after scrolling, but loads them in batches of 20 so a slow load lands lower.",
+        "comment": "Douyin loves captchas; longer wait is needed until for them to load. Redirects to /jingxuan. Fills in batches of 20, so the count reflects how many batches arrived before the wait ran out rather than what the page holds: 20 to 80 on load, and roughly double after scrolling.",
         "captcha-selector": "div#captcha_container"
       }
     },
     "Recommended": {
       "https://www.douyin.com/": {
-        "expected": [20, 60],
+        "expected": [20, 100],
         "more-after-scroll": true,
         "wait": 10,
         "comment": "Only one of the several aweme_list objects this page loads is visible, so the count is far below the number of videos in the responses.",
@@ -297,7 +297,7 @@
     },
     "User page": {
       "https://www.douyin.com/user/MS4wLjABAAAAqtpQNZmjRtGJdpyk0gbAh6OpqqBjJddNTgLhmK3Y0CI": {
-        "expected": [15, 40],
+        "expected": [15, 60],
         "more-after-scroll": false,
         "wait": 10,
         "captcha-selector": "div#captcha_container"
@@ -316,13 +316,13 @@
         "expected": [8, 40],
         "more-after-scroll": true,
         "wait": 10,
-        "comment": "Starts with a short list, around 10, and reaches 40 to 50 after scrolling.",
+        "comment": "Starts with a short list, 10 to 30, and reaches 40 to 50 after scrolling.",
         "captcha-selector": "div#captcha_container"
       }
     },
     "Channels": {
       "https://www.douyin.com/channel/300205": {
-        "expected": [20, 60],
+        "expected": [20, 100],
         "more-after-scroll": true,
         "wait": 10,
         "comment": "Redirects to /jingxuan/game. Same batching as the front page.",
