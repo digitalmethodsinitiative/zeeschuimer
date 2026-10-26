@@ -583,20 +583,29 @@ const MEDIA_TYPE_VIDEO = 2;
 
 const MEDIA_TYPE_CAROUSEL = 8;
 
-const HASHTAG_REGEX = /#([^\s!@#$%ˆ&*()_+{}:"|<>?\[\];',.\/`~'‘’]+)/g;
+const HASHTAG_REGEX = /#([^\s!@#$%ˆ&*()_+{}:\"|<>?\[\];',.\/`~'‘’]+)/g;
 
-function extractHashtags(caption) {
+function extract_hashtags(caption) {
     if (caption instanceof MissingMappedField) {
         return '';
     }
-    const matches = [...caption.matchAll(HASHTAG_REGEX)].map(m => m[1]);
-    return matches.join(',');
+    const matches = [...caption.matchAll(HASHTAG_REGEX)];
+    return matches.map(m => m[1]).join(',');
 }
 
-function getAuthor(node) {
-    const user = node.user || {};
-    const owner = node.owner || {};
-    if (user.username && owner.username && user.username !== owner.username) {
+function extract_timestamp(post_id) {
+    const instagram_epoch = 1314220021;
+    const pid = BigInt(post_id);
+    // shift right by 23 bits (64-41)
+    const shifted = pid >> BigInt(23);
+    const embedded = Number(shifted) / 1000;
+    return Math.round(instagram_epoch + embedded);
+}
+
+function get_author(node) {
+    const user = py_get(node, 'user', {});
+    const owner = py_get(node, 'owner', {});
+    if (user && user.username && owner && owner.username && user.username !== owner.username) {
         throw new MapItemException('Unable to parse item: different user and owner');
     }
     const author = { ...owner };
@@ -608,24 +617,24 @@ function getAuthor(node) {
     return author;
 }
 
-function getAuthorId(node, author) {
+function get_author_id(node, author) {
     const author_id = author.id || author.pk;
     if (author_id) {
         return author_id;
     }
-    const item_id = node.id;
+    const item_id = py_get(node, 'id', null);
     if (typeof item_id === 'string' && item_id.includes('_')) {
         return item_id.split('_')[1];
     }
     return new MissingMappedField('');
 }
 
-function getValueOrMissing(node, key, defaultValue) {
+function get_value_or_missing(node, key, defaultValue) {
     const value = value_or_missing(node, key, defaultValue);
-    return value === null ? new MissingMappedField(defaultValue) : value;
+    return (value === null) ? new MissingMappedField(defaultValue) : value;
 }
 
-function getImageUrl(candidates) {
+function get_image_url(candidates) {
     if (!Array.isArray(candidates)) {
         return '';
     }
@@ -637,47 +646,48 @@ function getImageUrl(candidates) {
     return '';
 }
 
-function parsePolarisItem(node) {
-    const partial_item = py_get(node, '_zs_partial', false);
-    const collected_at = new MissingMappedField(0);
-    const unix_at = new MissingMappedField(0);
-    let caption;
-    if (!('caption' in node)) {
-        caption = new MissingMappedField('');
-    } else if (!node.caption) {
-        caption = '';
-    } else {
-        caption = node.caption.text;
+function parse_polaris_item(node) {
+    const partial_item = !!py_get(node, '_zs_partial', false);
+    let collected_at = new MissingMappedField(0);
+    let unix_at = new MissingMappedField(0);
+    const caption = py_get(node, 'caption') ? (node.caption && node.caption.text ? node.caption.text : '') : new MissingMappedField('');
+
+    if (py_get(node, 'pk') !== undefined) {
+        unix_at = extract_timestamp(py_get(node, 'pk'));
+        collected_at = formatUtcTimestamp(unix_at);
     }
-    const author = getAuthor(node);
+
+    const author = get_author(node);
     const is_verified = (author.is_verified === undefined || author.is_verified === null) ? new MissingMappedField(false) : Boolean(author.is_verified);
-    const type_map = { XIGPolarisPhotoMedia: 'photo', XIGPolarisVideoMedia: 'video' };
-    const media_type = type_map[node.__typename] || 'unknown';
-    const num_media = node.__typename !== 'XIGPolarisCarouselMedia' ? 1 : (node.carousel_media ? node.carousel_media.length : 0);
-    const display_urls = getValueOrMissing(node, 'display_uri', '');
-    let missing_media = null;
-    const video_versions = node.video_versions || [];
+
+    const type_map = { 'XIGPolarisPhotoMedia': 'photo', 'XIGPolarisVideoMedia': 'video' };
+    const media_type = type_map[py_get(node, '__typename')] || 'unknown';
+    const num_media = (py_get(node, '__typename') !== 'XIGPolarisCarouselMedia') ? 1 : (Array.isArray(py_get(node, 'carousel_media')) ? py_get(node, 'carousel_media').length : 0);
+
+    const display_urls = get_value_or_missing(node, 'display_uri', '');
+    const video_versions = py_get(node, 'video_versions', []);
     let media_urls;
     if (video_versions.length && typeof video_versions[0] === 'object') {
-        media_urls = getValueOrMissing(video_versions[0], 'url', '');
+        media_urls = get_value_or_missing(video_versions[0], 'url', '');
     } else {
         media_urls = new MissingMappedField('');
     }
+
     return {
-        collected_from_url: readable_url(py_get(node, '__import_meta', {}).source_platform_url),
+        collected_from_url: readable_url(py_get(py_get(node, '__import_meta', {}), 'source_platform_url', '')),
         collected_from_view: py_get(node, '_zs_instagram_view', ''),
         partial_item: partial_item,
-        id: node.code,
+        id: py_get(node, 'code'),
         timestamp: collected_at,
-        thread_id: node.code,
-        parent_id: node.code,
-        url: 'https://www.instagram.com/p/' + node.code,
+        thread_id: py_get(node, 'code'),
+        parent_id: py_get(node, 'code'),
+        url: 'https://www.instagram.com/p/' + py_get(node, 'code'),
         body: caption,
-        author_id: getAuthorId(node, author),
-        author: getValueOrMissing(author, 'username', ''),
-        author_fullname: getValueOrMissing(author, 'full_name', ''),
+        author_id: get_author_id(node, author),
+        author: get_value_or_missing(author, 'username', ''),
+        author_fullname: get_value_or_missing(author, 'full_name', ''),
         verified: is_verified,
-        author_avatar_url: getValueOrMissing(author, 'profile_pic_url', ''),
+        author_avatar_url: get_value_or_missing(author, 'profile_pic_url', ''),
         coauthors: new MissingMappedField(''),
         coauthor_fullnames: new MissingMappedField(''),
         coauthor_ids: new MissingMappedField(''),
@@ -685,9 +695,9 @@ function parsePolarisItem(node) {
         num_media: num_media,
         image_urls: display_urls,
         media_urls: media_urls,
-        hashtags: extractHashtags(caption),
+        hashtags: extract_hashtags(caption),
         usertags: new MissingMappedField(''),
-        play_count: getValueOrMissing(node, 'play_count', -1),
+        play_count: get_value_or_missing(node, 'play_count', -1),
         likes_hidden: new MissingMappedField(''),
         num_likes: new MissingMappedField(-1),
         num_comments: new MissingMappedField(-1),
@@ -696,61 +706,68 @@ function parsePolarisItem(node) {
         location_latlong: new MissingMappedField(''),
         location_city: new MissingMappedField(''),
         unix_timestamp: unix_at,
-        missing_media: missing_media
+        missing_media: null
     };
 }
 
-function parseGraphItem(node) {
+function parse_graph_item(node) {
     let caption;
     try {
         caption = node.edge_media_to_caption.edges[0].node.text;
     } catch (e) {
         caption = new MissingMappedField('');
     }
-    const num_media = node.__typename !== 'GraphSidecar' ? 1 : (node.edge_sidecar_to_children.edges.length);
+    const num_media = (py_get(node, '__typename') !== 'GraphSidecar') ? 1 : (Array.isArray(py_get(node, 'edge_sidecar_to_children', {}).edges) ? py_get(node, 'edge_sidecar_to_children').edges.length : 0);
+
     let media_node;
-    if (node.__typename === 'GraphSidecar') {
-        media_node = node.edge_sidecar_to_children.edges[0].node;
+    if (py_get(node, '__typename') === 'GraphSidecar') {
+        media_node = py_get(node, 'edge_sidecar_to_children').edges[0].node;
     } else {
         media_node = node;
     }
-    let media_url;
+    let media_url = '';
     if (media_node.__typename === 'GraphVideo') {
-        media_url = media_node.video_url;
+        media_url = py_get(media_node, 'video_url', '');
     } else if (media_node.__typename === 'GraphImage') {
-        const resources = media_node.display_resources || media_node.thumbnail_resources;
+        const resources = py_get(media_node, 'display_resources', py_get(media_node, 'thumbnail_resources', []));
         if (Array.isArray(resources) && resources.length) {
-            media_url = resources[resources.length - 1].src;
+            const last = resources[resources.length - 1];
+            media_url = py_get(last, 'src', '');
         } else {
-            media_url = media_node.display_url || '';
+            media_url = py_get(media_node, 'display_url', '');
         }
     } else {
-        media_url = media_node.display_url;
+        media_url = py_get(media_node, 'display_url', '');
     }
-    const type_map = { GraphSidecar: 'photo', GraphVideo: 'video' };
+
+    const type_map = { 'GraphSidecar': 'photo', 'GraphVideo': 'video' };
     let media_type;
-    if (node.__typename !== 'GraphSidecar') {
-        media_type = type_map[node.__typename] || 'unknown';
+    if (py_get(node, '__typename') !== 'GraphSidecar') {
+        media_type = type_map[py_get(node, '__typename')] || 'unknown';
     } else {
-        const mediaTypes = new Set(node.edge_sidecar_to_children.edges.map(e => e.node.__typename));
-        if (mediaTypes.size > 1) {
+        const mediaTypesSet = new Set();
+        for (const edge of py_get(node, 'edge_sidecar_to_children').edges) {
+            mediaTypesSet.add(edge.node.__typename);
+        }
+        if (mediaTypesSet.size > 1) {
             media_type = 'mixed';
         } else {
-            const single = [...mediaTypes][0];
+            const single = mediaTypesSet.values().next().value;
             media_type = type_map[single] || 'unknown';
         }
     }
+
     const location = { name: '', latlong: '', city: '', location_id: '' };
     if (node.location) {
-        location.name = py_get(node.location, 'name');
-        location.location_id = py_get(node.location, 'pk');
-        if (node.location.lat) {
-            location.latlong = node.location.lat + ',' + node.location.lng;
+        location.name = node.location.name || '';
+        location.location_id = node.location.pk || '';
+        if (node.location.lat != null) {
+            location.latlong = `${node.location.lat},${node.location.lng}`;
         }
-        location.city = py_get(node.location, 'city');
+        location.city = node.location.city || '';
     }
     const no_likes = Boolean(node.like_and_view_counts_disabled);
-    const author = getAuthor(node);
+    const author = get_author(node);
     let play_count;
     if (node.view_count != null) {
         play_count = node.view_count;
@@ -759,74 +776,71 @@ function parseGraphItem(node) {
     } else {
         play_count = new MissingMappedField(-1);
     }
+
     return {
-        id: node.shortcode,
-        collected_from_url: readable_url(py_get(node, '__import_meta', {}).source_platform_url || ''),
-        collected_from_view: getValueOrMissing(node, '_zs_instagram_view', ''),
-        partial_item: getValueOrMissing(node, '_zs_partial', ''),
-        timestamp: formatUtcTimestamp(node.taken_at_timestamp),
-        thread_id: node.shortcode,
-        parent_id: node.shortcode,
-        url: 'https://www.instagram.com/p/' + node.shortcode,
+        id: py_get(node, 'shortcode'),
+        collected_from_url: readable_url(py_get(py_get(node, '__import_meta', {}), 'source_platform_url', '')),
+        collected_from_view: get_value_or_missing(node, '_zs_instagram_view', ''),
+        partial_item: get_value_or_missing(node, '_zs_partial', ''),
+        timestamp: formatUtcTimestamp(py_get(node, 'taken_at_timestamp')),
+        thread_id: py_get(node, 'shortcode'),
+        parent_id: py_get(node, 'shortcode'),
+        url: 'https://www.instagram.com/p/' + py_get(node, 'shortcode'),
         body: caption,
-        author_id: getAuthorId(node, author),
-        author: getValueOrMissing(author, 'username', ''),
-        author_fullname: getValueOrMissing(author, 'full_name', ''),
+        author_id: get_author_id(node, author),
+        author: get_value_or_missing(author, 'username', ''),
+        author_fullname: get_value_or_missing(author, 'full_name', ''),
         verified: Boolean(author.is_verified),
-        author_avatar_url: getValueOrMissing(author, 'profile_pic_url', ''),
+        author_avatar_url: get_value_or_missing(author, 'profile_pic_url', ''),
         coauthors: new MissingMappedField(''),
         coauthor_fullnames: new MissingMappedField(''),
         coauthor_ids: new MissingMappedField(''),
         media_type: media_type,
         num_media: num_media,
-        image_urls: node.display_url,
+        image_urls: py_get(node, 'display_url', ''),
         media_urls: media_url,
-        hashtags: extractHashtags(caption),
-        usertags: (node.edge_media_to_tagged_user && node.edge_media_to_tagged_user.edges || []).map(e => e.node.user.username).join(','),
+        hashtags: extract_hashtags(caption),
+        usertags: (node.edge_media_to_tagged_user && node.edge_media_to_tagged_user.edges || []).map(tagged => tagged.node.user.username).join(','),
         play_count: play_count,
         likes_hidden: no_likes ? 'yes' : 'no',
-        num_likes: !no_likes ? getValueOrMissing((node.edge_media_preview_like || {}), 'count', -1) : new MissingMappedField(-1),
-        num_comments: getValueOrMissing((node.edge_media_preview_comment || {}), 'count', -1),
+        num_likes: no_likes ? new MissingMappedField(-1) : get_value_or_missing(py_get(node, 'edge_media_preview_like', {}), 'count', -1),
+        num_comments: get_value_or_missing(py_get(node, 'edge_media_preview_comment', {}), 'count', -1),
         location_name: location.name,
         location_id: location.location_id,
         location_latlong: location.latlong,
         location_city: location.city,
-        unix_timestamp: node.taken_at_timestamp,
+        unix_timestamp: py_get(node, 'taken_at_timestamp'),
         missing_media: null
     };
 }
 
-function parseItemlistItem(node) {
+function parse_itemlist_item(node) {
     const code = py_get(node, 'code');
     if (!code) {
         throw new MapItemException('Unable to parse item: no post code to identify the post by');
     }
-    let caption;
-    if (!('caption' in node)) {
-        caption = new MissingMappedField('');
-    } else if (!node.caption) {
-        caption = '';
-    } else {
-        caption = node.caption.text;
-    }
+    const caption = py_get(node, 'caption') ? (node.caption && node.caption.text ? node.caption.text : '') : new MissingMappedField('');
+
     const display_urls = [];
     const media_urls = [];
     let missing_media = null;
     const type_map = { [MEDIA_TYPE_PHOTO]: 'photo', [MEDIA_TYPE_VIDEO]: 'video' };
     const media_types = new Set();
-    const carousel_media = node.carousel_media || [];
+
+    const carousel_media = py_get(node, 'carousel_media', []);
     let num_media;
-    if (node.media_type === MEDIA_TYPE_CAROUSEL) {
+    if (py_get(node, 'media_type') === MEDIA_TYPE_CAROUSEL) {
         num_media = carousel_media.length || py_get(node, 'carousel_media_count') || 1;
     } else {
         num_media = 1;
     }
     const media_nodes = carousel_media.length ? carousel_media : [node];
+
     for (const media_node of media_nodes) {
-        const thumbnail_url = getImageUrl(((media_node.image_versions2 || {}).candidates));
-        const video_versions = media_node.video_versions || [];
-        const video_url = (video_versions.length && typeof video_versions[0] === 'object') ? video_versions[0].url : '';
-        const media_node_type = media_node.media_type;
+        const thumbnail_url = get_image_url(py_get(py_get(media_node, 'image_versions2', {}), 'candidates'));
+        const video_versions = py_get(media_node, 'video_versions', []);
+        const video_url = (video_versions.length && typeof video_versions[0] === 'object') ? py_get(video_versions[0], 'url', '') : '';
+        const media_node_type = py_get(media_node, 'media_type');
         if (media_node_type === MEDIA_TYPE_VIDEO) {
             if (thumbnail_url) {
                 display_urls.push(thumbnail_url);
@@ -847,30 +861,35 @@ function parseItemlistItem(node) {
         media_types.add(type_map[media_node_type] || 'unknown');
     }
     const media_type = media_types.size > 1 ? 'mixed' : (media_types.values().next().value || 'unknown');
+
     let num_comments;
-    if (node.comment_count != null) {
-        num_comments = node.comment_count;
-    } else if (Array.isArray(node.comments)) {
-        num_comments = node.comments.length;
+    if (py_get(node, 'comment_count') != null) {
+        num_comments = py_get(node, 'comment_count');
+    } else if (Array.isArray(py_get(node, 'comments'))) {
+        num_comments = py_get(node, 'comments').length;
     } else {
         num_comments = new MissingMappedField(-1);
     }
+
     const location = { name: '', latlong: '', city: '', location_id: '' };
-    if (node.location) {
-        location.name = node.location.name || '';
-        location.location_id = node.location.pk || '';
-        if (node.location.lat) {
-            location.latlong = node.location.lat + ',' + node.location.lng;
+    if (py_get(node, 'location')) {
+        const loc = py_get(node, 'location');
+        location.name = loc.name || '';
+        location.location_id = loc.pk || '';
+        if (loc.lat != null) {
+            location.latlong = `${loc.lat},${loc.lng}`;
         }
-        location.city = node.location.city || '';
+        location.city = loc.city || '';
     }
-    const author = getAuthor(node);
+
+    const author = get_author(node);
     const is_verified = (author.is_verified === undefined || author.is_verified === null) ? new MissingMappedField(false) : Boolean(author.is_verified);
+
     const coauthors = [];
     const coauthor_fullnames = [];
     const coauthor_ids = [];
-    if (node.coauthor_producers) {
-        for (const coauthor_node of node.coauthor_producers) {
+    if (Array.isArray(py_get(node, 'coauthor_producers'))) {
+        for (const coauthor_node of py_get(node, 'coauthor_producers')) {
             coauthors.push(coauthor_node.username || '');
             coauthor_fullnames.push(coauthor_node.full_name || '');
             coauthor_ids.push(coauthor_node.id || '');
@@ -879,31 +898,37 @@ function parseItemlistItem(node) {
     const coauthors_str = coauthors.some(Boolean) ? coauthors.join(',') : '';
     const coauthor_fullnames_str = coauthor_fullnames.some(Boolean) ? coauthor_fullnames.join(',') : '';
     const coauthor_ids_str = coauthor_ids.some(Boolean) ? coauthor_ids.join(',') : '';
-    const no_likes = Boolean(node.like_and_view_counts_disabled);
-    const num_likes = (!no_likes && node.like_count != null) ? node.like_count : new MissingMappedField(-1);
+
+    const no_likes = Boolean(py_get(node, 'like_and_view_counts_disabled'));
+    const num_likes = (no_likes || py_get(node, 'like_count') == null) ? new MissingMappedField(-1) : py_get(node, 'like_count');
+
     let play_count;
-    if (node.view_count != null) {
-        play_count = node.view_count;
-    } else if (node.play_count != null) {
-        play_count = node.play_count;
+    if (py_get(node, 'view_count') != null) {
+        play_count = py_get(node, 'view_count');
+    } else if (py_get(node, 'play_count') != null) {
+        play_count = py_get(node, 'play_count');
     } else {
         play_count = new MissingMappedField(-1);
     }
+
     let usertags = '';
     if ('usertags' in node) {
-        usertags = (node.usertags && node.usertags.in || []).filter(tagged => typeof (tagged.user) === 'object' && tagged.user.username).map(tagged => tagged.user.username).join(',');
+        const inTags = py_get(node.usertags, 'in', []);
+        usertags = inTags.filter(tagged => tagged && typeof tagged.user === 'object' && tagged.user.username).map(tagged => tagged.user.username).join(',');
     }
+
     let collected_at;
     let unix_at;
-    if (node.taken_at != null) {
-        collected_at = formatUtcTimestamp(node.taken_at);
-        unix_at = node.taken_at;
+    if (py_get(node, 'taken_at') != null) {
+        unix_at = py_get(node, 'taken_at');
+        collected_at = formatUtcTimestamp(unix_at);
     } else {
-        collected_at = new MissingMappedField(0);
-        unix_at = new MissingMappedField(0);
+        unix_at = extract_timestamp(py_get(node, 'pk'));
+        collected_at = formatUtcTimestamp(unix_at);
     }
+
     return {
-        collected_from_url: readable_url(py_get(node, '__import_meta', {}).source_platform_url || ''),
+        collected_from_url: readable_url(py_get(py_get(node, '__import_meta', {}), 'source_platform_url', '')),
         collected_from_view: py_get(node, '_zs_instagram_view', ''),
         partial_item: py_get(node, '_zs_partial', ''),
         id: code,
@@ -912,11 +937,11 @@ function parseItemlistItem(node) {
         parent_id: code,
         url: 'https://www.instagram.com/p/' + code,
         body: caption,
-        author_id: getAuthorId(node, author),
-        author: getValueOrMissing(author, 'username', ''),
-        author_fullname: getValueOrMissing(author, 'full_name', ''),
+        author_id: get_author_id(node, author),
+        author: get_value_or_missing(author, 'username', ''),
+        author_fullname: get_value_or_missing(author, 'full_name', ''),
         verified: is_verified,
-        author_avatar_url: getValueOrMissing(author, 'profile_pic_url', ''),
+        author_avatar_url: get_value_or_missing(author, 'profile_pic_url', ''),
         coauthors: coauthors_str,
         coauthor_fullnames: coauthor_fullnames_str,
         coauthor_ids: coauthor_ids_str,
@@ -924,7 +949,7 @@ function parseItemlistItem(node) {
         num_media: num_media,
         image_urls: display_urls.join(','),
         media_urls: media_urls.join(','),
-        hashtags: extractHashtags(caption),
+        hashtags: extract_hashtags(caption),
         usertags: usertags,
         play_count: play_count,
         likes_hidden: no_likes ? 'yes' : 'no',
@@ -940,18 +965,19 @@ function parseItemlistItem(node) {
 }
 
 export function map_item(item) {
+    // Detect ads and raise exception
     const link = py_get(item, 'link', '');
-    const product_type = py_get(item, 'product_type', '');
-    if (product_type === 'ad' || (link && link.startsWith('https://www.facebook.com/ads/ig_redirect'))) {
+    if ((py_get(item, 'product_type', '') === 'ad') || (link && link.startsWith('https://www.facebook.com/ads/ig_redirect'))) {
         throw new MapItemException('appears to be Instagram ad, check raw data to confirm and ensure Zeeschuimer is up to date.');
     }
+
     const typename = py_get(item, '__typename', '');
     if (typename && typename.toLowerCase().includes('polaris')) {
-        return new MappedItem(parsePolarisItem(item));
+        return new MappedItem(parse_polaris_item(item));
     } else if (typename && typename.startsWith('Graph')) {
-        return new MappedItem(parseGraphItem(item));
+        return new MappedItem(parse_graph_item(item));
     } else {
-        return new MappedItem(parseItemlistItem(item));
+        return new MappedItem(parse_itemlist_item(item));
     }
 }
 // === end auto-generated ===
