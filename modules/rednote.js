@@ -3,7 +3,7 @@ export const DOMAIN = 'xiaohongshu.com';
 
 export function capture(response, source_platform_url, source_url) {
     let domain = source_platform_url.split("/")[2].toLowerCase().replace(/^www\./, '');
-    if (!domain.endsWith('xiaohongshu.com')) {
+    if (!domain.endsWith('xiaohongshu.com') && !domain.endsWith('rednote.com')) {
         return [];
     }
 
