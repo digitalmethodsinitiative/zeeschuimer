@@ -7,7 +7,7 @@
 
   "browser_specific_settings": {
     "gecko": {
-      "id": "zeeschuimer@digitalmethods.net",
+      "id": "{677bb78c-7168-4aa5-8e9b-32e9f26c6157}",
       "update_url": "https://extensions.digitalmethods.net/updates.json",
       "data_collection_permissions": {
         "required": ["none"]
